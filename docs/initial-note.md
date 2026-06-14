@@ -1,5 +1,78 @@
-## initial voice note
+# Initial Voice Note (English translation)
 
-Идея в чём? Хочу сделать небольшой, для начала, который будет в дальнейшем масштабироваться и получать всё больше фичей, сервис для благотворительности. Идея в том, чтобы помогать людям, у которых нет возможности и нет денег, получать адекватную, качественную психиатрическую и психологическую помощь. Делать это через раздачу оплаченных сессий с психологом в онлайн-сервисах типа Альтер. Может быть, что-то позже, потом желательно и психиатрию тоже как-то покрыть, но для начала так. Как это будет устроено? Экономическое ядро — это криптовалюты, скажем так, конкретный кошелёк, счёт или несколько кошельков и счетов, на которые приходят деньги типа USDT. Пользователям, донатерам прозрачно видно, сколько денег когда поступает и затем также прозрачно видно, сколько денег и когда уходит. С криптовалютных денег покупаются через большое количество сервисов, предоставающих такие услуги, подарочные карты на сайты типа Альтер. В случае, если подарочные карты нельзя купить напрямую за крипту, то покупаются через различные телеграм-сервисы, которые позволяют конвертировать криптовалюты сразу же в долларовые банковские карточки или даже оплачивать по СБП. В общем, способов оплачивать реальные сервисы за крипту много. Легальность всего этого — это следующий шаг. Сначала нужно выстроить MVP и затем, позже будет прорабатываться юридическое сопровождение. Этим занимается отдельная команда, сейчас не я. Мой скоуп — это чисто бизнесовая идея и технология. То есть еще раз, визуально можно представить это как какой-то гит-историю, дерево, где есть ветви входящих поступлений и ветви исходящих поступлений. Для того, чтобы было понятно, что исходящие деньги не просто куда-то выводятся, к каждому случае вывода денег прикладывается чек оплаты в каком-то может быть анонимизированном виде. Пока что для начала так. В будущем, конечно, тут может быть какая-то хитроумная автоматизация и все такое, но поначалу все это буду делать я вручную. Сайт нужен просто как такой красивый способ просматривать историю и видеть все прозрачно.
+> The original Russian voice note is preserved in the conversation history.
+> This file is the English version of the original idea, captured before any
+> structured discussion. See `2026-06-14-crypto-charity-vault.md` for the
+> refined concept and decisions that came out of the ideation session.
 
-Как устроено пока что масштабирование? На начальном этапе это несколько человек, которых просто можно привлечь в качестве подопечных. Просто по знакомству в личку. Затем реферальная система. Один подопечный зовет другого подопечного. У него есть одно приглашение в месяц. Или, например, N приглашений в месяц. В зависимости от бюджета. Для того, чтобы продолжать пользоваться сервисом, нужно приглашать людей. Ну, не сервисом, а продолжать получать поддержку. В рамках бюджета, конечно. Очень важна анонимность. Как обеспечить анонимность тех, кто донатит? Очевидно, просто перевод на счет. Как обеспечить анонимность людей, которые пользуются сервисом? Это посложнее. Тут нужно подумать про MVP и, скажем так, продакшн. Самый простой неанонимный способ – это, конечно, просто бот с телеграмми, что может быть удовлетворительным компромиссом в каком-то случае. Может быть, электронная почта. Надо подумать. В идеале – это интеграция с чем-то типа мотор-моста позже. Ой, не мотор-моста, конечно, а анонимных современных мессенджеров. Я запомнил. Забыл название. Матрикс, по-моему, называется протокол. Может быть, построить какое-то свое собственное простенькое окно. Защита от абьюза на начальном этапе никакая. На более поздних этапах защита от абьюза через рефералки. Ну, вот это очень кратко. То есть как я вижу стадию MVP? Что у нас есть? Бэк, который отвечает за интеграцию с кошельком. Ну, наверное, для начала это Solana. Solana, USDC, может быть. USDT. У нас есть фронт, который позволяет красиво видеть транзакции. Что-то типа лендинга. У нас есть возможность для донатеров донатить деньги. И есть ручной механизм вывода денег и превращения их в подарочные карты и другие талоны для подопечных. По-хорошему здесь нужно все-таки придумать, как автоматизировать, роботизировать, анонимизировать сервис взаимодействия с подопечными. Телеграм-бот или что-то еще.
+## The idea
+
+I want to make a small — for the start — charity service that will scale later
+and gain more features. The idea is to help people who lack the opportunity and
+the money to get adequate, quality psychiatric and psychological help. Deliver
+it by distributing paid sessions with a psychologist on online services like
+Alter (ru). Maybe later psychiatry too, but for the start this is enough.
+
+## How it will work
+
+The economic core is cryptocurrencies — a specific wallet, an account, or
+several wallets/accounts that receive money like USDT. Donors can transparently
+see how much money comes in and when, and then transparently see how much goes
+out and when. From the crypto money, through a number of services that provide
+such services, gift cards are purchased for sites like Alter. In case gift
+cards can't be bought directly with crypto, then bought through various
+Telegram services that allow converting cryptocurrencies directly into dollar
+bank cards or even paying via SBP (Russian fast payment system). In general,
+there are many ways to pay for real services with crypto.
+
+## Legality
+
+Legality of all this is the next step. First we need to build the MVP, and
+then later legal support will be worked out. This is handled by a separate
+team, not me for now. My scope is purely the business idea and technology.
+
+## Visual model
+
+So again, visually you can imagine it like a git history — a tree — where
+there are branches of incoming transactions and branches of outgoing
+transactions. So that it's clear that outgoing money is not just withdrawn
+somewhere, every withdrawal is attached with a payment receipt, possibly in
+some anonymized form. For now that's it. In the future, of course, there can
+be some clever automation and so on, but initially I'll be doing all this
+manually. The site is needed just as a nice way to view the history.
+
+## Scaling for now
+
+At the early stage it's just a few people who can be brought in as
+beneficiaries, just by personal acquaintance. Then a referral system. One
+beneficiary invites another beneficiary. They have one invitation per month.
+Or N invitations per month, depending on budget. To keep receiving support,
+you need to invite people. Within budget, of course.
+
+## Anonymity
+
+Anonymity is very important.
+
+- **Donors:** obviously, just a transfer to the account.
+- **Beneficiaries:** harder. Need to think about MVP and production. The
+  simplest non-anonymous way is of course just a Telegram bot, which may be
+  a satisfactory compromise in some cases. Maybe email. Need to think.
+  Ideally — integration with something like Matrix (the protocol — modern
+  anonymous messenger). Maybe build some own simple window.
+
+## Abuse protection
+
+At the early stage: none. At later stages: via referrals.
+
+## How I see the MVP stage
+
+- A backend that handles wallet integration. Probably Solana to start.
+  Solana+USDC, maybe USDT.
+- A frontend that lets you beautifully view transactions. Something like a
+  landing page.
+- The ability for donors to donate money.
+- A manual mechanism for withdrawing money and turning it into gift cards
+  and other vouchers for beneficiaries.
+
+Ideally we need to figure out how to automate, robotize, and anonymize the
+service of interacting with beneficiaries. A Telegram bot or something else.
