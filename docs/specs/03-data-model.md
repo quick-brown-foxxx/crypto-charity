@@ -1,469 +1,360 @@
-# 03 — Data model
+# 03 — Data Model
 
-**Status:** Draft v0.3.1
+**Status:** Draft
 **Date:** 2026-06-14
-**Scope:** MVP v1. The D1 schemas, the hash chain mechanics, and what is deliberately not stored.
+**Scope:** MVP D1 schemas, canonical ledger events, and hash-chain mechanics.
 
 ## How to read this
 
-This doc describes **what the bytes look like**. It does not describe
-the HTTP API that reads/writes them (see [`04-api.md`](04-api.md)) or
-where the databases live (see [`05-hosting-and-deploy.md`](05-hosting-and-deploy.md)).
-The rules the data model must satisfy live in
+This document defines the bytes that matter for trust. The API that exposes
+them is in [`04-api.md`](04-api.md), and the invariants are in
 [`02-invariants.md`](02-invariants.md).
 
-## Two databases, one chain
+## Databases
 
 There are two Cloudflare D1 databases:
 
-- **`vault-db`** — donor-facing, hash-chained, append-only. Contains
-  the ledger.
-- **`bot-db`** — bot-only, not chained, mutable. Contains the
-  beneficiary identity mapping.
+- **`vault-db`** — donor-facing system state: canonical ledger events, wallet
+  metadata, Helius inbox, anchor runs, and optional read models.
+- **`bot-db`** — bot-only working memory: Telegram mapping, requests, and
+  delivery state.
 
-The donor-facing hash chain lives entirely in `vault-db`. The bot
-mapping lives entirely in `bot-db`. The two databases are
-**structurally isolated**: a Worker with only the `vault-db` binding
-cannot query `bot-db` and vice versa. This enforces invariant I-4
-**by platform, not by code review.**
+The databases are structurally isolated. A Worker with only the `vault-db`
+binding cannot query `bot-db`, and the bot Worker does not receive the
+`vault-db` binding.
 
 ## `vault-db` schema
 
-### `chain_sequence`
+### `ledger_events`
 
-The single linear hash chain. Every donor-visible event has exactly
-one row here, in monotonic `sequence_no` order. The chain head is
-`MAX(sequence_no)`'s `row_hash`.
+`ledger_events` is the canonical append-only donor ledger. All public
+verification starts here.
 
 ```sql
-CREATE TABLE chain_sequence (
+CREATE TABLE ledger_events (
     sequence_no      INTEGER PRIMARY KEY AUTOINCREMENT,
     event_type       TEXT NOT NULL CHECK (event_type IN (
-                         'donation',
-                         'disbursement',
-                         'anchor_publication'
+                         'donation_confirmed',
+                         'disbursement_recorded',
+                         'anchor_published',
+                         'correction_recorded'
                      )),
-    target_table     TEXT NOT NULL,         -- e.g. 'donations'
-    target_id        INTEGER NOT NULL,      -- PK in target_table
-    head_hash        TEXT NOT NULL,         -- convenience: same as row_hash
-    prev_hash        TEXT NOT NULL,         -- 64 hex chars; "0"*64 for sequence_no=1
-    row_hash         TEXT NOT NULL UNIQUE,  -- 64 hex chars; SHA-256 of canonical_json(this row)
-    created_at_utc   TEXT NOT NULL          -- ISO-8601
+    payload_json     TEXT NOT NULL,             -- canonical JSON object as text
+    prev_hash        TEXT NOT NULL,             -- 64 hex chars; "0"*64 for sequence_no=1
+    event_hash       TEXT NOT NULL UNIQUE,      -- 64 hex chars
+    created_at_utc   TEXT NOT NULL              -- ISO-8601 UTC
 );
 
-CREATE INDEX idx_chain_event_type ON chain_sequence(event_type, sequence_no);
+CREATE INDEX idx_ledger_events_type_sequence
+    ON ledger_events(event_type, sequence_no);
 ```
 
-The `target_table` / `target_id` pair is denormalized for fast
-verification. The chain does not need a join to validate: each
-`chain_sequence` row is self-contained.
+`sequence_no` is allocated only in the `ledger_events` namespace. The insert
+helper serializes ledger writes, computes the next sequence number, reads the
+previous head, computes the event hash, and inserts one row. If a concurrent
+writer wins first, the helper retries with the new head.
 
-**`target_id` is set at INSERT time, not post-INSERT.** The
-insert order for any new event uses a **shared-autoincrement
-trick** that avoids both the chicken-and-egg and any UPDATE
-statements. This is the only canonical insert path; everything
-else flows from it.
+No other table participates in sequence allocation.
 
-The trick: **SQLite's `AUTOINCREMENT` counter is shared across
-all tables in a connection.** When we INSERT into
-`chain_sequence` first, the counter advances by one. The
-`last_insert_rowid()` call returns that value. When we then
-INSERT into `donations` with `id = last_insert_rowid()` and
-`sequence_no = last_insert_rowid()`, both `donations.id` and
-`chain_sequence.sequence_no` are the same value (because the
-counter advanced only once between the two INSERTs). The FK
-from `donations.sequence_no` to `chain_sequence(sequence_no)`
-is satisfied at INSERT time because the parent row exists in
-the same transaction.
+### Event hash
 
-The full transaction:
+For every event:
 
-```sql
-BEGIN;
-  INSERT INTO chain_sequence
-    (event_type, target_table, target_id, head_hash, prev_hash, row_hash, created_at_utc)
-  VALUES
-    ('donation', 'donations', :target_id, :row_hash, :prev_hash, :row_hash, :now);
-  -- :target_id is the new donations.id, which is the same as
-  -- the chain_sequence.sequence_no we're about to consume.
-  -- We don't know it yet, so we use last_insert_rowid() below.
-  -- For SQLite to allocate the rowid correctly, the INSERT
-  -- above must use AUTOINCREMENT on chain_sequence.sequence_no
-  -- and we capture the result via last_insert_rowid().
-  INSERT INTO donations
-    (id, sequence_no, wallet_id, tx_signature, amount_usdc_minor,
-     slot, block_time_utc, donor_note, observed_at_utc)
-  VALUES
-    (last_insert_rowid(), last_insert_rowid(), :wallet_id, :tx_sig,
-     :amount, :slot, :block_time, :note, :now);
-  -- Both donations.id and donations.sequence_no are now
-  -- equal to chain_sequence.sequence_no. The FK is satisfied.
-COMMIT;
+```text
+event_hash = SHA-256(canonical_json({
+  sequence_no,
+  event_type,
+  payload,
+  prev_hash,
+  created_at_utc
+}))
 ```
 
-There is **no UPDATE** anywhere in this transaction. The
-shared-autoincrement trick keeps both `target_id` (in
-`chain_sequence.target_id`) and the chain row's `id` (in
-`donations.id`) consistent at INSERT time. Append-only is
-preserved.
+Rules:
 
-**Tradeoff note:** the trick depends on SQLite's shared-
-autoincrement-counter behavior, which is documented but not
-universally known. The alternative — explicit transaction with
-two UPDATEs to finalize `target_id` and recompute `row_hash` —
-is more conventional but violates the spirit of "no UPDATE
-after commit" (and requires careful in-transaction reasoning
-about observer visibility). The shared-autoincrement trick is
-the chosen design for v1. A unit test
-(`tests/test_invariants.py::test_shared_autoincrement_trick`)
-verifies the behavior on the actual D1 runtime.
+- `payload` is the parsed JSON object stored in `payload_json`.
+- `event_hash` is not included in its own preimage.
+- Object keys are sorted lexicographically.
+- Numbers that represent money are integer minor-unit strings; no floats.
+- Strings are UTF-8.
+- Nullable fields are represented as `null`, not omitted, when they are part of
+  an event schema.
 
-**On the `prev_hash` and `row_hash` for the first event:** when
-`chain_sequence` is empty, `prev_hash = "0" * 64`. `row_hash =
-SHA-256(canonical_json({ sequence_no, event_type,
-target_table, target_id, head_hash = same as row_hash,
-prev_hash, created_at_utc }))`.
+For the first event, `prev_hash = "0" * 64`. For later events,
+`prev_hash` equals the previous row's `event_hash`.
 
-### `donations`
+### What `payload_json` means
 
-```sql
-CREATE TABLE donations (
-    id                   INTEGER PRIMARY KEY,
-    sequence_no          INTEGER NOT NULL UNIQUE REFERENCES chain_sequence(sequence_no),
-    wallet_id            INTEGER NOT NULL REFERENCES wallets(id),
-    tx_signature         TEXT NOT NULL UNIQUE,         -- base58 Solana tx sig
-    amount_usdc_minor    TEXT NOT NULL,                -- integer string, e.g. "100000000" = 100.000000 USDC
-    slot                 INTEGER NOT NULL,             -- Solana slot of confirmation
-    block_time_utc       TEXT NOT NULL,                -- ISO-8601
-    donor_note           TEXT,                         -- optional, set by donor via SPL memo (≤ 64 bytes)
-    observed_at_utc      TEXT NOT NULL                 -- when ingest Worker saw it
-);
+`payload_json` is the canonical event body stored as text in
+`ledger_events`. It is the part of the ledger row that says what actually
+happened.
+
+```text
+external fact or operator action
+        │
+        ▼
+validate + normalize into event schema
+        │
+        ▼
+canonical JSON text → ledger_events.payload_json
+        │
+        ▼
+parsed payload object participates in event_hash
 ```
 
-**Unit for `amount_usdc_minor`:** integer string of the **smallest
-unit** (USDC has 6 decimals on Solana). `"100.000000"` USDC is stored
-as `"100000000"`. This matches the SPL Token program layout and
-avoids floating-point ambiguity. All API request/response bodies
-that take an amount also use the integer minor unit string. The
-public site's display layer formats it back to decimal for humans.
+`payload_json` is **not** raw provider data and is **not** arbitrary metadata.
+It must not contain secrets, private beneficiary identifiers, Telegram user IDs,
+raw Helius webhook bodies, donor memos, or full gift-card codes.
 
-**Why not a `donor_wallet_address` column?** We do not store who
-donated. The vault's own address is public; inflows are visible on
-chain; we just record that an inflow happened. Donor deanonymization
-via on-chain analytics is a known limit, documented in
-[`../concepts/2026-06-14-crypto-charity-vault.md#what-this-is-not-honest-limits`](../concepts/2026-06-14-crypto-charity-vault.md#what-this-is-not-honest-limits).
+| Term | Meaning |
+| --- | --- |
+| `payload_json` | Canonical JSON text stored in the database. |
+| `payload` | Parsed JSON object produced from `payload_json` before hashing. |
+| Event payload | The immutable, donor-visible facts for one ledger event. |
 
-### `disbursements`
+The event payload comes from the subsystem that observed or created the event:
 
-```sql
-CREATE TABLE disbursements (
-    id                   INTEGER PRIMARY KEY,
-    sequence_no          INTEGER NOT NULL UNIQUE REFERENCES chain_sequence(sequence_no),
-    wallet_id            INTEGER NOT NULL REFERENCES wallets(id),
-    amount_usdc_minor    TEXT NOT NULL,                -- integer string, smallest unit
-    gift_card_count      INTEGER NOT NULL CHECK (gift_card_count > 0),
-    service              TEXT NOT NULL CHECK (service IN ('Alter', 'Yasno', 'Zigmund', 'Other')),
-    service_note         TEXT,                         -- required only if service='Other'; max 64 chars
-    receipt_ref          TEXT NOT NULL,                -- human-readable ref; regex ^[A-Za-z0-9-]{4,64}$
-    receipt_blob_key     TEXT,                         -- R2 key; NULL in MVP (see 09-decisions.md)
-    beneficiary_handle   TEXT NOT NULL,                -- the beneficiary's self-chosen handle
-    purchased_at_utc     TEXT NOT NULL,                -- when the operator bought the cards
-    recorded_at_utc      TEXT NOT NULL,                -- when the operator recorded this
-    recorded_by          TEXT NOT NULL                 -- operator identifier; "operator" at MVP
-);
+- `donation_confirmed` — parsed from a finalized Solana SPL USDC transfer to the
+  configured vault USDC ATA.
+- `disbursement_recorded` — built from the operator's validated gift-card
+  purchase record.
+- `anchor_published` — built after the anchor Memo transaction is known.
+- `correction_recorded` — built from an operator correction action.
+
+### Event payloads
+
+Payloads must contain the immutable donor-visible fields needed to verify the
+event.
+
+#### `donation_confirmed`
+
+```json
+{
+  "cluster": "mainnet-beta",
+  "usdc_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "treasury_wallet_address": "...base58",
+  "vault_usdc_ata": "...base58",
+  "tx_signature": "...base58",
+  "slot": 123456789,
+  "block_time_utc": "2026-06-14T10:23:00Z",
+  "amount_usdc_minor": "100000000"
+}
 ```
 
-### `anchor_publications`
+Notes:
 
-```sql
-CREATE TABLE anchor_publications (
-    id                   INTEGER PRIMARY KEY,
-    sequence_no          INTEGER NOT NULL UNIQUE REFERENCES chain_sequence(sequence_no),
-    head_hash            TEXT NOT NULL,               -- the head hash at the moment of publishing
-    tx_signature         TEXT,                        -- base58 Solana tx sig; NULL if send failed
-    published_at_utc     TEXT NOT NULL,               -- ISO-8601
-    source               TEXT NOT NULL CHECK (source IN ('cron-trigger', 'github-actions', 'operator-manual')),
-    send_status          TEXT NOT NULL CHECK (send_status IN ('pending', 'sent', 'failed')),
-    send_error           TEXT                         -- error message if send_status='failed'
-);
+- Donations are accepted only when the SPL token transfer destination is the
+  configured vault USDC ATA for the configured USDC mint. Reconciliation may
+  watch the treasury owner address to discover missed activity, but donor-ledger
+  donation events are appended only for configured vault ATA destinations.
+- Donor wallet addresses and donor memos are not stored in the donor ledger.
+  They may be visible on-chain; the public API does not repeat them by default.
+- The transaction must be fetched at `finalized` commitment with
+  `maxSupportedTransactionVersion: 0` when parsing finality-sensitive data.
 
--- Atomic idempotency: at most one row per UTC day, enforced at the DB level.
--- This replaces the v1 read-then-write idempotency check, which had a race.
-CREATE UNIQUE INDEX idx_anchor_unique_per_day
-    ON anchor_publications (date(published_at_utc));
+#### `disbursement_recorded`
+
+```json
+{
+  "amount_usdc_minor": "50000000",
+  "gift_card_count": 2,
+  "service": "Alter",
+  "service_note": null,
+  "receipt_ref": "ALTER-2026-06-14-A1B2C3",
+  "public_beneficiary_ref": "benpub_7G9Q2KX4",
+  "purchased_at_utc": "2026-06-14T10:23:00Z",
+  "recorded_at_utc": "2026-06-14T10:25:14Z",
+  "recorded_by": "operator"
+}
 ```
 
-The unique index is the single point of truth for "did we already
-publish today?" — both crons can race; the DB decides. The losing
-INSERT fails with a constraint violation, which the anchor job
-catches and treats as "already done, exiting ok."
+`public_beneficiary_ref` is random and safe to display. It is not a Telegram
+handle and does not identify the beneficiary. It may be `null` if no public
+reference is needed.
 
-### `shares_optional`
+#### `anchor_published`
 
-**Removed in v0.3.** The table was YAGNI for v1: nothing reads
-it publicly, nothing in the operator workflow needs it, and
-the PII-scan complexity (the `contains_pii_flag` column) is
-deferred to whatever Phase 2 needs it. Re-add when Phase 2
-actually wants a curated public view of beneficiary quotes.
+```json
+{
+  "anchor_date": "2026-06-14",
+  "anchored_head_sequence_no": 89,
+  "anchored_head_hash": "ab12...64hex",
+  "tx_signature": "...base58",
+  "anchor_wallet_address": "...base58",
+  "memo_text": "ccv-anchor:ab12...64hex",
+  "published_at_utc": "2026-06-14T02:17:31Z",
+  "cluster": "mainnet-beta"
+}
+```
+
+The anchor memo commits to the head before this event is inserted. The
+`anchor_published` event is covered by a later anchor.
+
+#### `correction_recorded`
+
+Corrections are new events that reference the event being corrected:
+
+```json
+{
+  "corrects_sequence_no": 42,
+  "reason": "receipt reference typo",
+  "replacement_fields": {
+    "receipt_ref": "ALTER-2026-06-14-A1B2C4"
+  },
+  "recorded_at_utc": "2026-06-15T08:00:00Z",
+  "recorded_by": "operator"
+}
+```
 
 ### `wallets`
+
+Wallet metadata is public configuration, not private key material.
 
 ```sql
 CREATE TABLE wallets (
     id                   INTEGER PRIMARY KEY,
-    address              TEXT NOT NULL UNIQUE,        -- base58 Solana address
-    label                TEXT NOT NULL,               -- human-readable
+    role                 TEXT NOT NULL CHECK (role IN ('treasury', 'anchor')),
+    cluster              TEXT NOT NULL CHECK (cluster IN ('mainnet-beta', 'devnet', 'localnet')),
+    address              TEXT NOT NULL UNIQUE,
+    usdc_mint            TEXT,
+    usdc_ata             TEXT,
+    label                TEXT NOT NULL,
+    active               INTEGER NOT NULL DEFAULT 1,
     created_at_utc       TEXT NOT NULL
 );
 ```
 
-MVP has exactly one row. The table exists to support multi-wallet
-later without schema change. Wallet creation is **bootstrapping**,
-not an operator API action — the row is created by a migration,
-not by `POST /api/disbursements` or any write endpoint.
+MVP rows:
 
-## What is NOT in `vault-db` schema (by design)
+| Role | Purpose | Private key location |
+| --- | --- | --- |
+| `treasury` | owns the vault USDC ATA and receives donations | not in CI, Workers, repo, or app runtime |
+| `anchor` | signs Solana Memo anchor transactions | `ANCHOR_WALLET_SECRET` only |
 
-Verified by `tests/test_invariants.py::test_schema_introspect` —
-the test introspects the schema and fails on any column matching
-a deny-list pattern.
+USDC mint addresses:
 
-- **No `telegram_user_id`.** Ever. Not in any table, not in any
-  index, not in any view.
-- **No `telegram_id`, `phone`, `email`, `real_name`.** Same.
-- **No `donor_wallet_address`.** We never link a donation to a
-  non-vault address.
-- **No `UPDATE`/`DELETE` migrations.** Verified by
-  `test_no_update_or_delete_in_migrations`.
+| Cluster | USDC mint |
+| --- | --- |
+| Mainnet | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` |
+| Devnet | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` |
+
+### `anchor_runs`
+
+Mutable runner state for anchor attempts. This table is not part of the donor
+ledger.
+
+```sql
+CREATE TABLE anchor_runs (
+    id                       INTEGER PRIMARY KEY,
+    anchor_date              TEXT NOT NULL,
+    anchored_head_sequence_no INTEGER NOT NULL,
+    anchored_head_hash       TEXT NOT NULL,
+    status                   TEXT NOT NULL CHECK (status IN ('pending', 'sending', 'published', 'failed')),
+    tx_signature             TEXT,
+    anchor_wallet_address    TEXT NOT NULL,
+    memo_text                TEXT NOT NULL,
+    attempt_count            INTEGER NOT NULL DEFAULT 0,
+    last_error               TEXT,
+    locked_until_utc         TEXT,
+    created_at_utc           TEXT NOT NULL,
+    updated_at_utc           TEXT NOT NULL
+);
+
+CREATE UNIQUE INDEX idx_anchor_runs_date_head
+    ON anchor_runs(anchor_date, anchored_head_hash);
+```
+
+Status and retry metadata may be updated here. A successful run appends an
+`anchor_published` ledger event after the transaction is known/finalized.
+
+### `helius_inbox`
+
+Durable inbox for ACK-fast webhook handling and reconciliation.
+
+```sql
+CREATE TABLE helius_inbox (
+    signature           TEXT PRIMARY KEY,
+    source              TEXT NOT NULL CHECK (source IN ('webhook', 'reconciliation')),
+    raw_payload_json    TEXT NOT NULL,
+    status              TEXT NOT NULL CHECK (status IN ('received', 'processing', 'processed', 'ignored', 'failed')),
+    reason              TEXT,
+    attempt_count       INTEGER NOT NULL DEFAULT 0,
+    last_error          TEXT,
+    received_at_utc     TEXT NOT NULL,
+    updated_at_utc      TEXT NOT NULL
+);
+```
+
+The webhook handler validates `Authorization`, inserts or finds the inbox row,
+returns `200` quickly, and performs full parsing in `ctx.waitUntil` or an async
+worker path. Duplicate signatures do not create duplicate ledger events.
+
+### Optional read models
+
+Views or materialized read-model tables may exist for query speed, for example
+`donation_read_model`, `disbursement_read_model`, and `anchor_read_model`.
+They are convenience projections from `ledger_events.payload_json` and can be
+rebuilt from the ledger. They are not used for hash verification.
 
 ## `bot-db` schema
 
-`bot-db` is **not** part of the donor chain. It is the bot's
-working memory. It is not append-only (we do need to update
-`handles.last_seen_utc`, etc.). This is fine because `bot-db` is
-**never read by the donor-facing surface**.
+`bot-db` is not part of the donor hash chain. It is mutable bot working memory.
 
 ### `handles`
-
-The single bot-side table. Combines beneficiary identity
-(opaque_id, handle, telegram_user_id) with active-state tracking.
-This is the only place `telegram_user_id` lives in our
-infrastructure.
 
 ```sql
 CREATE TABLE handles (
     id                   INTEGER PRIMARY KEY,
-    opaque_id            TEXT NOT NULL UNIQUE,         -- 128-bit hex, server-generated
-    handle               TEXT NOT NULL UNIQUE COLLATE NOCASE,  -- beneficiary-chosen
-    telegram_user_id     INTEGER NOT NULL UNIQUE,      -- 64-bit int from Telegram
+    opaque_id            TEXT NOT NULL UNIQUE,
+    handle               TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    telegram_user_id     INTEGER NOT NULL UNIQUE,
     first_seen_utc       TEXT NOT NULL,
     last_seen_utc        TEXT NOT NULL,
     is_active            INTEGER NOT NULL DEFAULT 1
 );
 ```
 
-`last_seen_utc` is updated on every interaction. This is allowed
-in `bot-db` because the bot database is not the donor chain. The
-`is_active` flag lets an operator deactivate a handle (e.g., on
-request from the beneficiary, or on abuse signal) without losing
-history. The `telegram_user_id` is the **only** mapping to a
-real Telegram account in our infrastructure — the
-`vault-db` Workers do not have the `bot-db` binding, so the
-defense is structural (by platform), not just by code review.
+`handle` is sensitive pseudonymous data. It is used in the bot/operator
+workflow, not exposed in public donor APIs.
 
 ### `conversations`
 
 ```sql
 CREATE TABLE conversations (
-    id                   INTEGER PRIMARY KEY,
-    opaque_id            TEXT NOT NULL REFERENCES handles(opaque_id),
-    kind                 TEXT NOT NULL CHECK (kind IN ('card_request', 'operator_reply', 'system')),
-    status               TEXT NOT NULL CHECK (status IN ('pending', 'in_flight', 'done', 'failed')),
-    payload              TEXT,                         -- e.g. the gift card code, when delivered
-    created_at_utc       TEXT NOT NULL,
-    updated_at_utc       TEXT NOT NULL
+    id                       INTEGER PRIMARY KEY,
+    opaque_id                TEXT NOT NULL REFERENCES handles(opaque_id),
+    kind                     TEXT NOT NULL CHECK (kind IN ('card_request', 'operator_reply', 'system')),
+    status                   TEXT NOT NULL CHECK (status IN ('pending', 'in_flight', 'delivered', 'failed')),
+    public_beneficiary_ref   TEXT,
+    delivery_code_hash       TEXT,
+    delivery_code_last4      TEXT,
+    encrypted_code_ttl_blob  TEXT,
+    encrypted_code_expires_at_utc TEXT,
+    created_at_utc           TEXT NOT NULL,
+    updated_at_utc           TEXT NOT NULL
 );
 ```
 
-In-flight gift card requests and their resolutions.
+Full gift-card codes are not retained after delivery. If a transient retry path
+requires storage, the value must be encrypted and short-lived; after delivery,
+only delivery status, hash, and last4 may remain.
 
-## Hash chain mechanics
+## Verification query shape
 
-### Canonical JSON
-
-The `row_hash` is `SHA-256(canonical_json(row))`. The canonical
-encoder is deterministic:
-
-- Object keys sorted lexicographically.
-- Numbers: integer minor-unit strings only. No floats.
-- Strings: UTF-8, no escaping beyond JSON's requirements.
-- No whitespace.
-- `null` for nullable fields (never absent).
-- Arrays preserve order.
-
-A reference implementation lives in `packages/vault-core/src/canonical.ts`
-(TS) and `tools/anchor-job/src/vault_core/canonical.py` (Python).
-**Cross-language parity is tested in CI**: a 200-event fixture
-produces the same head hash in both languages.
-
-### `row_hash` and `prev_hash`
-
-For `chain_sequence` row at `sequence_no = N` (where `N > 1`):
-
-```
-prev_hash = chain_sequence[N-1].row_hash
-row_hash  = SHA-256(canonical_json({
-    sequence_no, event_type, target_table, target_id,
-    head_hash, prev_hash, created_at_utc
-}))
-```
-
-For `sequence_no = 1`:
-
-```
-prev_hash = "0" * 64
-```
-
-The `head_hash` column is a convenience duplicate of `row_hash` so
-the anchor worker doesn't have to choose which field to publish.
-Both names exist; they hold the same value.
-
-### `verify_chain()`
-
-```python
-def verify_chain() -> Result[str, VerifyError]:
-    """Return the head hash, or an error describing the first break."""
-    rows = db.query(
-        "SELECT sequence_no, prev_hash, row_hash "
-        "FROM chain_sequence ORDER BY sequence_no ASC"
-    )
-    expected_prev = "0" * 64
-    for row in rows:
-        if row.prev_hash != expected_prev:
-            return Err(BrokenLink(row.sequence_no, expected_prev, row.prev_hash))
-        if row.row_hash != sha256(canonical_json(row)):
-            return Err(HashMismatch(row.sequence_no, ...))
-        expected_prev = row.row_hash
-    if not rows:
-        return Err(EmptyChain())
-    return Ok(rows[-1].row_hash)
-```
-
-This is the function that gets called by:
-- The read API `/api/verify` endpoint (on demand, read-only).
-- The anchor worker (to compute the head hash to publish).
-- The CI invariant test (against a seeded DB).
-
-It does not validate that `chain_sequence` rows point to real
-target rows. That validation is a separate function,
-`verify_chain_referential()`, which is called once at startup of
-the read API and on every CI test run. A referential break is an
-invariant violation and is reported loudly.
-
-### Donation ingest transaction
-
-The `apps/ingest` Worker performs the shared-autoincrement
-trick described in
-["`target_id` is set at INSERT time" above](#target_id-is-set-at-insert-time-not-post-insert).
-D1 supports multi-statement transactions. The canonical
-INSERT sequence is:
+Public verification needs the canonical ledger rows:
 
 ```sql
-BEGIN;
-  INSERT INTO chain_sequence
-    (event_type, target_table, target_id, head_hash, prev_hash, row_hash, created_at_utc)
-  VALUES
-    ('donation', 'donations', :target_id, :row_hash, :prev_hash, :row_hash, :now);
-  -- :target_id is bound by the application layer; it equals
-  -- the next value SQLite will assign to chain_sequence.sequence_no
-  -- (because target_id = donations.id = chain_sequence.sequence_no
-  -- by the shared-autoincrement trick).
-  INSERT INTO donations
-    (id, sequence_no, wallet_id, tx_signature, amount_usdc_minor,
-     slot, block_time_utc, donor_note, observed_at_utc)
-  VALUES
-    (last_insert_rowid(), last_insert_rowid(), :wallet_id, :tx_sig,
-     :amount, :slot, :block_time, :note, :now);
-COMMIT;
+SELECT sequence_no, event_type, payload_json, prev_hash, event_hash, created_at_utc
+FROM ledger_events
+ORDER BY sequence_no ASC;
 ```
 
-`prev_hash` and `row_hash` are computed by the application
-layer (in `packages/vault-core`); they are passed as bound
-parameters. The values are:
-
-- `prev_hash = (SELECT row_hash FROM chain_sequence ORDER BY
-  sequence_no DESC LIMIT 1)` — or `"0" * 64` if the chain is
-  empty.
-- `row_hash = SHA-256(canonical_json({ sequence_no,
-  event_type, target_table, target_id, head_hash = same as
-  row_hash, prev_hash, created_at_utc }))` where
-  `sequence_no` is the new value allocated by SQLite
-  (captured via `last_insert_rowid()`).
-
-**In-process cache purge on commit:** after `COMMIT`, the
-Worker calls `caches.default.delete(<cache_key>)` for each
-public read API path affected by the new event.
-
-Same pattern for `disbursements` and `anchor_publications`.
-The anchor transaction additionally includes the partial
-unique index on `date(published_at_utc)`; a second INSERT in
-the same UTC day fails the constraint and the anchor job
-catches `SQLITE_CONSTRAINT_UNIQUE` and exits ok (see
-[`01-architecture.md`](01-architecture.md) §"Daily anchor" for
-the full flow).
-
-## Indexes (donor-facing query performance)
-
-```sql
-CREATE INDEX idx_donations_block_time      ON donations(block_time_utc DESC);
-CREATE INDEX idx_disbursements_purchased_at ON disbursements(purchased_at_utc DESC);
-CREATE INDEX idx_donations_sequence_no      ON donations(sequence_no DESC);
-CREATE INDEX idx_disbursements_sequence_no  ON disbursements(sequence_no DESC);
-```
-
-Read paths are date-ordered. Most pages load the first 50; the
-`before_id` cursor paginates. For v1 we don't expect >10k rows;
-when we cross that, the indexes above keep it sub-100ms.
-
-## Indexes (anchor)
-
-The partial unique index on `date(published_at_utc)` already in the
-`anchor_publications` table definition above is the main one. It
-also serves queries like "did we publish today?" with a single
-index seek.
+The verifier parses `payload_json`, recomputes every event hash, checks the
+linked `prev_hash` values, then compares anchor events to Solana Memo
+transactions.
 
 ## Migrations
 
-D1 ships with `wrangler d1 migrations`. Migrations are plain SQL
-files in `migrations/NNNN_name.sql`. v1 contains exactly one
-migration: `0001_init.sql` with the schema above. **The
-migration contains only `CREATE TABLE` and `CREATE INDEX`.** No
-bootstrap INSERTs — the first real event (the first donation
-ingest) will naturally create `chain_sequence.sequence_no = 1`
-with `prev_hash = "0" * 64`.
-
-The migration runner in CI:
-
-1. Applies the migration to a fresh local D1.
-2. Asserts `chain_sequence` is empty (`SELECT COUNT(*) = 0`) —
-   this is the genesis state, with no events yet.
-3. Runs all invariant tests.
-4. On success, the deploy job applies the migration to the remote
-   D1.
-
-No migration in v1 contains `UPDATE` or `DELETE`. The
-`test_no_update_or_delete_in_migrations` invariant test enforces
-this in CI.
-
-## What's deliberately not modeled
-
-- **No "users" or "accounts" table.** There are no user accounts
-  in the system. The operator authenticates with a bearer token;
-  donors do not authenticate at all.
-- **No "audit_log" table.** The chain is the audit log.
-- **No "sessions" or "tokens" table.** The bot uses Telegram
-  message metadata for session state; the operator token is
-  validated on every request.
-- **No "settings" or "config" table.** Configuration is in code
-  (for the app) or in Workers Secrets (for runtime values).
-- **No "soft_delete" anywhere.** Append-only means append-only.
+Migrations are plain SQL files. Ledger migrations must not update or delete
+`ledger_events`. Operational tables may have normal mutable state, but their
+mutation rules must be explicit and tested.

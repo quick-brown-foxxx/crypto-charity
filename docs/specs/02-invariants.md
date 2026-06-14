@@ -1,254 +1,190 @@
 # 02 — Invariants
 
-**Status:** Draft v0.3.1
+**Status:** Draft
 **Date:** 2026-06-14
-**Scope:** MVP v1. The trust model of the project is encoded here.
+**Scope:** MVP trust rules.
 
 ## Why this doc exists
 
-The product's value is **trust**. Donors trust a transparent ledger;
-beneficiaries trust that the operator cannot deanonymize them. Both
+The product's value is trust. Donors trust a transparent ledger;
+beneficiaries trust that the operator cannot casually deanonymize them. Both
 trust stories collapse if a small set of rules is violated.
 
-This doc enumerates the **invariants** — the rules that MUST NOT break,
-under any circumstance, in v1. Each invariant is:
-
-- Stated in one sentence
-- Enforced by something testable (code, schema, CI check, ops
-  discipline)
-- Verified by something testable (a test in
-  [`08-testing-strategy.md`](08-testing-strategy.md))
-- Cross-referenced from any code, schema, or doc that depends on it
-
-These are the constraints a future engineer (or agent) can grep for.
-If a change would violate an invariant, **the change is wrong**, not
-the invariant. Invariants can only be amended by changing *this* doc
-with explicit justification, never silently.
-
-A grep-able mirror of these invariants lives in
-[`INVARIANTS.md`](./INVARIANTS.md). Anything that belongs here but
-is not in the mirror is a doc bug.
+Each invariant below is intended to be enforceable by schema, code structure,
+CI checks, operational controls, or explicit manual audit.
 
 ## The invariants
 
-### I-1: Append-only ledger
+### I-1: Append-only donor ledger
 
-The donor-facing ledger tables (`donations`, `disbursements`,
-`anchor_publications`, `chain_sequence`) are **append-only.**
-Once a row has been INSERTed and committed, no `UPDATE` or
-`DELETE` is ever issued against it, in any code path, in any
-environment, in any test.
+`ledger_events` is the canonical donor ledger and is append-only. Once a row is
+committed, no `UPDATE` or `DELETE` is ever issued against it. Corrections,
+reversals, and operator mistakes are represented as new events.
 
-**No exception for the chain sequence either.** The shared-
-autoincrement trick used to keep `donations.id`,
-`donations.sequence_no`, and `chain_sequence.sequence_no`
-consistent uses INSERTs only (see
-[`03-data-model.md`](03-data-model.md) §"`target_id` is set at
-INSERT time"). There is no UPDATE anywhere in the canonical
-insert path.
+Mutable operational tables such as `anchor_runs`, `helius_inbox`, and bot
+conversation state are not donor ledger tables and may change state as part of
+normal processing.
 
-- **Enforced by:**
-  - Migrations contain only `CREATE TABLE`, `CREATE INDEX`, and
-    DDL. No `INSERT`s in migrations (no bootstrap row; the
-    first real event creates `chain_sequence.sequence_no = 1`).
-  - A Python invariant test (`tests/test_invariants.py::test_no_update_or_delete_in_migrations`)
-    fails CI if any migration contains `UPDATE`/`DELETE` outside
-    an explicit allowlist (empty at v1).
-  - A Python invariant test (`tests/test_invariants.py::test_no_runtime_update_in_donor_tables`)
-    uses static analysis to assert that no `db.prepare("UPDATE …")`
-    call is reachable against `donations`, `disbursements`,
-    `anchor_publications`, or `chain_sequence`. (The `UPDATE
-    anchor_publications SET send_status` flow for the anchor
-    is on columns that are NOT in the chain and is covered by
-    a separate allowlist — see `01-architecture.md` §"Daily
-    anchor" for the rationale.)
-  - The handle management table lives in a *separate* D1 database
-    (`bot-db`), so updates to `handles.last_seen_utc` don't
-    affect the donor chain.
-- **Test:** `tests/test_invariants.py::test_no_update_or_delete_in_migrations`,
-  `test_no_runtime_update_in_donor_tables`, and an integration test
-  that inserts N events and asserts the chain head is what
-  `verify_chain()` returns.
+- **Enforced by:** migration lint, static SQL checks, code review rules, and a
+  narrow ledger insert helper.
+- **Test:** no migration/runtime SQL targets `ledger_events` with `UPDATE` or
+  `DELETE`; appending a correction keeps history visible.
 
-### I-2: Linear hash chain with a single global head
+### I-2: Single linear hash chain
 
-Every donor-visible event is a row in a single monotonic
-`chain_sequence` table. The chain has exactly one head (the most
-recent row's `row_hash`). The `head_hash` is unambiguous and is
-re-derivable from the public DB by any third party.
+Every donor-visible event is exactly one row in `ledger_events`, ordered by
+`sequence_no`. The current head is the latest row's `event_hash`.
 
-- **Enforced by:**
-  - Schema: `chain_sequence` has a `sequence_no INTEGER PRIMARY KEY
-    AUTOINCREMENT` and a `UNIQUE` constraint. Every other donor-table
-    row references a `sequence_no`.
-  - `row_hash = SHA-256(canonical_json(row))` (deterministic encoder,
-    sorted keys, fixed number representation).
-  - `prev_hash` for sequence_no 1 is `"0" * 64`; thereafter, the
-    previous row's `row_hash`.
-  - `verify_chain()` walks `chain_sequence` in `sequence_no` order and
-    returns the head's `row_hash`. (Referential integrity — that
-    every `chain_sequence.target_id` actually points to an existing
-    row in `chain_sequence.target_table` — is checked by a
-    separate function `verify_chain_referential()`, called at
-    API-read startup and on every CI test run, not by `verify_chain()`
-    itself. See
-    [`03-data-model.md`](03-data-model.md).)
-- **Test:** `tests/test_chain.py::test_chain_round_trip` (200 events
-  of mixed types) and `test_modify_breaks_chain`.
+- **Enforced by:** `sequence_no INTEGER PRIMARY KEY AUTOINCREMENT` on
+  `ledger_events`; all donor-visible writes go through one ledger append path.
+- **Test:** inserting a mixed event fixture produces one monotonic chain with a
+  single re-derivable head.
 
-### I-3: At most one anchor transaction per UTC day
+### I-3: Event hash commits to donor-visible payload
 
-A second anchor attempt for the same UTC day MUST be a no-op at the
-DB level, not at the application level. This is the property that
-protects the "we anchor daily" trust story even under cron races.
+Each event hash is computed as:
 
-- **Enforced by:**
-  - A partial unique index on
-    `anchor_publications(date(published_at_utc))` — second INSERT in
-    the same UTC day fails with a constraint violation, which the
-    anchor job treats as "already done, exiting ok."
-- **Test:** `tests/test_anchor.py::test_unique_per_day` (two parallel
-  inserts, one fails).
+```text
+SHA-256(canonical_json({
+  sequence_no,
+  event_type,
+  payload,
+  prev_hash,
+  created_at_utc
+}))
+```
 
-### I-4: No real beneficiary identity in the main vault
+`payload` is the parsed value stored in `payload_json`. `event_hash` is not
+included in its own preimage. The payload must contain all immutable
+donor-visible facts needed to verify the event:
 
-The `vault-db` schema contains no column for a Telegram user id,
-real name, phone, email, or any other personally identifying
-information. The mapping `telegram_user_id ↔ handle ↔ opaque_id` lives
-only in `bot-db`, which is bound to the bot Worker only.
+- donation amount, token mint, vault ATA, transaction signature, finalized slot,
+  and block time;
+- disbursement amount, service, card count, receipt reference, public
+  beneficiary reference when used, purchase time, and record time;
+- anchor date, anchored pre-anchor head hash, transaction signature, anchor
+  wallet address, memo text, and publication time.
 
-- **Enforced by:**
-  - Schema: no such columns exist (verified by introspection test).
-  - `bot-db` is a separate Cloudflare D1 database. The `vault-api-read`
-    and `vault-api-write` Workers do not have its binding.
-  - The bot Worker does not have the `vault-db` binding (it calls
-    vault's HTTP API for what it needs).
-  - A CI test (`tests/test_invariants.py::test_binding_allowlist`)
-    asserts that `wrangler.toml` files only contain the bindings
-    from an explicit allowlist.
-- **Test:** `tests/test_invariants.py::test_schema_introspect` and
-  `test_binding_allowlist`.
+Typed tables or views may exist only as convenience read models. They are not
+the hash-chain source of truth.
 
-### I-5: Operator-only writes to the donor ledger
+- **Enforced by:** shared event schemas and canonical JSON parity tests.
+- **Test:** mutating any payload field changes verification output; public
+  export can recompute the exact chain.
 
-Public read endpoints are open. The only write endpoints are
-operator-authenticated. The anchor job is the only other writer
-(its own auth, scoped to the anchor Worker).
+### I-4: Anchor runner state is outside the donor ledger
 
-- **Enforced by:**
-  - Workers: `vault-api-write` requires `Authorization: Bearer
-    <OPERATOR_TOKEN>`; the read API has no write routes.
-  - The anchor Worker's binding is write-only by convention
-    (it only INSERTs into `anchor_publications` and `chain_sequence`).
-  - The ingestion Worker's binding is also write-only by convention.
-- **Test:** `tests/test_api_write.py::test_auth_required` (no header
-  → 401, bad token → 401) and
-  `test_chain_cannot_be_written_by_read_worker`.
+Anchor attempts, locks, retry counters, status, and errors live in
+`anchor_runs`. The donor ledger receives an `anchor_published` event only after
+the on-chain transaction is known.
 
-### I-6: The wallet private key is never in code, repo, logs, or build artifacts
+- **Enforced by:** separate `anchor_runs` table and no mutable anchor status in
+  `ledger_events`.
+- **Test:** failed/retried anchor attempts update `anchor_runs` only; successful
+  finalized publication appends one immutable ledger event.
 
-The Solana keypair for the treasury wallet is held only in:
+### I-5: Anchor memo commits to the pre-anchor head
 
-- A GitHub Actions encrypted secret (`WALLET_SECRET`) used by the
-  Python anchor job in CI
-- A Workers Secret bound to the `vault-anchor-cron` Worker
+The Solana Memo instruction contains valid UTF-8 text in this format:
 
-The key MUST NOT appear in any other location. If it does, that
-location is compromised and the key MUST be rotated.
+```text
+ccv-anchor:<64hex head_hash>
+```
 
-- **Enforced by:**
-  - Pre-commit hook greps for base58 88-char strings and 64-byte
-    JSON arrays in `*.ts`, `*.js`, `*.py` files.
-  - CI runs the same grep on every push.
-  - Workers log scrubbing: the anchor Worker never logs the secret
-    and Cloudflare Workers automatically masks `env.*` access in
-    `console.log` calls.
-  - The Python anchor uses `::add-mask::` in the GitHub Actions
-    workflow to prevent accidental echo.
-- **Test:** `tests/test_invariants.py::test_no_keypair_materials_in_code`.
+`head_hash` is the ledger head before inserting the `anchor_published` event.
+That means the anchor publication event is not covered by the transaction that
+announces it; it is covered by the next successful anchor.
 
-### I-7: The on-chain anchor contains only the ledger hash digest
+- **Enforced by:** anchor builder accepts only 64-character lowercase hex head
+  hashes and creates Memo text, not arbitrary binary bytes.
+- **Test:** memo text decodes as UTF-8 and matches
+  `^ccv-anchor:[0-9a-f]{64}$`; verification explains the pre-anchor-head rule.
 
-The Solana memo field in the daily anchor transaction contains
-exactly `bytes.fromhex(head_hash)` — 32 bytes, the SHA-256 of the
-head. No amounts, no timestamps, no PII, no metadata. This is what
-keeps the on-chain footprint deanonymization-safe.
+### I-6: Treasury and anchor wallets are separate
 
-- **Enforced by:**
-  - The anchor tx builder is a pure function: it takes the head
-    hash string and produces a `VersionedTransaction` whose memo
-    instruction's data is exactly the 32-byte digest.
-  - The builder is shared between the TypeScript Cron Worker and
-    the Python CI job, with a cross-language parity test.
-- **Test:** `tests/test_anchor.py::test_memo_bytes_match_head_hash`
-  (run in both TS and Python).
+The treasury wallet and vault USDC ATA receive donations. No private treasury
+key is present in CI, Workers, logs, or build artifacts for the MVP. The anchor
+wallet signs Memo transactions and holds only enough SOL for fees.
 
-### I-8: Public read endpoints are cache-friendly with bounded staleness
+- **Enforced by:** separate environment variables and secret allowlists:
+  `TREASURY_WALLET_ADDRESS`, `VAULT_USDC_ATA`, `ANCHOR_WALLET_ADDRESS`, and
+  `ANCHOR_WALLET_SECRET`.
+- **Test:** secret scans fail if treasury private key material appears; anchor
+  code can only load the anchor keypair.
 
-The donor-facing JSON endpoints are served from Cloudflare's edge
-cache with a TTL of 60 seconds. Writes purge the cache. The total
-staleness a donor can ever see is bounded by (write_time →
-purge_propagation_time), which is seconds, plus the 60s TTL.
+### I-7: No real beneficiary identity in the vault database
 
-- **Enforced by:**
-  - Cloudflare edge cache with TTL 60s. Writes call
-    `caches.default.delete(<cache_key>)` in-process in the
-    `vault-api-write` and `vault-ingest` Workers (no separate
-    Worker, no API token needed).
-  - The `X-Cache-Status` header is set on every response for
-    transparency.
-- **Test:** `tests/test_api_read.py::test_cache_headers`,
-  `test_purge_on_write` (manual smoke in pre-deploy).
+`vault-db` contains no Telegram user ID, real name, phone, email, or direct
+identity mapping. The mapping from Telegram identity to handle/opaque ID lives
+only in `bot-db`, which is bound only to the bot Worker.
 
-### I-9: Operator is structurally blind to beneficiary real identity
+Beneficiary handles are sensitive pseudonymous data. They are useful for the
+operator workflow but should not be exposed publicly by default.
 
-The operator (a) cannot read the bot's D1 binding and (b) does not
-have admin access to the Telegram account the bot operates on.
-This is a structural property of the deployment, not a code
-property.
+- **Enforced by:** separate D1 databases, binding allowlist, schema denylist,
+  and public response schemas that omit handles.
+- **Test:** schema introspection and `wrangler.toml` binding checks.
 
-- **Enforced by:**
-  - Cloudflare account topology: the bot's Workers are deployed
-    under a Cloudflare account section the operator does not have
-    API access to. (For v1 single-operator, this is a separate
-    Cloudflare account entirely.)
-  - The Telegram bot account is on a phone/account the operator
-    does not have admin access to.
-  - A runbook item in
-    [`07-observability-and-ops.md`](07-observability-and-ops.md)
-    describes the recovery procedure if either of these is
-    compromised.
-- **Test:** Not testable in code. The test is "the operator
-  account cannot log in to the bot's Cloudflare resources." A
-  periodic manual audit (quarterly) verifies this.
+### I-8: Public APIs do not expose sensitive notes or handles by default
 
-## What is NOT an invariant
+Donor memos and internal handles are not public API fields by default. Public
+disbursement records use a random `public_beneficiary_ref` or no beneficiary
+reference. If a donor memo is visible on-chain, the vault still does not repeat
+it in public JSON unless a future explicit moderation policy allows it.
 
-These are tempting to elevate to invariant status but aren't, with
-reasoning:
+- **Enforced by:** public response schemas and ledger payload schemas.
+- **Test:** schema tests fail if public response examples include donor memos or
+  internal handles.
 
-- **"The ledger is correct (receipts are real)."** The hash chain
-  proves the operator didn't tamper with what was published. The
-  receipt itself is the trust anchor for the off-chain truth. This
-  is operational, not cryptographic, and is documented in
-  [`../concepts/2026-06-14-crypto-charity-vault.md#what-this-is-not-honest-limits`](../concepts/2026-06-14-crypto-charity-vault.md#what-this-is-not-honest-limits).
-- **"Beneficiaries are protected from state adversaries."** Out of
-  scope at MVP.
-- **"The operator can't lose the key."** Catastrophic but *visible*
-  failure (`anchor_stale` banner). Documented in
-  [`07-observability-and-ops.md`](07-observability-and-ops.md).
-- **"Donors are anonymous."** Out of scope; the wallet is public.
+### I-9: Public verification can recompute the exact chain
+
+The public verification path must expose `ledger_events` or enough canonical
+payload fields to recompute the same `event_hash` values and compare anchor
+transactions against the pre-anchor heads.
+
+- **Enforced by:** `/api/ledger-events` or equivalent export endpoint and
+  public verification scripts.
+- **Test:** TypeScript and Python verification scripts produce the same head
+  from public exports and match known Solana anchors.
+
+### I-10: Blockchain ingest is duplicate-safe and eventually reconcilable
+
+Helius webhooks are acknowledged quickly after authentication and durable inbox
+write. Processing is asynchronous, duplicate-safe by transaction signature, and
+limited to finalized SPL USDC transfers whose destination is the configured
+vault USDC ATA.
+
+Missed webhooks are not deferred to a later product phase: the MVP includes a
+minimal reconciliation/backfill path using transaction signature/address/token
+account history.
+
+- **Enforced by:** `helius_inbox.signature` uniqueness, finalized RPC fetches,
+  ATA/mint filters, and retry/backfill jobs.
+- **Test:** duplicate replay, ACK-fast, null-before-finality, 429/5xx retry,
+  and `maxSupportedTransactionVersion: 0` scenarios.
+
+## What is not an invariant
+
+- **Receipt truth.** The hash chain proves what was published and whether it
+  changed. It does not prove a receipt reference is genuine.
+- **Donor anonymity.** The vault address and SPL token transfers are public.
+- **State-adversary-grade beneficiary protection.** The MVP reduces operator
+  visibility; it does not claim protection from compelled Telegram/provider data.
+- **Treasury key recovery by software.** Keeping the treasury private key out of
+  CI/Workers is deliberate. Multi-sig and formal recovery are later custody
+  upgrades.
 
 ## Invariant cross-reference
 
-| Invariant | Where enforced (code/schema)              | Where tested                                  | Doc reference                                        |
-| --------- | ----------------------------------------- | --------------------------------------------- | ---------------------------------------------------- |
-| I-1       | Migrations, ORM helpers, `bot-db` separation | `test_no_update_or_delete_in_migrations`     | `03-data-model.md`, `08-testing-strategy.md`         |
-| I-2       | `chain_sequence` schema, `verify_chain()`   | `test_chain_round_trip`, `test_modify_breaks_chain` | `03-data-model.md`                                   |
-| I-3       | Partial unique index                       | `test_unique_per_day`                         | `03-data-model.md`, `05-hosting-and-deploy.md`       |
-| I-4       | Two-DB topology, binding allowlist, schema  | `test_schema_introspect`, `test_binding_allowlist` | `01-architecture.md`, `03-data-model.md`             |
-| I-5       | Worker route guards, scoped bindings        | `test_auth_required`, `test_chain_cannot_be_written_by_read_worker` | `04-api.md`                                          |
-| I-6       | Pre-commit + CI grep, log scrubbing         | `test_no_keypair_materials_in_code`           | `05-hosting-and-deploy.md`, `06-security-model.md`   |
-| I-7       | Pure-function anchor builder, parity test   | `test_memo_bytes_match_head_hash` (TS + Py)   | `03-data-model.md`, `08-testing-strategy.md`         |
-| I-8       | Cloudflare cache + purge-on-write           | `test_cache_headers`, manual smoke            | `04-api.md`                                          |
-| I-9       | Account topology, Telegram account discipline | Quarterly manual audit, runbook              | `06-security-model.md`, `07-observability-and-ops.md` |
+| Invariant | Enforced by | Tested by |
+| --- | --- | --- |
+| I-1 | migration/static SQL checks, ledger append helper | no update/delete checks, correction event test |
+| I-2 | `ledger_events.sequence_no` | chain round-trip tests |
+| I-3 | event schemas, canonical JSON | mutation break tests, parity tests |
+| I-4 | `anchor_runs` separation | failed retry vs published event tests |
+| I-5 | Memo builder | UTF-8 memo and regex tests |
+| I-6 | secret allowlists, wallet role split | secret scans, anchor-key-only tests |
+| I-7 | D1 separation, binding allowlist | schema/binding tests |
+| I-8 | public schemas | public response contract tests |
+| I-9 | public export and scripts | TS/Python verify script tests |
+| I-10 | durable inbox, finality filters | webhook/reconciliation contract tests |

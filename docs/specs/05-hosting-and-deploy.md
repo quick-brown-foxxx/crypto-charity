@@ -1,273 +1,164 @@
-# 05 — Hosting and deployment
+# 05 — Hosting and Deployment
 
-**Status:** Draft v0.3.1
+**Status:** Draft
 **Date:** 2026-06-14
-**Scope:** MVP v1. Where the bytes live, how code gets there, where secrets live.
+**Scope:** MVP infrastructure, secrets, CI/CD, and environments.
 
-## How to read this
+## Hosting decisions
 
-This doc describes **the infrastructure** — the Cloudflare account
-topology, the secrets, the CI/CD, the local dev story. It does not
-describe what the system does (see [`00-overview.md`](00-overview.md))
-or what the API looks like (see [`04-api.md`](04-api.md)). The
-invariants the infrastructure must satisfy live in
-[`02-invariants.md`](02-invariants.md).
+| Concern | Choice | Why |
+| --- | --- | --- |
+| Static site | Cloudflare Pages | Works well for Vite/React, no idle cost. |
+| Workers | Cloudflare Workers | Fits read API, write API, ingest, anchor, and bot webhooks. |
+| Ledger DB | Cloudflare D1 `vault-db` | SQLite-compatible, enough for MVP, simple migrations. |
+| Bot DB | Separate Cloudflare D1 `bot-db` | Structural privacy boundary for Telegram mapping. |
+| Solana RPC / webhooks | Helius | Webhooks, RPC, devnet/mainnet endpoints, free tier suitable for MVP. |
+| CI/CD | GitHub Actions | Public repo CI is free; manual/live jobs can be separately gated. |
+| Anchor schedule | Cloudflare Cron plus operator-triggered backup run | Public liveness with an operator fallback through the same anchor code path. |
 
-## Decisions (with reasoning)
+The operator-triggered backup run is not a separate anchoring system. It invokes
+the same anchor logic as the scheduled Cloudflare Cron run, with the same
+`ANCHOR_WALLET_SECRET`, ledger verification, Memo format, and `anchor_runs`
+state handling.
 
-| Decision                                  | Choice                                                    | Why                                                                                                                                                                  |
-| ----------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Static site host                          | Cloudflare Pages                                          | First-class Vite/React, free tier, commercial use allowed, no idle cost.                                                                                              |
-| Read API                                  | Cloudflare Worker (no secrets, read-only binding)         | Free tier, edge cache, no idle cost.                                                                                                                                |
-| Write API, ingest, anchor-cron            | Cloudflare Workers (per-Worker bindings + secrets)        | Free tier sufficient, no idle cost.                                                                                                                                |
-| Telegram bot Worker                       | Cloudflare Worker, **second Cloudflare account**           | Structural isolation. The operator does not have admin access to the bot's account. Required for invariant I-9.                                                       |
-| Ledger database                           | Cloudflare D1 (`vault-db`)                                | Free tier allows 10 databases per account. Append-only, SQLite-compatible, edge-replicated.                                                                          |
-| Bot database                              | Cloudflare D1 (`bot-db`), separate database               | Same free-tier allowance. The `vault-db` Workers do not have the `bot-db` binding, by platform, not by code review.                                                  |
-| Daily anchor (primary)                    | Cloudflare Cron Trigger (02:17 UTC)                        | 5 triggers/account free, runs on UTC, reliable. **Not 02:00** — top of the hour is the worst possible slot per GitHub's own schedule docs.                          |
-| Daily anchor (backup)                     | GitHub Actions `schedule` (02:17 UTC)                      | Free for public repos. The two crons race; the DB unique index decides the winner.                                                                                    |
-| Solana RPC                                | Helius free tier                                          | 1 sendTransaction/sec, 10 RPC req/s, 5 webhooks, 10M credits. We use 1 webhook (vault address) and a few RPC req/day.                                                |
-| Wallet custody                            | GitHub Actions encrypted secret + Workers Secret          | Two locations, never in code/repo/logs/build artifacts. See invariant I-6.                                                                                            |
-| CI                                        | GitHub Actions                                            | Free for public repos, well-understood, no idle cost.                                                                                                                |
-| Frontend framework                        | React + Vite + TypeScript                                 | Mature ecosystem on Pages, TanStack Query, react-i18next, and react-hook-form are all available off the shelf.                                                       |
-| Backend language                          | TypeScript for Workers, Python for the CI anchor          | Cloudflare Workers Python is still beta and won't run `solders` (a native-extension PyPI package). The CI anchor is the right place for Python.                     |
+## Cloudflare topology
 
-## Cloudflare account topology
-
-Two Cloudflare accounts, one Cloudflare organization (if available
-on the plan; otherwise just two separate logins).
-
-### Account A — "Vault" (operator's primary)
+### Account A — Vault
 
 Resources:
 
-- **Pages project:** `vault-web` — bound to the GitHub repo, builds
-  `apps/web`, deploys on push to `main`.
-- **Workers:**
-  - `vault-api-read` (apps/api-read). Bindings: `vault-db` (read).
-    Secrets: none.
-  - `vault-api-write` (apps/api-write). Bindings: `vault-db` (write).
-    Secrets: `OPERATOR_TOKEN`. Performs in-process cache purge
-    via the Workers Cache API.
-  - `vault-ingest` (apps/ingest). Bindings: `vault-db` (write).
-    Secrets: `HELIUS_WEBHOOK_SECRET`, `VAULT_WALLET_ADDRESS`.
-    Same in-process cache purge.
-  - `vault-anchor-cron` (apps/anchor-cron). Bindings: `vault-db`
-    (write). Secrets: `WALLET_SECRET`, `HELIUS_RPC_URL`.
-- **D1 database:** `vault-db`.
-- **Cron Triggers:** one trigger on `vault-anchor-cron`,
-  `crons = ["17 2 * * *"]` in `wrangler.toml` (5-field standard
-  cron, 02:17 UTC, off the top of the hour).
-- **R2 bucket (deferred):** `vault-receipts` for receipt images.
-  Not used in v1 (see [`09-decisions.md`](09-decisions.md#q-6-receipt-storage)).
+- Pages project: `vault-web`.
+- Workers:
+  - `vault-api-read` — `vault-db` read binding, no secrets.
+  - `vault-api-write` — `vault-db` write binding, `OPERATOR_TOKEN`.
+  - `vault-ingest` — `vault-db` write binding, Helius auth/RPC config.
+  - `vault-anchor-cron` — `vault-db` write binding, anchor wallet secret.
+- D1 database: `vault-db`.
+- Cron Trigger: daily anchor run, off the top of the hour.
 
-### Account B — "Bot" (operator does not have admin)
+### Account B — Bot
 
 Resources:
 
-- **Workers:**
-  - `tg-bot` (apps/tg-bot). Bindings: `bot-db` (write). Secrets:
-    `TG_BOT_TOKEN`, `TG_WEBHOOK_SECRET`, `VAULT_API_URL`,
-    `OPERATOR_TOKEN` (for calling the vault's write API on the
-    operator's behalf when delivering gift card codes).
-- **D1 database:** `bot-db`.
+- Worker: `tg-bot` with `bot-db` only.
+- D1 database: `bot-db`.
 
-Account A's Workers do not have any binding to `bot-db`. Account
-B's `tg-bot` has a binding to `bot-db` only. This is enforced by
-Cloudflare's per-Worker binding model, not by code review.
+Account A Workers do not have the `bot-db` binding. The bot Worker does not
+have the `vault-db` binding; it calls HTTP APIs when it needs vault actions.
 
-The Telegram bot account itself is on a phone/account the operator
-does not have admin access to. The bot's chat history lives at
-Telegram, not in our infrastructure. (See invariant I-9.)
+## Secrets and environment variables
 
-## Secrets (where each one lives)
+| Name | Location | Required for PR CI? | Purpose |
+| --- | --- | --- | --- |
+| `OPERATOR_TOKEN` | `vault-api-write`, `tg-bot` Workers Secrets | no | Operator write auth and bot internal delivery calls. |
+| `TG_BOT_TOKEN` | `tg-bot` Workers Secret | no | Telegram Bot API. |
+| `TG_WEBHOOK_SECRET` | `tg-bot` Workers Secret | no | Telegram webhook secret-token validation. |
+| `HELIUS_API_KEY` | deploy/live environments | no | Helius management/RPC access. |
+| `HELIUS_RPC_URL` | ingest/anchor environments | no for PR; optional for live smoke | Solana RPC endpoint. |
+| `HELIUS_WEBHOOK_AUTH_HEADER` | `vault-ingest` Workers Secret | no | Exact expected `Authorization` header value Helius sends from `authHeader`. |
+| `TREASURY_WALLET_ADDRESS` | public config + ingest env | yes as non-secret test value | Owner of the vault USDC ATA. |
+| `VAULT_USDC_ATA` | public config + ingest env | yes as non-secret test value | USDC token account watched for donations. |
+| `USDC_MINT` | public config | yes as non-secret test value | Cluster-specific USDC mint. |
+| `ANCHOR_WALLET_ADDRESS` | public config + anchor env | yes as non-secret test value | Public signer for Memo anchors. |
+| `ANCHOR_WALLET_SECRET` | anchor Worker / gated manual job only | no | Anchor wallet keypair; holds only SOL for fees. |
+| `SOLANA_CLUSTER` | all blockchain-aware environments | yes | `localnet`, `devnet`, or `mainnet-beta`. |
 
-**Rotation note for `OPERATOR_TOKEN`:** it lives in **two**
-locations — the `vault-api-write` Workers Secret and the
-`tg-bot` Workers Secret. They must be rotated in lockstep via
-`wrangler secret put OPERATOR_TOKEN` against both Workers, in
-the same maintenance window. The bot will reject 401s for a few
-seconds during the swap, which is acceptable for v1.
+The treasury private key is intentionally absent from CI, Workers, repository
+files, and normal app runtime.
 
-**Rotation note for `WALLET_SECRET`:** same two-location pattern
-(GH Actions secret + `vault-anchor-cron` Workers Secret). The
-rotation window is also tight; the Cron Worker may briefly
-reject 401s. Acceptable for v1.
+## Cluster configuration
 
-| Secret                     | Lives in                                                  | Used by                  | Rotation                                                          |
-| -------------------------- | --------------------------------------------------------- | ------------------------ | ----------------------------------------------------------------- |
-| `WALLET_SECRET`            | GH Actions encrypted secret + Account A Workers Secret on `vault-anchor-cron` | anchor job + cron trigger | Quarterly. See "Rotation note" above. Multi-sig is Phase 2.       |
-| `OPERATOR_TOKEN`           | Account A Workers Secret on `vault-api-write` + Account B Workers Secret on `tg-bot` | write API + bot          | On operator departure. See "Rotation note" above. 32+ byte random. |
-| `TG_BOT_TOKEN`             | Account B Workers Secret on `tg-bot`                      | bot                      | On bot compromise.                                                |
-| `TG_WEBHOOK_SECRET`        | Account B Workers Secret on `tg-bot`                      | bot                      | On bot webhook endpoint rotation.                                 |
-| `HELIUS_WEBHOOK_SECRET`    | Account A Workers Secret on `vault-ingest`                | ingest                   | On provider change.                                               |
-| `HELIUS_RPC_URL`           | Account A Workers Secret on `vault-anchor-cron`           | anchor worker            | On provider change.                                               |
-| `VAULT_WALLET_ADDRESS`     | Account A Workers Secret on `vault-ingest`                | ingest                   | Never changes (it's the treasury address).                        |
-| `VAULT_API_URL`            | Account B Workers Secret on `tg-bot`                      | bot                      | Never changes (it's the vault's public URL).                      |
+| Cluster | USDC mint | Use |
+| --- | --- | --- |
+| `mainnet-beta` | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` | Production donations. |
+| `devnet` | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` | Live smoke tests with no financial value. |
+| `localnet` | Local test mint | Local validator tests. |
 
-## CI/CD (GitHub Actions)
+Every transaction fetch used for ingestion or verification finality uses
+`commitment: "finalized"` and `maxSupportedTransactionVersion: 0`.
 
-### `ci.yml` — runs on PRs and on push to `main`
+## CI/CD
 
-Steps:
+### PR CI
 
-1. Checkout.
-2. Setup pnpm, Node 20, Python 3.12 (via `actions/setup-python` with
-   `uv`).
-3. `pnpm install --frozen-lockfile`.
-4. `uv sync` for `tools/anchor-job`.
-5. **TS checks** (per package, parallel):
-   - `pnpm exec eslint .`
-   - `pnpm exec prettier --check .`
-   - `pnpm exec tsc --noEmit`
-   - `pnpm exec vitest run`
-6. **Python checks** (per tool, parallel):
-   - `uv run ruff check`
-   - `uv run ruff format --check`
-   - `uv run basedpyright`
-   - `uv run pytest`
-7. **Invariant tests** (Python): `pytest tests/test_invariants.py`.
-8. **Wrangler dry-run** per Worker: `wrangler deploy --dry-run
-   --outdir=dist` (catches config errors before deploy).
-9. **D1 migration lint**: a Python script walks `migrations/*.sql`
-   and fails on `UPDATE`/`DELETE` outside the explicit allowlist
-   (empty at v1).
-10. **Binding allowlist check**: a Python script diffs every
-    `wrangler.toml` against the allowlist of which Worker can bind
-    to which database. Fails the build on any binding not in the
-    allowlist. (See invariant I-4.)
-11. **Workers Tail policy check**: confirms no Worker has both
-    `vault-db` (write) and `bot-db` bindings.
-12. **Cross-language parity test**: a fixture produces the same
-    head hash in TS and Python.
+PR CI must not require paid funds, real mainnet secrets, or a funded mainnet
+wallet. It runs:
 
-### `deploy.yml` — runs on push to `main` after `ci.yml` passes
+1. TypeScript lint, format, typecheck, and unit tests.
+2. Python lint, typecheck, and unit tests for verification/anchor tooling.
+3. D1 migration lint and schema invariant checks.
+4. Hash-chain parity tests.
+5. Local-validator blockchain tests if the toolchain is available in CI.
+6. Browser smoke tests against local or seeded data.
 
-Steps:
+If local Solana tooling is not available, PR CI reports the local-validator
+blockchain suite as skipped with a clear reason; it does not silently replace it
+with fake mocked tests.
 
-1. All CI steps.
-2. `pnpm build` in each app.
-3. `wrangler deploy` for each Worker with `--env production`.
-4. `wrangler pages deploy` for the Pages project.
-5. `wrangler d1 migrations apply vault-db --remote` if new
-   migration files are present.
-6. `wrangler d1 migrations apply bot-db --remote` if new
-   migration files are present.
-7. `curl -fsS https://<host>/api/health` (smoke test).
-8. `curl -fsS https://<host>/api/verify` and assert the response
-   has the expected shape.
+### Deploy workflow
 
-### `anchor.yml` — runs on `schedule: cron: "17 2 * * *"` and on `workflow_dispatch`
+Runs after PR CI passes and applies production deploy steps:
 
-Schedule is `17 2 * * *` (02:17 UTC), **not** `0 2 * * *` (02:00
-UTC). Per GitHub's docs, top-of-the-hour schedules are the most
-likely to be delayed or dropped. Off-hour schedules are much more
-reliable.
+1. Build web and Workers.
+2. Deploy Workers and Pages.
+3. Apply D1 migrations.
+4. Smoke `GET /api/health` and `GET /api/verify`.
+5. Confirm public config contains the expected treasury/anchor wallet addresses
+   and USDC mint.
 
-Steps:
+### Live smoke workflows
 
-1. Setup Python 3.12 with `uv`.
-2. Idempotency check: `curl https://<vault-api-read>/api/verify`
-   and parse the response. If `anchor.published_at_utc` is today
-   AND it's a fresh day, exit ok.
-3. Compute head hash: `curl
-   https://<vault-api-read>/api/verify` again (or reuse) — the
-   `head_hash` is what we publish.
-4. Build, sign, send the anchor tx via Helius RPC.
-5. `POST` to `https://<vault-api-write>/api/anchor/manual` with
-   `source: "github-actions"` and the tx signature.
-6. Log the tx signature as a workflow artifact and step output.
-7. On any step failure: `exit 1`, GH Actions emails the operator.
-   The Cron Trigger will run 5-10 minutes later (or vice versa)
-   and likely succeed.
+Live blockchain checks are gated separately:
 
-## Deployment guardrails
+- **Devnet live smoke:** manual or nightly, free, uses throwaway devnet keypairs
+  and faucet funds.
+- **Helius webhook contract smoke:** manual/nightly against public HTTPS staging,
+  uses Helius API key and configured auth header.
+- **Tiny mainnet smoke:** optional manual release gate only, paid, throwaway
+  wallet, never normal CI.
 
-- **Branch protection on `main`:** requires CI green, requires 1
-  review. Solo dev: the 1 review is the operator, which doesn't
-  enforce separation of duties but does force a PR. Phase 2
-  (multi-operator) adds real review.
-- **No force-pushes** to `main`.
-- **No direct push to `main`** (the deploy workflow is triggered
-  by `push` to `main` from a PR; bypass would skip CI).
-- **Wrangler secrets are set out-of-band** (`wrangler secret put`),
-  not in any config file.
-- **No `.env` files in the repo.** `.env.example` is allowed.
-- **No `--remote` flag in any CI step that mutates production**
-  outside `deploy.yml`. `wrangler dev` and `wrangler d1 migrations
-  apply <db> --local` only.
+## Anchor job
+
+Scheduled anchor steps:
+
+1. Verify the current ledger chain and compute the pre-anchor head.
+2. Create or update an `anchor_runs` row for the `anchor_date` and head hash.
+3. Build Memo text `ccv-anchor:<64hex head_hash>`.
+4. Sign and send a Solana transaction with the anchor wallet.
+5. Fetch the transaction at finalized commitment.
+6. Append an `anchor_published` ledger event after the transaction is known.
+7. Mark `anchor_runs.status='published'`.
+
+Failures update `anchor_runs` only. They do not create donor-visible ledger
+events until a transaction is known.
+
+## Donation ingest job
+
+Helius webhook setup watches the vault USDC ATA and, where useful, the treasury
+owner address. The webhook config sets `authHeader` to a bearer value. Helius
+then sends that value in the request `Authorization` header.
+
+The ingest Worker:
+
+- ACKs quickly after durable inbox write.
+- Processes asynchronously.
+- Deduplicates by transaction signature.
+- Accepts finalized SPL Token transfers for the configured USDC mint whose
+  destination is the configured vault USDC ATA.
+- Retries RPC `null`, 429, and 5xx outcomes with backoff.
+- Supports minimal reconciliation/backfill from address/token-account history.
 
 ## Local development
 
-### Frontend
+Local dev uses local D1 and either mocked Solana payload fixtures or a local
+validator. Local config must make the cluster explicit (`localnet` or `devnet`)
+so test transactions cannot be confused with production.
 
-```sh
-pnpm --filter web dev
-# Vite dev server on http://localhost:5173
-# Reads VITE_API_BASE from .env.local (default: http://localhost:8787)
-```
+## Deployment guardrails
 
-### Workers (local)
-
-```sh
-pnpm --filter api-read dev
-# wrangler dev with --local; miniflare-backed local D1
-pnpm --filter api-write dev
-pnpm --filter ingest dev
-pnpm --filter anchor-cron dev
-pnpm --filter tg-bot dev
-```
-
-Each Worker binds to a local D1 instance via `--local`. The local
-D1 lives in `.wrangler/state/v3/d1/`.
-
-### DB reset
-
-```sh
-pnpm db:reset
-# Runs wrangler d1 migrations apply <db> --local
-# Seeds the bootstrap row
-```
-
-### Python anchor (dry-run)
-
-```sh
-uv run --directory tools/anchor-job python -m anchor_job.dry_run
-# Signs a tx against the configured RPC but does not send
-# Prints the would-be tx signature
-```
-
-### End-to-end smoke test
-
-```sh
-pnpm e2e:smoke
-# Playwright script:
-#   - starts dev API + frontend
-#   - navigates to /
-#   - asserts totals render
-#   - navigates to /verify
-#   - asserts the structure is correct
-#   - exits
-```
-
-## Free-tier limits and what we use
-
-| Resource              | Free limit (per source)                                    | Our use                          | Headroom                                  |
-| --------------------- | ---------------------------------------------------------- | -------------------------------- | ----------------------------------------- |
-| Cloudflare Workers requests | 100,000 / day                                         | ~1,000 / day at MVP              | 100x                                      |
-| Cloudflare Workers CPU    | 10 ms / HTTP request, 30 s / cron                       | < 5 ms / request typical         | 2x for request; 6x for cron (large chain) |
-| Cloudflare Cron Triggers | 5 / account                                                | 1                                | 4x                                       |
-| Cloudflare D1 storage    | 500 MB / DB, 5 GB total                                  | ~1 MB at MVP, ~50 MB at 5 years  | Plenty                                    |
-| Cloudflare D1 databases | 10 / account on Free                                       | 2 (vault-db, bot-db)             | 5x                                       |
-| Cloudflare Pages builds  | 500 / month                                                | ~20 / month                      | 25x                                      |
-| Cloudflare Pages bandwidth | Unlimited on Free                                       | Negligible                       | ∞                                        |
-| Helius RPC reqs          | 10 / sec                                                   | ~5 / day                         | ∞                                        |
-| Helius sendTransaction   | 1 / sec                                                    | 1 / day                          | Plenty                                    |
-| Helius webhooks          | 5                                                          | 1 (vault address)                | 4x                                       |
-| GH Actions minutes (public) | Unlimited                                                | ~10 min / day for CI + anchor    | ∞                                        |
-| UptimeRobot checks       | 50 free, 5-min interval                                    | 1                                | Plenty                                    |
-
-If any limit is hit, the **first** thing to check is whether the
-chain has grown large enough that the cron worker's 30s budget
-is at risk. Mitigation: the anchor worker is a single read +
-single write; 30s is comfortable up to ~100k rows. Beyond that,
-move to Workers Paid ($5/mo) and the limit becomes 30 minutes.
+- No secrets in repo or config files.
+- No treasury private key in CI or Workers.
+- `wrangler.toml` binding allowlist enforced in CI.
+- Main branch protected by CI.
+- Live smoke jobs are opt-in and environment-gated.
+- Anchor wallet low-SOL threshold is monitored and surfaced in `/api/health`.

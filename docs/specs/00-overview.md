@@ -1,159 +1,105 @@
 # 00 — Overview
 
-**Status:** Draft v0.3.1
+**Status:** Draft
 **Date:** 2026-06-14
-**Scope:** MVP v1 (Phase 1). Phase 2 is out of scope and not designed-for.
+**Scope:** MVP (Phase 1). Phase 2 is a product roadmap term, not part of this build.
 
 ## What this is
 
-A small, transparent, crypto-funded mental-health charity MVP. Donations
-in USDC (Solana SPL) flow into a public treasury wallet. The operator
-(me) manually converts them into gift cards for online psychological
-services (Alter, etc.) and distributes the codes to beneficiaries
-through a Telegram bot. A public, hash-chained ledger records every
-incoming and outgoing event, anchored daily to a Solana on-chain
-transaction.
+A small, transparent, crypto-funded mental-health charity MVP. Donors send
+USDC on Solana to a public vault USDC associated token account (ATA). The
+operator manually converts funds into gift cards for online psychological
+services and distributes the codes through a Telegram bot.
 
-The **donor trusts the system** because the ledger is auditable
-end-to-end: the public site shows what's in the DB, a daily on-chain
-transaction commits to the latest state of that DB, and a donor can
-re-verify both independently.
+The donor-facing product is a public, append-only ledger of donations,
+disbursements, and anchor publications. The ledger is hash-chained and
+regularly anchored to Solana with a Memo transaction so donors can verify
+that the public history was not silently rewritten.
 
-The **beneficiary trusts the system** because the operator literally
-cannot see their real identity — the main vault database never contains
-a Telegram user id, real name, phone, or email. The Telegram bot is
-the only component that holds that mapping, and it lives in a
-completely separate database that the vault Workers cannot read.
+The beneficiary-facing product is private by design, but not magical:
+beneficiaries use a Telegram bot, the bot stores the Telegram mapping in a
+separate database, and the main vault database stores no Telegram user IDs,
+real names, phone numbers, or emails. Internal handles are sensitive
+pseudonymous data, not public ledger identifiers or proof of real-world
+identity.
 
-## What v1 delivers (in scope)
+## What the MVP delivers
 
-- USDC-SPL donations accepted to a single public Solana wallet
-- Append-only, hash-chained donor ledger (donations + disbursements +
-  anchor publications)
-- Daily Solana anchor transaction publishing the latest ledger hash
-  on-chain
-- Public read-only site: landing, ledger, verify, donate, about, FAQ,
-  contact
-- Operator-authenticated write API for recording disbursements
-- Telegram bot for beneficiary channel (handle registration, gift card
-  request, optional anonymous share)
-- End-to-end manual conversion loop: donor → wallet → buy gift card →
-  publish receipt → distribute code
-- CI/CD via GitHub Actions, deployment to Cloudflare Pages + Workers
-- All invariants tested in CI
-- Donor-facing FAQ documenting the honest limits of the trust story
+- Solana SPL USDC donations to the vault USDC ATA.
+- Public donate page with the treasury address, vault ATA, QR code, and clear warnings about public on-chain transfers.
+- Canonical append-only donor ledger in `ledger_events`.
+- Donor-visible event payloads for donations, disbursements, and anchor publications.
+- Daily Solana Memo anchor using a separate anchor wallet that holds only SOL for fees.
+- Public read-only site: landing, ledger, verify, donate, about, FAQ, contact.
+- Operator-authenticated write API for recording gift-card disbursements.
+- Helius webhook ingest with durable inbox, duplicate-safe processing, and minimal reconciliation/backfill.
+- Telegram bot for pseudonymous handle registration, gift-card requests, and private delivery.
+- End-to-end manual conversion loop: donor → vault ATA → operator buys gift card → receipt reference published → code delivered through the bot.
+- CI/CD via GitHub Actions, deployment to Cloudflare Pages + Workers.
+- Donor-facing FAQ documenting what the hash chain and anchor do and do not prove.
 
-## What v1 does NOT deliver (out of scope — explicit deferrals)
+## What the MVP does not deliver
 
-| Item                                            | Why deferred                                                                  |
-| ----------------------------------------------- | ----------------------------------------------------------------------------- |
-| Narrative / marketing / stories layer           | MVP donor is just the operator. No need to over-engineer.                     |
-| Verification of usage (receipts from services)  | Could break anonymity. We are not even building the opt-in path yet.          |
-| Therapist vetting                               | Alter filters therapists. The platform's job, not ours.                      |
-| Referral / anti-abuse beyond minimum            | MVP is small. Defer until scaling creates real abuse pressure.                |
-| Hardened opsec / state-adversary protection     | "We are not dealing drugs." Documented as a known limit.                      |
-| Multi-sig / cold storage / wallet recovery      | Single-wallet is acceptable at MVP scale. Architecture supports later.        |
-| Matrix / alternative messengers                 | Telegram bot is the realistic MVP.                                            |
-| Psychiatry (vs. psychology)                     | Explicitly Phase 2 from the original note.                                    |
-| Automation of the conversion loop               | The "gift card factory" Phase 2 path. MVP is manual by design.                |
-| Multi-currency / cross-chain                    | USDC-SPL on Solana only. Adding chains later is a backend task, not redesign. |
-| Donor accounts, recurring donations             | Donor story is "send to a wallet address." That's it for MVP.                 |
-| Public signup for beneficiaries                 | MVP beneficiaries are invited personally. No public signup.                   |
-| Exchange widget on the donation page            | MVP shows QR + address + link to ff.io. Real widget is Phase 2.               |
-| Receipt image storage (R2)                      | MVP stores a `receipt_ref` string only. R2 is Phase 2.                        |
+| Item | Why deferred |
+| --- | --- |
+| Narrative / marketing / stories layer | The first donor pool is small; trust mechanics matter more than marketing. |
+| Automated receipt verification | Receipt truth remains operational unless an Alter API or opt-in proof path exists. |
+| Therapist vetting | The therapy platform owns therapist vetting. |
+| Referral / anti-abuse system | MVP beneficiaries are invited personally. |
+| Hardened state-adversary opsec | The project is not claiming state-adversary-grade anonymity. |
+| Multi-sig / cold storage | The treasury key is kept out of CI/Workers; multi-sig is a later custody upgrade. |
+| Matrix / alternative messengers | Telegram is the realistic MVP channel. |
+| Psychiatry | The initial scope is psychological support. |
+| Automated conversion loop | Manual conversion is part of the MVP validation. |
+| Multi-currency / cross-chain | Solana USDC is the MVP rail. |
+| Donor accounts or recurring donations | Donors send to a public address; no account system. |
+| Public beneficiary signup | Beneficiaries are personally invited. |
+| Exchange widget | MVP can link to external conversion options; no embedded exchange integration. |
+| Receipt image storage | MVP stores structured receipt references, not images. |
 
-The complete deferral table lives in
-[`../concepts/2026-06-14-crypto-charity-vault.md`](../concepts/2026-06-14-crypto-charity-vault.md#out-of-scope-for-mvp-explicit-deferrals).
+## Pre-build validation gate — manual loop must be validated first
 
-## Phase 0 — manual loop must be validated first
+Before writing substantial application code, the operator must run the manual
+conversion loop end-to-end at least three times with small real amounts and
+record:
 
-Per the concept doc, **assumption #2** is the most dangerous
-un-validated bet: that Alter gift cards can be bought with crypto
-(directly or via a Telegram intermediate) at a cost-effective rate.
+- Conversion method used.
+- Effective fee, target ≤ 15%.
+- Time taken per beneficiary, target ≤ 30 minutes/month.
+- Failure modes and frequency.
 
-**Phase 0 gate:** before writing any non-trivial code, the operator
-must perform the full manual loop end-to-end at least three times with
-real money (small amounts) and document:
+If the conversion cost or time is too high, the model needs rethinking before
+the software build continues.
 
-- Conversion method used (direct exchange → card vs. Telegram
-  intermediate → SBP → card)
-- Effective fee (target: ≤ 15% of the donation)
-- Time taken per beneficiary (target: ≤ 30 min/month)
-- Failure modes observed and their frequency
+## Success criteria
 
-If any of these targets is missed, the model needs rethinking before
-code is written. The MVP is not a charitable success if the operator
-loses 25% of every donation to fees.
+The MVP is done when:
 
-## Success criteria (testable)
+1. **Public site works.** Public endpoints return correct JSON; pages render totals, ledger history, donation instructions, and verification guidance.
+2. **Ledger chain holds.** A seeded ledger of mixed events verifies to the expected head hash; changing any historical payload or hash breaks verification.
+3. **Public verification works.** A donor can fetch/export ledger events, recompute the exact chain, fetch Solana anchors, and compare the anchored head hash.
+4. **Anchor semantics are honest.** The anchor memo commits to the head hash before the anchor publication event; the anchor event itself is covered by a later anchor.
+5. **Donation ingest works.** Finalized SPL USDC transfers to the vault ATA are ingested once, duplicates are ignored, and missed signatures can be reconciled.
+6. **Privacy boundary holds.** The vault database has no Telegram user IDs or real beneficiary identifiers; public APIs do not expose internal handles or donor memos by default.
+7. **Bot delivery works.** A beneficiary can register a handle, request a card, and receive a code without the vault database learning their Telegram ID.
+8. **Gift-card code storage is minimized.** Full codes are not retained in bot storage after delivery; only delivery status plus hash/last4 or a short-TTL encrypted value may remain.
+9. **Anchor wallet is funded safely.** The anchor wallet has enough SOL for fees, and low-SOL alert/replenishment is documented.
+10. **PR CI remains free of paid funds and mainnet secrets.** Live devnet/mainnet checks are gated outside normal PR CI.
 
-The MVP is **done** when:
+## User stories
 
-1. **Public site works.** All public endpoints return correct JSON.
-   The site renders totals, history, and the verify page. Lighthouse
-   mobile score ≥ 90. `/api/health` returns `ok`.
-2. **Hash chain holds.** `verify_chain()` over a seeded
-   database of 200 mixed-type events returns the head hash;
-   modifying any historical row makes it fail. The same 200-event
-   fixture produces the same head hash in both TypeScript and
-   Python.
-3. **Anchor is daily and idempotent.** Running the anchor job twice
-   on the same UTC day does not produce two `anchor_publications`
-   rows. The memo on Solana is the 32-byte digest of the head hash.
-4. **Anonymity invariant holds.** `pytest tests/test_invariants.py`
-   passes against the live schema. No Telegram user id is reachable
-   from any code path that has `vault-db`'s binding.
-5. **Bot works.** A beneficiary can DM the bot, register a handle,
-   request a card, and receive a code. The bot's chat history is at
-   Telegram, not in our DB.
-6. **Operator workflow takes < 60 s.** `POST /api/disbursements` from
-   the operator UI with a valid body returns a row in under 500 ms
-   (cold) / 100 ms (warm).
-7. **All invariant tests pass in CI** (see
-   [`08-testing-strategy.md`](08-testing-strategy.md)).
-8. **Documented limits are published.** A donor-facing FAQ at `/faq`
-   lists the "What this is not" points (see
-   [`../concepts/2026-06-14-crypto-charity-vault.md`](../concepts/2026-06-14-crypto-charity-vault.md#what-this-is-not-honest-limits)).
-9. **The operator has run the manual conversion loop end-to-end**
-   (Phase 0) and the cost is ≤ 15% of donations at typical volumes.
+- **As a donor**, I can send USDC on Solana to the vault ATA shown on the site.
+- **As a donor**, I can return to the site and see a finalized donation appear in the public ledger.
+- **As a donor**, I can click “Verify,” export ledger events, recompute the hash chain, and compare it to Solana Memo anchors.
+- **As a donor**, I can see total in, total out, current balance, and gift-card disbursement records with receipt references.
+- **As a donor**, if I notice a mismatch, I can find a contact address and report it.
+- **As a beneficiary**, I can DM the Telegram bot, choose a pseudonymous handle, request a gift card, and receive the code through the bot.
+- **As a beneficiary**, I do not need to share real name, phone, or email with the vault system.
+- **As the operator**, I can record a disbursement with amount, card count, service, receipt reference, and a non-public beneficiary context from the bot workflow.
+- **As the operator**, I can trigger a manual anchor and see if the anchor wallet is low on SOL.
 
-## User stories (the minimum set)
+## What done does not mean
 
-- **As a donor**, I can send USDC-SPL to the wallet address shown on
-  the site, then return to the site and see my donation appear in the
-  ledger.
-- **As a donor**, I can click "Verify" on the site and see the latest
-  on-chain anchor transaction, with a one-command instruction set for
-  re-running the hash chain independently.
-- **As a donor**, I can see the total in, total out, current balance,
-  and the full history of incoming donations and outgoing gift-card
-  purchases.
-- **As a donor**, if I notice a hash mismatch between the public
-  ledger and the on-chain anchor, I can find a contact address to
-  report it to.
-- **As a beneficiary**, I can DM the Telegram bot, choose a pseudonym
-  handle, and request a gift card. The operator eventually sends me
-  the code via the bot.
-- **As a beneficiary**, I do not need to share my real name, phone,
-  or email. The bot never asks for them and the operator never sees
-  them.
-- **As the operator**, I can record a disbursement in < 60 seconds by
-  sending one authenticated API call with the amount, the gift card
-  count, the service, the receipt reference, and the beneficiary's
-  handle.
-- **As the operator**, I can trigger a manual anchor if both crons
-  miss.
-- **As the operator**, I can see at a glance if the anchor is stale.
-
-## What "done" explicitly does NOT mean
-
-- "All tests pass" is necessary but not sufficient. Trust is the
-  product; tests prove the trust properties hold, but the
-  trust properties themselves are defined in
-  [`02-invariants.md`](02-invariants.md) and must be read and
-  understood.
-- "The site looks nice" is necessary but not sufficient. The
-  verification affordance is the product; if a donor can't re-run
-  the chain, the trust story fails.
-- "Donations are coming in" is not a success criterion. Donations
-  without distribution are a tax problem waiting to happen.
+- Passing tests is necessary but not sufficient. The trust properties are defined in [`02-invariants.md`](02-invariants.md).
+- A nice landing page is not enough. If donors cannot re-run verification, the trust story fails.
+- Incoming donations alone are not success. The manual disbursement loop must work and be documented.
