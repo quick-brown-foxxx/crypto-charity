@@ -27,7 +27,7 @@ jump to a single doc when you need it.
 | 08  | [`08-testing-strategy.md`](08-testing-strategy.md)       | What we test, at what level, what's the proof for each invariant.                     |
 | 09  | [`09-decisions.md`](09-decisions.md)                     | What we decided, what we deferred (and why), open questions.                          |
 
-A grep-able mirror of the invariants lives in [`../INVARIANTS.md`](../INVARIANTS.md).
+A grep-able mirror of the invariants lives in [`INVARIANTS.md`](./INVARIANTS.md).
 
 ## What changed in v0.2 (vs. the v1 draft)
 

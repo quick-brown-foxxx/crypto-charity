@@ -26,7 +26,7 @@ the invariant. Invariants can only be amended by changing *this* doc
 with explicit justification, never silently.
 
 A grep-able mirror of these invariants lives in
-[`../INVARIANTS.md`](../INVARIANTS.md). Anything that belongs here but
+[`INVARIANTS.md`](./INVARIANTS.md). Anything that belongs here but
 is not in the mirror is a doc bug.
 
 ## The invariants

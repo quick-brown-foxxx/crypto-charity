@@ -3,7 +3,7 @@
 This file is the canonical, grep-able source of the project's
 invariants. The detailed invariant definitions, enforcement
 mechanisms, and test mappings live in
-[`docs/specs/02-invariants.md`](specs/02-invariants.md). If the two
+[`docs/specs/02-invariants.md`](02-invariants.md). If the two
 disagree, **this file is authoritative for the canonical text** and
 the spec doc should be updated to match.
 
