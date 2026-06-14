@@ -37,7 +37,7 @@ directory are the current technical design.
 - **Anchoring:** the anchor wallet signs a Solana Memo instruction containing UTF-8 text `ccv-anchor:<64hex head_hash>`. The memo anchors the head before the anchor publication event.
 - **Wallet split:** the treasury wallet/ATA receives USDC and has no private key in CI or Workers. The anchor wallet holds only SOL for transaction fees.
 - **Ingest:** Helius webhooks authenticate by the configured `authHeader` echoed in `Authorization`, ACK quickly, store a durable inbox entry, and process/reconcile asynchronously.
-- **Privacy:** internal handles are sensitive pseudonymous data. Public examples use `public_beneficiary_ref` or omit beneficiary references. Donor memos are not exposed publicly by default.
+- **Privacy:** internal handles are sensitive pseudonymous data. Bot storage uses keyed HMAC Telegram user references and encrypted Telegram chat routes, not plaintext Telegram IDs. Public examples use `public_beneficiary_ref` or omit beneficiary references. Donor memos are not exposed publicly by default.
 
 ## Cross-reference summary
 
@@ -47,6 +47,6 @@ directory are the current technical design.
 | Tamper-evident donor ledger + daily anchor | `02-invariants.md`, `03-data-model.md`, `04-api.md`, `05-hosting-and-deploy.md` |
 | Public donor-facing site | `00-overview.md`, `04-api.md` |
 | Manual operator conversion loop | `00-overview.md`, `01-architecture.md`, `04-api.md` |
-| Telegram bot beneficiary channel | `01-architecture.md`, `03-data-model.md`, `04-api.md`, `06-security-model.md` |
+| Telegram bot beneficiary channel | `01-architecture.md`, `03-data-model.md`, `04-api.md`, `05-hosting-and-deploy.md`, `06-security-model.md`, `08-testing-strategy.md`, `09-decisions.md` |
 | Privacy and honest limits | `06-security-model.md`, `07-observability-and-ops.md` |
 | Blockchain verification and test tiers | `08-testing-strategy.md` |

@@ -37,8 +37,10 @@ channel.
 
 The donor trust story is tamper-evidence, not magic: public records are
 hash-chained in `ledger_events`, anchored to Solana, and independently
-verifiable. The beneficiary privacy story is separation: the public vault never
-stores Telegram user IDs or real-world beneficiary identities.
+verifiable. The beneficiary privacy story is separation plus minimized bot
+storage: the public vault never stores Telegram user IDs or real-world
+beneficiary identities, and `bot-db` stores HMAC user references plus encrypted
+chat routes instead of plaintext Telegram IDs.
 
 ---
 
@@ -102,9 +104,10 @@ stores Telegram user IDs or real-world beneficiary identities.
 - `vault-db` stores donor ledger events, wallet metadata, Helius inbox state,
   anchor run state, and optional read models. It does **not** store Telegram user
   IDs or real-world beneficiary identities.
-- `bot-db` stores the Telegram mapping, opaque IDs, internal pseudonymous
-  handles, request state, and delivery state in a separate Worker/database
-  boundary.
+- `bot-db` stores opaque IDs, internal pseudonymous handles, a keyed HMAC
+  Telegram user reference, an encrypted Telegram chat route, request state, and
+  delivery state in a separate Worker/database boundary. It does not store
+  plaintext Telegram user IDs or chat IDs at rest.
 - Internal handles are sensitive pseudonymous data used by the bot/operator
   workflow. They are not public ledger identifiers.
 - Full gift-card codes are delivery secrets. After delivery, bot storage keeps
@@ -165,8 +168,10 @@ stores Telegram user IDs or real-world beneficiary identities.
 - **The public ledger does not identify beneficiaries.** Public records omit
   beneficiary identity and may use only random public references when needed.
 - **The bot privacy boundary is not provider anonymity.** Telegram still has its
-  own metadata. The project promise is that `vault-db` and public APIs do not
-  learn Telegram IDs or real-world beneficiary identities.
+  own metadata, and bot runtime compromise can see incoming Telegram identifiers.
+  The project promise is that `vault-db` and public APIs do not learn Telegram
+  IDs or real-world beneficiary identities, and a `bot-db`-only leak does not
+  expose plaintext Telegram IDs or chat routes.
 - **A lost or compromised anchor wallet is visible, not silent.** The fee-only
   anchor wallet cannot spend donations, but failed or suspicious anchors require
   rotation and a public notice.

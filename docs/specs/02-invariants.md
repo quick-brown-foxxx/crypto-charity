@@ -112,18 +112,39 @@ wallet signs Memo transactions and holds only enough SOL for fees.
 - **Test:** secret scans fail if treasury private key material appears; anchor
   code can only load the anchor keypair.
 
-### I-7: No real beneficiary identity in the vault database
+### I-7: No plaintext Telegram identity at rest
 
 `vault-db` contains no Telegram user ID, real name, phone, email, or direct
-identity mapping. The mapping from Telegram identity to handle/opaque ID lives
-only in `bot-db`, which is bound only to the bot Worker.
+identity mapping. The Telegram lookup and delivery route live only in `bot-db`,
+which is bound only to the bot Worker, and they are not stored as plaintext
+Telegram IDs.
+
+`bot-db.handles` stores:
+
+```text
+telegram_user_ref     = HMAC-SHA256(TG_ID_HMAC_KEY, "tg-user:" + telegram_user_id)
+telegram_chat_id_enc  = authenticated encryption of chat_id under TG_CHAT_ENC_KEY
+```
+
+Plaintext Telegram user IDs and chat IDs may exist in bot memory while handling
+an incoming update or sending a proactive message. They must not be persisted in
+`bot-db`, copied into `vault-db`, included in public APIs, or written to logs.
+`telegram_chat_key_version` records the encryption key version for route
+rotation.
 
 Beneficiary handles are sensitive pseudonymous data. They are useful for the
 operator workflow but should not be exposed publicly by default.
 
 - **Enforced by:** separate D1 databases, binding allowlist, schema denylist,
-  and public response schemas that omit handles.
-- **Test:** schema introspection and `wrangler.toml` binding checks.
+  HMAC/encryption helpers, logging policy, and public response schemas that omit
+  handles.
+- **Test:** schema introspection denies plaintext `telegram_user_id`,
+  `telegram_chat_id`, and standalone `chat_id` columns in `bot-db` except the
+  explicitly allowed encrypted field `telegram_chat_id_enc`; same Telegram ID
+  plus same `TG_ID_HMAC_KEY` yields the same `telegram_user_ref`; different HMAC
+  key yields a different ref; `telegram_chat_id_enc` round-trips only with
+  `TG_CHAT_ENC_KEY`; public APIs and logs contain no plaintext Telegram IDs or
+  chat IDs.
 
 ### I-8: Public APIs do not expose sensitive notes or handles by default
 
@@ -169,7 +190,8 @@ account history.
   changed. It does not prove a receipt reference is genuine.
 - **Donor anonymity.** The vault address and SPL token transfers are public.
 - **State-adversary-grade beneficiary protection.** The MVP reduces operator
-  visibility; it does not claim protection from compelled Telegram/provider data.
+  visibility and DB-only breach impact; it does not claim protection from
+  compelled Telegram/provider data or bot runtime compromise.
 - **Treasury key recovery by software.** Keeping the treasury private key out of
   CI/Workers is deliberate. Multi-sig and formal recovery are later custody
   upgrades.
@@ -184,7 +206,7 @@ account history.
 | I-4 | `anchor_runs` separation | failed retry vs published event tests |
 | I-5 | Memo builder | UTF-8 memo and regex tests |
 | I-6 | secret allowlists, wallet role split | secret scans, anchor-key-only tests |
-| I-7 | D1 separation, binding allowlist | schema/binding tests |
+| I-7 | D1 separation, binding allowlist, bot schema denylist, HMAC/encryption helpers | schema/binding tests, HMAC stability tests, chat-route encryption tests, log/API redaction tests |
 | I-8 | public schemas | public response contract tests |
 | I-9 | public export and scripts | TS/Python verify script tests |
 | I-10 | durable inbox, finality filters | webhook/reconciliation contract tests |

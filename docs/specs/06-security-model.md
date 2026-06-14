@@ -49,19 +49,26 @@ An attacker posts fake webhook payloads or replays real ones.
 The operator tries to map a public record or bot handle to a Telegram account.
 
 - **Mitigation:** `vault-db` stores no Telegram user ID, real name, phone, or
-  email. Bot mapping lives in separate `bot-db`, bound only to the bot Worker.
-  Public donor APIs use `public_beneficiary_ref` or omit beneficiary reference.
-- **Limit:** the bot still needs Telegram user IDs to deliver messages. This is
-  reduced operator visibility, not anonymity from Telegram.
+  email. `bot-db` stores no plaintext Telegram user IDs or chat IDs; it stores
+  `telegram_user_ref` as a keyed HMAC and `telegram_chat_id_enc` as an encrypted
+  chat route. Public donor APIs use `public_beneficiary_ref` or omit beneficiary
+  reference.
+- **Limit:** the bot runtime still receives Telegram identifiers from incoming
+  updates and must decrypt the chat route to deliver messages. This is reduced
+  operator visibility and DB-only breach resistance, not anonymity from Telegram
+  or from a bot runtime compromise.
 
 ### T6: Bot compromise
 
 An attacker compromises the Telegram bot or bot Cloudflare account.
 
 - **Mitigation:** separate account/bindings, bot token rotation, webhook secret
-  token, and minimal gift-card code storage.
-- **Blast radius:** Telegram mappings and active requests may be exposed. Treat
-  internal handles as compromised and rotate bot credentials.
+  token, HMAC/encryption keys for stored Telegram identifiers, and minimal
+  gift-card code storage.
+- **Blast radius:** bot runtime compromise can see incoming Telegram identifiers,
+  decrypt chat routes, and expose active requests. Treat internal handles and bot
+  identity refs as compromised, rotate bot credentials, and rotate chat-route
+  encryption keys.
 
 ### T7: Operator token leak
 
@@ -84,6 +91,9 @@ An attacker gets `OPERATOR_TOKEN`.
 
 - `vault-db` must not contain Telegram user IDs, real names, phone numbers, or
   emails.
+- `bot-db` must not contain plaintext Telegram user IDs or chat IDs. The allowed
+  handle fields are `telegram_user_ref` and `telegram_chat_id_enc`, plus
+  `telegram_chat_key_version` for encryption-key rotation.
 - Beneficiary handles are sensitive pseudonymous data. They can appear in
   bot/operator workflows, but public APIs should use `public_beneficiary_ref` or
   no reference.
@@ -109,14 +119,17 @@ Log:
 Never log:
 
 - `OPERATOR_TOKEN`, `ANCHOR_WALLET_SECRET`, `TG_BOT_TOKEN`,
-  `HELIUS_WEBHOOK_AUTH_HEADER`, or Helius API keys;
+  `TG_ID_HMAC_KEY`, `TG_CHAT_ENC_KEY`, `HELIUS_WEBHOOK_AUTH_HEADER`, or Helius
+  API keys;
 - full request bodies for write or bot delivery endpoints;
-- Telegram user IDs outside bot-only debug tooling;
+- plaintext Telegram user IDs or chat IDs;
 - gift-card codes;
 - donor memos.
 
 Handles may be logged only in bot-scoped logs when needed for support, and
-should be treated as sensitive pseudonymous data.
+should be treated as sensitive pseudonymous data. If bot correlation is needed,
+prefer a truncated `telegram_user_ref`; never log plaintext Telegram identifiers
+or chat routes.
 
 ## Key custody
 
@@ -133,6 +146,21 @@ should be treated as sensitive pseudonymous data.
 - Secret is `ANCHOR_WALLET_SECRET`.
 - If compromised, rotate anchor wallet, replenish SOL, update public config,
   and publish a notice. No treasury funds are spendable from this key.
+
+### Telegram bot identity and route keys
+
+- `TG_ID_HMAC_KEY` derives stable, non-reversible `telegram_user_ref` values from
+  Telegram user IDs. A different key produces different references.
+- `TG_CHAT_ENC_KEY` protects `telegram_chat_id_enc`, the encrypted route used for
+  proactive Telegram delivery. Encryption uses AES-GCM with a fresh 96-bit nonce
+  per row and AAD bound to `opaque_id` plus `telegram_chat_key_version`.
+- `telegram_chat_key_version` records which chat encryption key protects each
+  row. Rotation means writing new rows with the current version, decrypting old
+  rows by their recorded version, and re-encrypting them under the current
+  version.
+- A `bot-db`-only leak does not expose plaintext Telegram IDs or chat IDs. A leak
+  of `bot-db` plus these secrets, or bot runtime compromise, can deanonymize or
+  deliver messages and is a privacy incident.
 
 ### Low-SOL replenishment
 
@@ -157,6 +185,7 @@ The FAQ must state:
 - The anchor memo commits to the pre-anchor head; the anchor event is covered by
   a later anchor.
 - Beneficiary privacy depends on the bot boundary and operational discipline;
-  Telegram still knows Telegram accounts.
+  Telegram still knows Telegram accounts, and bot runtime compromise can see
+  Telegram identifiers even though `bot-db` does not store them in plaintext.
 - Donor transfers are public on Solana.
 - The operator remains a manual conversion and custody bottleneck in the MVP.

@@ -16,8 +16,8 @@ There are two Cloudflare D1 databases:
 
 - **`vault-db`** — donor-facing system state: canonical ledger events, wallet
   metadata, Helius inbox, anchor runs, and optional read models.
-- **`bot-db`** — bot-only working memory: Telegram mapping, requests, and
-  delivery state.
+- **`bot-db`** — bot-only working memory: keyed HMAC Telegram user references,
+  encrypted Telegram chat routes, requests, and delivery state.
 
 The databases are structurally isolated. A Worker with only the `vault-db`
 binding cannot query `bot-db`, and the bot Worker does not receive the
@@ -304,18 +304,55 @@ rebuilt from the ledger. They are not used for hash verification.
 
 ```sql
 CREATE TABLE handles (
-    id                   INTEGER PRIMARY KEY,
-    opaque_id            TEXT NOT NULL UNIQUE,
-    handle               TEXT NOT NULL UNIQUE COLLATE NOCASE,
-    telegram_user_id     INTEGER NOT NULL UNIQUE,
-    first_seen_utc       TEXT NOT NULL,
-    last_seen_utc        TEXT NOT NULL,
-    is_active            INTEGER NOT NULL DEFAULT 1
+    opaque_id                 TEXT PRIMARY KEY,
+    handle                    TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    telegram_user_ref         TEXT NOT NULL UNIQUE,
+    telegram_chat_id_enc      TEXT NOT NULL,
+    telegram_chat_key_version INTEGER NOT NULL CHECK (telegram_chat_key_version >= 1),
+    first_seen_utc            TEXT NOT NULL,
+    last_seen_utc             TEXT NOT NULL,
+    is_active                 INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1))
 );
 ```
 
 `handle` is sensitive pseudonymous data. It is used in the bot/operator
 workflow, not exposed in public donor APIs.
+
+`telegram_user_ref` is the stable lookup key for incoming Telegram updates:
+
+```text
+telegram_user_ref = HMAC-SHA256(TG_ID_HMAC_KEY, "tg-user:" + telegram_user_id)
+```
+
+The value is non-reversible without `TG_ID_HMAC_KEY`. The same Telegram ID and
+same key produce the same reference; changing the key produces a different
+reference.
+
+`telegram_chat_id_enc` is the encrypted proactive-delivery route. It is
+authenticated encryption of the Telegram `chat_id` under `TG_CHAT_ENC_KEY`.
+`telegram_chat_key_version` records which chat-encryption key version protects
+the row so rotation can decrypt old rows and re-encrypt them under the current
+key.
+
+Encryption uses Web Crypto AES-GCM with a fresh 96-bit random nonce per row.
+The secret value for each key version is a base64url-encoded 256-bit raw AES
+key. The stored ciphertext envelope is:
+
+```text
+aesgcm:v1:<key_version>:<base64url(nonce)>:<base64url(ciphertext_with_tag)>
+```
+
+The authenticated additional data (AAD) is
+`ccv:tg-chat-route:<opaque_id>:<telegram_chat_key_version>`. This binds the
+ciphertext to the beneficiary record and key version, so a ciphertext copied
+between rows fails to decrypt.
+
+Forbidden plaintext columns in `bot-db` include `telegram_user_id`,
+`telegram_chat_id`, and standalone `chat_id`. The encrypted field name
+`telegram_chat_id_enc` is explicitly allowed. A `bot-db`-only leak exposes
+handles, opaque IDs, HMAC references, and ciphertext, but not plaintext Telegram
+user IDs or chat IDs. A leak of both `bot-db` and bot secrets, or bot runtime
+compromise, can still deanonymize users or deliver messages.
 
 ### `conversations`
 

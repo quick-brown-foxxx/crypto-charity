@@ -53,6 +53,8 @@ have the `vault-db` binding; it calls HTTP APIs when it needs vault actions.
 | `OPERATOR_TOKEN` | `vault-api-write`, `tg-bot` Workers Secrets | no | Operator write auth and bot internal delivery calls. |
 | `TG_BOT_TOKEN` | `tg-bot` Workers Secret | no | Telegram Bot API. |
 | `TG_WEBHOOK_SECRET` | `tg-bot` Workers Secret | no | Telegram webhook secret-token validation. |
+| `TG_ID_HMAC_KEY` | `tg-bot` Workers Secret | no | Keyed HMAC for non-reversible stable Telegram user references. |
+| `TG_CHAT_ENC_KEY` | `tg-bot` Workers Secret | no | Authenticated encryption key for Telegram chat delivery routes. |
 | `HELIUS_API_KEY` | deploy/live environments | no | Helius management/RPC access. |
 | `HELIUS_RPC_URL` | ingest/anchor environments | no for PR; optional for live smoke | Solana RPC endpoint. |
 | `HELIUS_WEBHOOK_AUTH_HEADER` | `vault-ingest` Workers Secret | no | Exact expected `Authorization` header value Helius sends from `authHeader`. |
@@ -65,6 +67,24 @@ have the `vault-db` binding; it calls HTTP APIs when it needs vault actions.
 
 The treasury private key is intentionally absent from CI, Workers, repository
 files, and normal app runtime.
+
+Telegram identity and route secrets are intentionally absent from PR CI,
+repository files, and public config. A `bot-db`-only leak exposes opaque IDs,
+handles, HMAC references, and encrypted chat routes, but not plaintext Telegram
+user IDs or chat IDs. A leak of both `bot-db` and bot secrets, or bot runtime
+compromise, can still deanonymize beneficiaries or deliver messages.
+
+`TG_CHAT_ENC_KEY` is versioned by `handles.telegram_chat_key_version`: new writes
+use the current key version, old rows are decrypted by their recorded version,
+and rows are re-encrypted under the current version during a planned rotation.
+Older decrypt-only key versions stay in the secret store only until rotation is
+complete. Rotating `TG_ID_HMAC_KEY` changes `telegram_user_ref` values and
+requires a planned migration based on future incoming Telegram updates or
+explicit re-registration, because plaintext Telegram user IDs are not stored.
+
+Chat-encryption secrets are stored as versioned 256-bit AES-GCM keys. The
+current encrypting key and any temporary decrypt-only keys are configured only in
+the bot environment; vault Workers never receive them.
 
 ## Cluster configuration
 

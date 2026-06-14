@@ -67,7 +67,8 @@ This document explains how components fit together. The database schemas are in
                    ▼
 ┌───────────────────────────────────────────────────────────────────────────┐
 │ bot-db (Cloudflare D1)                                                     │
-│ - handles: opaque_id, handle, telegram_user_id                             │
+│ - handles: opaque_id, handle, telegram_user_ref, telegram_chat_id_enc      │
+│ - handles: telegram_chat_key_version, first/last_seen, is_active           │
 │ - conversations: request/delivery status, hash/last4/short-TTL encrypted   │
 │   delivery value when needed                                               │
 └──────────────────┬────────────────────────────────────────────────────────┘
@@ -89,7 +90,8 @@ This document explains how components fit together. The database schemas are in
 - **`apps/anchor-cron`** — scheduled anchor Worker. Uses the anchor wallet key,
   not the treasury key.
 - **`apps/tg-bot`** — Telegram webhook Worker with `bot-db` only. It handles
-  registration, requests, and delivery.
+  registration, requests, delivery, keyed HMAC Telegram user lookup, and
+  encrypted chat-route storage.
 - **`packages/vault-core`** — TypeScript event schemas, canonical JSON,
   hash-chain verification, Solana Memo builder, and public verification logic.
 - **`tools/anchor-job`** — optional Python backup/manual anchor tool with the
@@ -165,11 +167,21 @@ signals, not the source of truth for Solana history.
 
 ### Beneficiary bot flow
 
-1. Beneficiary DMs `/start <handle>`.
-2. Bot stores `telegram_user_id ↔ opaque_id ↔ handle` in `bot-db` only.
-3. Beneficiary DMs `/card`; bot records a pending conversation.
-4. Operator fulfills manually from `/admin` without seeing Telegram user ID.
-5. Bot posts the code to Telegram and minimizes stored delivery data.
+1. Beneficiary DMs `/start <handle>` or `/card`.
+2. The bot receives Telegram user and chat IDs from the incoming update.
+3. The bot computes `telegram_user_ref` with
+   `HMAC-SHA256(TG_ID_HMAC_KEY, "tg-user:" + telegram_user_id)`.
+4. The bot encrypts the Telegram chat route into `telegram_chat_id_enc` with
+   authenticated encryption under `TG_CHAT_ENC_KEY` and records
+   `telegram_chat_key_version`.
+5. `bot-db` stores `opaque_id`, `handle`, `telegram_user_ref`,
+   `telegram_chat_id_enc`, key version, timestamps, and active state; it stores
+   no plaintext Telegram user ID or chat ID.
+6. Beneficiary DMs `/card`; bot records a pending conversation.
+7. Operator fulfills manually from `/admin` without seeing Telegram user ID or
+   chat ID.
+8. Bot decrypts `telegram_chat_id_enc` only in memory, posts the code to
+   Telegram, does not log plaintext chat ID, and minimizes stored delivery data.
 
 ## Trust boundaries
 
@@ -179,6 +191,7 @@ signals, not the source of truth for Solana history.
 | Solana Memo anchor | A specific pre-anchor head hash was publicly posted at a time. | The anchor event itself is included in that same transaction. |
 | Public verify/export | Donors can recompute what the site claims. | The operator bought a real gift card. |
 | Two database topology | Vault Workers cannot query bot identity mapping. | Telegram/provider metadata is anonymous to Telegram. |
+| Bot identity storage | A `bot-db`-only leak does not reveal plaintext Telegram user IDs or chat IDs. | DB plus bot secrets, or bot runtime compromise, can still deanonymize or deliver. |
 | Bot account discipline | Operator does not casually read Telegram mapping. | State-adversary-grade protection. |
 
 The architecture promises tamper-evidence and narrower operator visibility. It

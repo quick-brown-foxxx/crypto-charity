@@ -17,11 +17,12 @@ regularly anchored to Solana with a Memo transaction so donors can verify
 that the public history was not silently rewritten.
 
 The beneficiary-facing product is private by design, but not magical:
-beneficiaries use a Telegram bot, the bot stores the Telegram mapping in a
-separate database, and the main vault database stores no Telegram user IDs,
-real names, phone numbers, or emails. Internal handles are sensitive
-pseudonymous data, not public ledger identifiers or proof of real-world
-identity.
+beneficiaries use a Telegram bot, `bot-db` stores keyed HMAC Telegram user
+references and encrypted chat routes, and no database stores plaintext Telegram
+user IDs or chat IDs at rest. The main vault database stores no Telegram
+beneficiary identifiers, real names, phone numbers, or emails. Internal handles
+are sensitive pseudonymous data, not public ledger identifiers or proof of
+real-world identity.
 
 ## What the MVP delivers
 
@@ -33,7 +34,7 @@ identity.
 - Public read-only site: landing, ledger, verify, donate, about, FAQ, contact.
 - Operator-authenticated write API for recording gift-card disbursements.
 - Helius webhook ingest with durable inbox, duplicate-safe processing, and minimal reconciliation/backfill.
-- Telegram bot for pseudonymous handle registration, gift-card requests, and private delivery.
+- Telegram bot for pseudonymous handle registration, gift-card requests, and private delivery without plaintext Telegram IDs or chat IDs at rest.
 - End-to-end manual conversion loop: donor → vault ATA → operator buys gift card → receipt reference published → code delivered through the bot.
 - CI/CD via GitHub Actions, deployment to Cloudflare Pages + Workers.
 - Donor-facing FAQ documenting what the hash chain and anchor do and do not prove.
@@ -80,8 +81,8 @@ The MVP is done when:
 3. **Public verification works.** A donor can fetch/export ledger events, recompute the exact chain, fetch Solana anchors, and compare the anchored head hash.
 4. **Anchor semantics are honest.** The anchor memo commits to the head hash before the anchor publication event; the anchor event itself is covered by a later anchor.
 5. **Donation ingest works.** Finalized SPL USDC transfers to the vault ATA are ingested once, duplicates are ignored, and missed signatures can be reconciled.
-6. **Privacy boundary holds.** The vault database has no Telegram user IDs or real beneficiary identifiers; public APIs do not expose internal handles or donor memos by default.
-7. **Bot delivery works.** A beneficiary can register a handle, request a card, and receive a code without the vault database learning their Telegram ID.
+6. **Privacy boundary holds.** No database stores plaintext Telegram user IDs or chat IDs; the vault database has no Telegram beneficiary identifiers at all; public APIs do not expose internal handles or donor memos by default.
+7. **Bot delivery works.** A beneficiary can register a handle, request a card, and receive a code without the vault database learning their Telegram ID and without `bot-db` retaining a plaintext chat route.
 8. **Gift-card code storage is minimized.** Full codes are not retained in bot storage after delivery; only delivery status plus hash/last4 or a short-TTL encrypted value may remain.
 9. **Anchor wallet is funded safely.** The anchor wallet has enough SOL for fees, and low-SOL alert/replenishment is documented.
 10. **PR CI remains free of paid funds and mainnet secrets.** Live devnet/mainnet checks are gated outside normal PR CI.

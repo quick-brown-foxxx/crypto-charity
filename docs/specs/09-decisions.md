@@ -93,6 +93,20 @@
 - **Reasoning:** handles are sensitive pseudonymous data and should not become a
   public tracking key.
 
+### Telegram bot identity uses HMAC refs and encrypted chat routes
+
+- **Where:** `01-architecture.md`, `03-data-model.md`, `04-api.md`,
+  `05-hosting-and-deploy.md`, `06-security-model.md`, `08-testing-strategy.md`.
+- **Decision:** `bot-db.handles` stores `telegram_user_ref` derived with
+  `HMAC-SHA256(TG_ID_HMAC_KEY, "tg-user:" + telegram_user_id)` and
+  `telegram_chat_id_enc` as authenticated encryption of the Telegram chat route
+  under `TG_CHAT_ENC_KEY`. It does not store plaintext Telegram user IDs or chat
+  IDs at rest. `telegram_chat_key_version` records the encryption key version for
+  route-key rotation.
+- **Reasoning:** the bot needs stable lookup for incoming updates and a route for
+  proactive delivery, but a `bot-db`-only leak should not expose Telegram account
+  or chat identifiers.
+
 ### Gift-card code persistence is minimized
 
 - **Where:** `03-data-model.md`, `04-api.md`, `06-security-model.md`.

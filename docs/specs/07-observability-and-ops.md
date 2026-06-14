@@ -42,7 +42,7 @@ Any failed check returns `status: "degraded"`.
 | F-9 | `vault-db` unavailable | `/api/health` degraded or 503 | Wait for Cloudflare recovery; surface temporary unavailable message. |
 | F-10 | `bot-db` unavailable | Bot errors/timeouts | Bot replies with temporary unavailable message when possible. |
 | F-11 | `OPERATOR_TOKEN` leaked | Operator suspicion, unexpected writes | Rotate token in vault and bot Workers; inspect appended events. |
-| F-12 | Bot token/account compromised | Bot abuse or provider alert | Revoke token, redeploy bot, treat handles as compromised, notify beneficiaries through safe channel. |
+| F-12 | Bot token/account or Telegram identity secret compromised | Bot abuse, provider alert, or secret suspicion | Revoke token, redeploy bot, treat handles/identity refs as compromised, rotate chat-route keys, notify beneficiaries through safe channel. |
 | F-13 | Donor reports hash mismatch | Email/contact report | Re-run public verification, inspect ledger export and anchors, publish incident if real. |
 | F-14 | Deploy fails | GitHub Actions failure | Last good deploy stays live; fix and rerun. |
 | F-15 | D1 migration fails partially | Deploy smoke failure | Treat as incident; do not mutate `ledger_events` to hide the issue. |
@@ -80,9 +80,12 @@ source of truth.
 - Confirm treasury private key material is absent from repo, CI, Workers, and
   logs.
 - Confirm anchor wallet secret exists only in the anchor environments.
+- Confirm `TG_ID_HMAC_KEY` and `TG_CHAT_ENC_KEY` exist only in bot environments
+  and secret stores, not repo or public config.
 - Confirm latest anchor is recent and the anchor wallet has enough SOL.
-- Grep code for forbidden public fields: Telegram IDs, internal handles in
-  public APIs, full gift-card code persistence, and donor memo exposure.
+- Grep code and migrations for forbidden public/storage fields: plaintext
+  Telegram IDs or chat IDs in `bot-db`, internal handles in public APIs, full
+  gift-card code persistence, and donor memo exposure.
 
 ## Incident criteria
 

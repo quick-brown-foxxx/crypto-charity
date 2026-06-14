@@ -211,6 +211,52 @@ Then it preserves the inbox row
 And appends at most one donation event for that signature
 ```
 
+### Feature: Telegram bot identity storage
+
+Scenario: bot-db schema has no plaintext Telegram identity columns
+
+```gherkin
+Given the `bot-db` schema
+When schema introspection lists table and column names
+Then `handles` contains `telegram_user_ref`
+And `handles` contains `telegram_chat_id_enc`
+And `handles` contains `telegram_chat_key_version`
+And `bot-db` contains no plaintext `telegram_user_id`, `telegram_chat_id`, or standalone `chat_id` columns
+And the encrypted field name `telegram_chat_id_enc` is explicitly allowed
+```
+
+Scenario: Telegram user reference is stable only for the same HMAC key
+
+```gherkin
+Given `TG_ID_HMAC_KEY` is configured
+When the bot derives `telegram_user_ref` twice for the same Telegram user ID
+Then both references are identical
+When the bot derives a reference for that same Telegram user ID with a different HMAC key
+Then the reference is different
+```
+
+Scenario: encrypted Telegram chat route round-trips only with the chat key
+
+```gherkin
+Given `TG_CHAT_ENC_KEY` is configured
+When the bot encrypts a Telegram `chat_id` into `telegram_chat_id_enc`
+Then decrypting with `TG_CHAT_ENC_KEY` returns the original `chat_id`
+And decrypting with a different chat key fails
+And the row records `telegram_chat_key_version`
+And the ciphertext envelope starts with `aesgcm:v1:`
+And moving the ciphertext to a different `opaque_id` fails AAD validation
+```
+
+Scenario: logs and public APIs do not expose Telegram identifiers
+
+```gherkin
+Given the bot processes `/start`, `/card`, and `send-code`
+When logs, public API responses, and operator-safe responses are inspected
+Then no plaintext Telegram user ID appears
+And no plaintext Telegram `chat_id` appears
+And any bot-internal correlation uses a redacted or truncated `telegram_user_ref`
+```
+
 ## Per-invariant mapping
 
 | Invariant | Tests |
@@ -221,7 +267,7 @@ And appends at most one donation event for that signature
 | I-4 Anchor state outside ledger | failed anchor updates `anchor_runs` only; success appends immutable event |
 | I-5 UTF-8 pre-head anchor | Memo text regex/UTF-8 tests; pre-anchor-head scenario |
 | I-6 Wallet split | secret scans; anchor code loads only anchor key; treasury private key absent |
-| I-7 Vault privacy boundary | schema denylist; binding allowlist; public schema omits handles |
+| I-7 No plaintext Telegram identity at rest | schema denylist for `telegram_user_id`/`telegram_chat_id`/standalone `chat_id`; binding allowlist; HMAC stability and different-key tests; chat-route encryption round-trip/failure tests; public/log redaction tests |
 | I-8 No sensitive public fields by default | public API contract tests for no donor memos or internal handles |
 | I-9 Public verification | `/api/ledger-events` export recomputes exact head; Solana Memo comparison |
 | I-10 Ingest reliability | auth header, ACK-fast, duplicate replay, reconciliation, finality/retry tests |
@@ -257,12 +303,18 @@ pnpm blockchain:local-validator
 Live smoke commands must fail closed unless their required environment variables
 are present and the cluster is explicit.
 
+Bot privacy tests use generated local test keys for `TG_ID_HMAC_KEY` and
+`TG_CHAT_ENC_KEY` in PR CI. They must never require real Telegram bot secrets,
+real Telegram user IDs, or production chat routes.
+
 ## What green CI means
 
 Green PR CI means:
 
 - unit, integration, invariant, and parity tests pass;
 - public API contract tests prove sensitive fields are absent;
+- bot identity storage tests prove HMAC refs, encrypted chat routes, schema
+  denylist, and log/API redaction behavior;
 - local-validator blockchain tests pass or are explicitly skipped because the
   toolchain is unavailable;
 - no paid funds, real mainnet secrets, or production treasury key are required.

@@ -330,7 +330,12 @@ Commands:
 - `/card` — create a pending card request.
 - `/help` — static help text.
 
-The bot stores Telegram IDs only in `bot-db`.
+For `/start` and `/card`, the bot receives Telegram user and chat identifiers
+from the incoming update, computes
+`telegram_user_ref = HMAC-SHA256(TG_ID_HMAC_KEY, "tg-user:" + telegram_user_id)`,
+encrypts the Telegram `chat_id` into `telegram_chat_id_enc` with authenticated
+encryption under `TG_CHAT_ENC_KEY`, and stores no plaintext Telegram IDs or chat
+IDs at rest.
 
 ### `POST /tg/internal/send-code`
 
@@ -348,10 +353,13 @@ Request:
 
 Effect:
 
-1. Look up `telegram_user_id` in `bot-db` by `opaque_id`.
+1. Look up the handle row in `bot-db` by `opaque_id`.
 2. Verify the conversation belongs to the same `opaque_id`.
-3. Send the code through Telegram.
-4. Store delivery status plus code hash/last4. Do not retain the full code after
+3. Decrypt `telegram_chat_id_enc` with `TG_CHAT_ENC_KEY` and the recorded
+   `telegram_chat_key_version` only in memory.
+4. Send the code through Telegram `sendMessage`.
+5. Do not log plaintext `chat_id` or Telegram user identifiers.
+6. Store delivery status plus code hash/last4. Do not retain the full code after
    delivery. If retry requires temporary storage, store an encrypted value with a
    short TTL and delete it after success or expiry.
 
