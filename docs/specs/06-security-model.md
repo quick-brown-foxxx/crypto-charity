@@ -51,8 +51,10 @@ The operator tries to map a public record or bot handle to a Telegram account.
 - **Mitigation:** `vault-db` stores no Telegram user ID, real name, phone, or
   email. `bot-db` stores no plaintext Telegram user IDs or chat IDs; it stores
   `telegram_user_ref` as a keyed HMAC and `telegram_chat_id_enc` as an encrypted
-  chat route. Public donor APIs use `public_beneficiary_ref` or omit beneficiary
-  reference.
+  chat route. Public donor APIs use server-generated `public_beneficiary_ref`
+  values matching `^benpub_[A-Z0-9]{16}$` or omit beneficiary reference. The
+  write API rejects caller-supplied string refs instead of comparing them to
+  `bot-db` private handles or opaque IDs.
 - **Limit:** the bot runtime still receives Telegram identifiers from incoming
   updates and must decrypt the chat route to deliver messages. This is reduced
   operator visibility and DB-only breach resistance, not anonymity from Telegram
@@ -95,8 +97,11 @@ An attacker gets `OPERATOR_TOKEN`.
   handle fields are `telegram_user_ref` and `telegram_chat_id_enc`, plus
   `telegram_chat_key_version` for encryption-key rotation.
 - Beneficiary handles are sensitive pseudonymous data. They can appear in
-  bot/operator workflows, but public APIs should use `public_beneficiary_ref` or
-  no reference.
+  bot/operator workflows, but public APIs should use server-generated
+  `public_beneficiary_ref` values or no reference. These refs are
+  cryptographically random, never derived from handles, opaque IDs, Telegram
+  IDs/chat IDs, phone/email/contact values, or any private identifier; the
+  `benpub_` prefix is reserved for public refs, not bot/internal handles.
 - Donor memos are not exposed publicly by default, even if visible on-chain.
 - Gift-card codes are delivery secrets. Do not log them. Do not persist full
   codes after delivery.

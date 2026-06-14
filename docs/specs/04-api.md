@@ -11,6 +11,54 @@
 - USDC amounts are integer minor-unit strings. USDC has 6 decimals.
 - Public endpoints must not expose internal handles or donor memos by
   default.
+- Public beneficiary references are server-generated or absent. For
+  [`POST /api/disbursements`](#post-apidisbursements), callers may omit
+  `public_beneficiary_ref` or set it to `null`; caller-supplied strings are
+  rejected.
+
+## Standard error response
+
+Frontend consumers must be able to handle every non-2xx response with one
+structured shape:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request data.",
+    "request_id": "req_01J...",
+    "details": {
+      "field_errors": {
+        "receipt_ref": ["Use 4-64 letters, numbers, or hyphens."]
+      }
+    }
+  }
+}
+```
+
+Rules:
+
+- `error.code` is stable, machine-readable `UPPER_SNAKE_CASE`; UI logic branches
+  on this field, not on `message` text.
+- `message` is safe human copy and must not include stack traces, secrets,
+  provider raw payloads, token values, gift-card codes, Telegram identifiers, or
+  donor memos.
+- `request_id` is returned when available and may be shown to operators or donors
+  for support.
+- `details` is optional and must contain only public-safe validation or conflict
+  information.
+
+| Status | Typical code | Meaning |
+| --- | --- | --- |
+| 400 | `BAD_REQUEST` | Invalid JSON, unsupported query params, or malformed route input. |
+| 401 | `UNAUTHORIZED` | Missing/invalid operator, Helius, Telegram, or internal token. |
+| 403 | `FORBIDDEN` | Authenticated but not allowed for this action. |
+| 404 | `NOT_FOUND` | Resource or event does not exist. |
+| 409 | `CONFLICT` | Duplicate, already-published, or state conflict. |
+| 422 | `VALIDATION_ERROR` | Semantically invalid form/API input. |
+| 429 | `RATE_LIMITED` | Too many requests; retry later. |
+| 500 | `INTERNAL_ERROR` | Server bug or unexpected failure; details are hidden. |
+| 503 | `UNAVAILABLE` | Dependency or service temporarily unavailable. |
 
 ## Endpoint summary
 
@@ -28,6 +76,7 @@
 | POST | `/api/anchor/manual` | `OPERATOR_TOKEN` | `vault-api-write` | Trigger anchor run |
 | POST | `/webhook/helius` | configured `Authorization` | `vault-ingest` | Receive Helius events |
 | POST | `/tg/webhook` | Telegram secret token | `tg-bot` | Receive Telegram updates |
+| GET | `/tg/internal/pending-requests` | `OPERATOR_TOKEN` | `tg-bot` | List redacted pending bot requests |
 | POST | `/tg/internal/send-code` | `OPERATOR_TOKEN` | `tg-bot` | Send gift-card code by `opaque_id` |
 
 ## Public read endpoints
@@ -101,7 +150,7 @@ Response 200:
       "service": "Alter",
       "service_note": null,
       "receipt_ref": "ALTER-2026-06-14-A1B2C3",
-      "public_beneficiary_ref": "benpub_7G9Q2KX4",
+      "public_beneficiary_ref": "benpub_7G9Q2KX4N5P8R2T6",
       "purchased_at_utc": "2026-06-14T10:23:00Z",
       "recorded_at_utc": "2026-06-14T10:25:14Z"
     }
@@ -110,8 +159,9 @@ Response 200:
 }
 ```
 
-`public_beneficiary_ref` is a random public reference. It is not a Telegram
-handle and is safe to omit.
+`public_beneficiary_ref`, when present, is a server-generated public reference
+matching `^benpub_[A-Z0-9]{16}$`. It is never derived from an internal handle,
+Telegram identifier, contact value, or `opaque_id`.
 
 ### `GET /api/ledger-events?after_sequence_no=0&limit=500`
 
@@ -171,6 +221,58 @@ successful anchor, the verify page must explain that
 `latest_anchor.anchored_head_hash` is the head before the anchor event was
 inserted.
 
+### `GET /api/about`
+
+Response 200:
+
+```json
+{
+  "title": "Crypto Charity Vault",
+  "summary": "Transparent USDC donations for manually purchased therapy gift cards.",
+  "sections": [
+    {
+      "heading": "What this is",
+      "body": "A small public ledger for donations, disbursements, and verification anchors."
+    },
+    {
+      "heading": "What stays private",
+      "body": "Beneficiary names, contacts, Telegram identifiers, chat IDs, internal handles, donor memos, and gift-card codes are not public."
+    }
+  ],
+  "contact_url": "/contact",
+  "updated_at_utc": "2026-06-14T00:00:00Z"
+}
+```
+
+The response is server-owned static copy. It must not contain HTML from user or
+provider input, private beneficiary data, Telegram identifiers, internal
+handles, token values, or gift-card codes.
+
+### `GET /api/faq`
+
+Response 200:
+
+```json
+{
+  "items": [
+    {
+      "id": "what-hashes-prove",
+      "question": "What do hashes prove?",
+      "answer": "They prove the public ledger history was not silently rewritten without changing the head hash."
+    },
+    {
+      "id": "what-receipts-do-not-prove",
+      "question": "What do receipt references prove?",
+      "answer": "They are public operator references, not automated proof that a provider receipt is genuine."
+    }
+  ],
+  "updated_at_utc": "2026-06-14T00:00:00Z"
+}
+```
+
+`items[].id` is stable lowercase kebab-case for anchors. FAQ copy is static,
+plain text, and must follow the same privacy exclusions as `/api/about`.
+
 ### `GET /api/health`
 
 Response 200:
@@ -206,7 +308,6 @@ Request:
   "service": "Alter",
   "service_note": null,
   "receipt_ref": "ALTER-2026-06-14-A1B2C3",
-  "public_beneficiary_ref": "benpub_7G9Q2KX4",
   "purchased_at_utc": "2026-06-14T10:23:00Z"
 }
 ```
@@ -218,8 +319,17 @@ Validation:
 - `service`: `Alter`, `Yasno`, `Zigmund`, or `Other`.
 - `service_note`: required only for `Other`, max 64 characters.
 - `receipt_ref`: `^[A-Za-z0-9-]{4,64}$`.
-- `public_beneficiary_ref`: random public reference or `null`; not a handle.
+- `public_beneficiary_ref`: optional. If omitted, `vault-api-write` generates a
+  fresh cryptographically random value matching `^benpub_[A-Z0-9]{16}$`. If
+  `null`, no public beneficiary reference is stored. Any caller-supplied string
+  is rejected with `422 VALIDATION_ERROR` and a field error; rejected values are
+  not logged.
 - `purchased_at_utc`: ISO-8601 UTC, not in the future.
+
+The API must not compare supplied strings to private handles or opaque IDs,
+because `vault-api-write` must not depend on `bot-db` private data. The server
+must never derive `public_beneficiary_ref` from handles, opaque IDs, Telegram
+IDs/chat IDs, phone/email/contact values, or any private identifier.
 
 Response 200:
 
@@ -228,9 +338,13 @@ Response 200:
   "sequence_no": 90,
   "event_hash": "...64hex",
   "head_hash": "...64hex",
+  "public_beneficiary_ref": "benpub_7G9Q2KX4N5P8R2T6",
   "next_action": "send_code_to_beneficiary_via_bot"
 }
 ```
+
+If the request explicitly set `public_beneficiary_ref` to `null`, the response
+returns `"public_beneficiary_ref": null`.
 
 ### `POST /api/anchor/manual`
 
@@ -337,6 +451,47 @@ encrypts the Telegram `chat_id` into `telegram_chat_id_enc` with authenticated
 encryption under `TG_CHAT_ENC_KEY`, and stores no plaintext Telegram IDs or chat
 IDs at rest.
 
+### `GET /tg/internal/pending-requests?limit=50&cursor=<opaque>`
+
+Called by `/admin` so the operator can select a bot request without seeing
+Telegram identifiers.
+
+Authentication: `Authorization: Bearer <OPERATOR_TOKEN>`. Apply the same CORS,
+token logging, and rate-limit rules as other operator endpoints.
+
+Response 200:
+
+```json
+{
+  "items": [
+    {
+      "opaque_id": "ab12cd34...",
+      "conversation_id": 17,
+      "internal_handle": "therapy-request-a1",
+      "request_status": "pending",
+      "created_at_utc": "2026-06-14T10:10:00Z",
+      "updated_at_utc": "2026-06-14T10:10:00Z"
+    }
+  ],
+  "next_cursor": null
+}
+```
+
+Rules:
+
+1. Return only operator-actionable card requests, newest first. `limit` defaults
+   to 50 and is capped at 100.
+2. `request_status` is one of `pending`, `in_flight`, or `failed`. Delivered
+   conversations are excluded by default.
+3. `internal_handle` is optional and sensitive; it may be shown only inside
+   `/admin` to help the operator select the right request.
+4. The response must not include Telegram user IDs, Telegram chat IDs,
+   `telegram_user_ref`, encrypted chat routes, raw Telegram payloads, gift-card
+   codes, code hashes, code last4, donor memos, or private notes.
+5. Logs for this endpoint include request id, status, latency, and item count
+   only; they do not log handles, opaque IDs, conversation IDs, Telegram data, or
+   token values.
+
 ### `POST /tg/internal/send-code`
 
 Called by the operator UI after a disbursement record is appended.
@@ -358,7 +513,8 @@ Effect:
 3. Decrypt `telegram_chat_id_enc` with `TG_CHAT_ENC_KEY` and the recorded
    `telegram_chat_key_version` only in memory.
 4. Send the code through Telegram `sendMessage`.
-5. Do not log plaintext `chat_id` or Telegram user identifiers.
+5. Do not log plaintext `chat_id`, Telegram user identifiers, or the full
+   gift-card code.
 6. Store delivery status plus code hash/last4. Do not retain the full code after
    delivery. If retry requires temporary storage, store an encrypted value with a
    short TTL and delete it after success or expiry.

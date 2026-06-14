@@ -8,7 +8,7 @@
 
 | Concern | Choice | Why |
 | --- | --- | --- |
-| Static site | Cloudflare Pages | Works well for Vite/React, no idle cost. |
+| Web frontend | SvelteKit 2.x + Svelte 5 on Cloudflare Pages with `adapter-cloudflare` | Matches the project frontend standard, supports typed routes/load/actions, and keeps hosting on Cloudflare. |
 | Workers | Cloudflare Workers | Fits read API, write API, ingest, anchor, and bot webhooks. |
 | Ledger DB | Cloudflare D1 `vault-db` | SQLite-compatible, enough for MVP, simple migrations. |
 | Bot DB | Separate Cloudflare D1 `bot-db` | Structural privacy boundary for Telegram mapping. |
@@ -68,6 +68,14 @@ have the `vault-db` binding; it calls HTTP APIs when it needs vault actions.
 The treasury private key is intentionally absent from CI, Workers, repository
 files, and normal app runtime.
 
+Frontend public config may include only non-secret values: API base URLs when not
+same-origin, site URL, `SOLANA_CLUSTER`, `TREASURY_WALLET_ADDRESS`,
+`VAULT_USDC_ATA`, `USDC_MINT`, `ANCHOR_WALLET_ADDRESS`, and contact/report URLs.
+No `PUBLIC_` or checked-in config value may contain `OPERATOR_TOKEN`, bot
+secrets, Helius auth headers/API keys, Telegram identifiers, or gift-card codes.
+Authenticated write API CORS, when needed, must allow only the configured
+frontend origin.
+
 Telegram identity and route secrets are intentionally absent from PR CI,
 repository files, and public config. A `bot-db`-only leak exposes opaque IDs,
 handles, HMAC references, and encrypted chat routes, but not plaintext Telegram
@@ -104,7 +112,7 @@ Every transaction fetch used for ingestion or verification finality uses
 PR CI must not require paid funds, real mainnet secrets, or a funded mainnet
 wallet. It runs:
 
-1. TypeScript lint, format, typecheck, and unit tests.
+1. TypeScript lint, format, typecheck, SvelteKit `svelte-check`, and unit tests.
 2. Python lint, typecheck, and unit tests for verification/anchor tooling.
 3. D1 migration lint and schema invariant checks.
 4. Hash-chain parity tests.
@@ -119,7 +127,7 @@ with fake mocked tests.
 
 Runs after PR CI passes and applies production deploy steps:
 
-1. Build web and Workers.
+1. Build SvelteKit web and Workers.
 2. Deploy Workers and Pages.
 3. Apply D1 migrations.
 4. Smoke `GET /api/health` and `GET /api/verify`.

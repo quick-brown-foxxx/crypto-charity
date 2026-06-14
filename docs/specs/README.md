@@ -28,6 +28,9 @@ directory are the current technical design.
 | 07 | [`07-observability-and-ops.md`](07-observability-and-ops.md) | Monitoring, alerts, failure modes, and runbook pointers. |
 | 08 | [`08-testing-strategy.md`](08-testing-strategy.md) | Behavior proof, blockchain test tiers, and CI policy. |
 | 09 | [`09-decisions.md`](09-decisions.md) | Current decisions, explicit deferrals, and open questions. |
+| 10 | [`10-frontend-architecture.md`](10-frontend-architecture.md) | SvelteKit frontend stack, layers, validation, state, privacy, and gates. |
+| 11 | [`11-public-frontend-ux.md`](11-public-frontend-ux.md) | Public landing, donate, ledger, verify, FAQ/about/contact UX requirements. |
+| 12 | [`12-operator-frontend-ux.md`](12-operator-frontend-ux.md) | `/admin` operator UX, token handling, disbursement, anchors, and bot handoff. |
 
 ## Current design summary
 
@@ -37,16 +40,17 @@ directory are the current technical design.
 - **Anchoring:** the anchor wallet signs a Solana Memo instruction containing UTF-8 text `ccv-anchor:<64hex head_hash>`. The memo anchors the head before the anchor publication event.
 - **Wallet split:** the treasury wallet/ATA receives USDC and has no private key in CI or Workers. The anchor wallet holds only SOL for transaction fees.
 - **Ingest:** Helius webhooks authenticate by the configured `authHeader` echoed in `Authorization`, ACK quickly, store a durable inbox entry, and process/reconcile asynchronously.
-- **Privacy:** internal handles are sensitive pseudonymous data. Bot storage uses keyed HMAC Telegram user references and encrypted Telegram chat routes, not plaintext Telegram IDs. Public examples use `public_beneficiary_ref` or omit beneficiary references. Donor memos are not exposed publicly by default.
+- **Privacy:** internal handles are sensitive pseudonymous data. Bot storage uses keyed HMAC Telegram user references and encrypted Telegram chat routes, not plaintext Telegram IDs. Public examples use server-generated `public_beneficiary_ref` values or omit beneficiary references. Donor memos are not exposed publicly by default.
 
 ## Cross-reference summary
 
 | Product direction | Spec location |
 | --- | --- |
-| Solana + USDC wallet integration | `01-architecture.md`, `03-data-model.md`, `04-api.md` |
+| Solana + USDC wallet integration | `01-architecture.md`, `03-data-model.md`, `04-api.md`, `11-public-frontend-ux.md` |
 | Tamper-evident donor ledger + daily anchor | `02-invariants.md`, `03-data-model.md`, `04-api.md`, `05-hosting-and-deploy.md` |
-| Public donor-facing site | `00-overview.md`, `04-api.md` |
-| Manual operator conversion loop | `00-overview.md`, `01-architecture.md`, `04-api.md` |
+| Public donor-facing site | `00-overview.md`, `04-api.md`, `10-frontend-architecture.md`, `11-public-frontend-ux.md` |
+| Manual operator conversion loop | `00-overview.md`, `01-architecture.md`, `04-api.md`, `12-operator-frontend-ux.md` |
 | Telegram bot beneficiary channel | `01-architecture.md`, `03-data-model.md`, `04-api.md`, `05-hosting-and-deploy.md`, `06-security-model.md`, `08-testing-strategy.md`, `09-decisions.md` |
-| Privacy and honest limits | `06-security-model.md`, `07-observability-and-ops.md` |
-| Blockchain verification and test tiers | `08-testing-strategy.md` |
+| Frontend stack and browser boundaries | `10-frontend-architecture.md`, `11-public-frontend-ux.md`, `12-operator-frontend-ux.md` |
+| Privacy and honest limits | `06-security-model.md`, `07-observability-and-ops.md`, `11-public-frontend-ux.md`, `12-operator-frontend-ux.md` |
+| Blockchain verification and test tiers | `08-testing-strategy.md`, `11-public-frontend-ux.md` |

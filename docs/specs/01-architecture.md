@@ -8,8 +8,9 @@
 
 This document explains how components fit together. The database schemas are in
 [`03-data-model.md`](03-data-model.md), the HTTP contract is in
-[`04-api.md`](04-api.md), and the rules are in
-[`02-invariants.md`](02-invariants.md).
+[`04-api.md`](04-api.md), the frontend architecture is in
+[`10-frontend-architecture.md`](10-frontend-architecture.md), and the rules are
+in [`02-invariants.md`](02-invariants.md).
 
 ## System shape
 
@@ -17,7 +18,7 @@ This document explains how components fit together. The database schemas are in
               Public donor surface                    Operator surface
               read-only, no auth                       authenticated
 ┌────────────────────────────────────┐      ┌───────────────────────────────┐
-│ Cloudflare Pages                   │      │ /admin operator UI             │
+│ SvelteKit Cloudflare Pages         │      │ /admin operator UI             │
 │ - landing, donate, ledger, verify  │      │ - record disbursement          │
 │ - about, FAQ, contact              │      │ - trigger manual anchor         │
 └──────────────────┬─────────────────┘      └──────────────┬────────────────┘
@@ -78,8 +79,11 @@ This document explains how components fit together. The database schemas are in
 
 ## Components
 
-- **`apps/web`** — static Vite + React site. Renders public API data and
-  verification instructions. No secrets.
+- **`apps/web`** — SvelteKit 2.x + Svelte 5 app deployed to Cloudflare Pages via
+  `adapter-cloudflare`. Renders public API data, verification instructions, and
+  the `/admin` operator UI. Public bundles contain no secrets; the MVP operator
+  token is memory-only in the browser and sent only to authenticated write
+  endpoints.
 - **`apps/api-read`** — read-only Worker serving public JSON and ledger export.
 - **`apps/api-write`** — operator-authenticated Worker for disbursements and
   manual anchor trigger. All donor-visible writes go through the ledger append
@@ -146,7 +150,7 @@ signals, not the source of truth for Solana history.
    to `/admin`.
 3. The operator buys the gift card manually.
 4. The operator records amount, count, service, receipt reference, purchase
-   time, and a random `public_beneficiary_ref` or no public reference.
+   time, and a server-generated `public_beneficiary_ref` or no public reference.
 5. `apps/api-write` appends a `disbursement_recorded` event.
 6. The bot sends the code to the beneficiary. After delivery, bot storage keeps
    only delivery status plus code hash/last4, or a short-TTL encrypted value if

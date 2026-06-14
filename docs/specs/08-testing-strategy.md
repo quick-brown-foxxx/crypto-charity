@@ -21,7 +21,7 @@
 | Unit | vitest / pytest | PR CI | Canonical JSON, hash preimages, schema validation, Memo text builder. |
 | Worker integration | vitest + miniflare/local D1 | PR CI | HTTP contracts, ledger appends, durable inbox behavior. |
 | Cross-language parity | pytest + vitest | PR CI | TypeScript and Python hash/verify logic match. |
-| Browser smoke | Playwright | PR CI if stable | Public site renders seeded data and verify instructions. |
+| Browser smoke | SvelteKit + Playwright | PR CI if stable | Public site renders seeded data, donate warnings, ledger, verify instructions, and `/admin` safe states. |
 | Local-validator blockchain | Solana local validator | PR CI if tooling permits | Real Memo and SPL token flows without secrets or funds. |
 | Devnet live smoke | Solana devnet | manual/nightly, env-gated | Real devnet send/fetch/finality behavior. |
 | Helius webhook contract | Helius + public HTTPS staging | manual/nightly, env-gated | Provider auth header, payload shape, retry/duplicate behavior. |
@@ -257,6 +257,93 @@ And no plaintext Telegram `chat_id` appears
 And any bot-internal correlation uses a redacted or truncated `telegram_user_ref`
 ```
 
+Scenario: pending request endpoint exposes only operator-safe fields
+
+```gherkin
+Given a beneficiary has a pending card request with stored bot routing data
+When `/tg/internal/pending-requests` is called with a valid operator token
+Then each row contains `opaque_id`, `conversation_id`, request status, timestamps, and optional internal handle only
+And no Telegram user ID, Telegram chat ID, `telegram_user_ref`, encrypted chat route, raw Telegram payload, gift-card code, code hash, or code last4 appears
+```
+
+Scenario: send-code redacts value-bearing codes outside the browser
+
+```gherkin
+Given a valid `POST /tg/internal/send-code` request with a gift-card code
+When Worker logs, bot storage, public API responses, and operator-safe responses are inspected after delivery
+Then the full gift-card code does not appear
+And durable bot storage contains only delivery status plus code hash/last4
+And any encrypted retry value has a short TTL and is deleted after success or expiry
+```
+
+### Feature: Public beneficiary reference safety
+
+Scenario: disbursement write generates or omits public beneficiary refs safely
+
+```gherkin
+Given a valid `POST /api/disbursements` request without `public_beneficiary_ref`
+When the write API appends the disbursement event
+Then the response and ledger payload contain a fresh `^benpub_[A-Z0-9]{16}$` value
+When the request explicitly sends `public_beneficiary_ref: null`
+Then the response and ledger payload contain no public beneficiary reference
+When the request sends any string `public_beneficiary_ref`
+Then the API returns `422 VALIDATION_ERROR`
+And the rejected string is not logged
+```
+
+### Feature: Public frontend trust UX
+
+Scenario: landing renders a public-safe recent history preview
+
+```gherkin
+Given seeded public totals, donation, disbursement, and anchor events
+When a donor opens the landing page
+Then the page shows total in, total out, balance, and recent public history
+And no Telegram IDs, internal handles, donor memos, or gift-card codes appear
+And the page links to donate, ledger, verify, FAQ, and contact routes
+```
+
+Scenario: donate page does not treat wallet success as canonical
+
+```gherkin
+Given the donate page shows the configured Solana USDC mint and vault ATA
+When a browser wallet reports a successful transaction signature
+Then the UI shows the donation as pending until a matching ledger event exists
+And the copy says backend ingest or reconciliation must confirm finality
+```
+
+Scenario: verify page explains pre-anchor-head semantics
+
+```gherkin
+Given `/api/verify` returns a latest anchor
+When a donor opens `/verify`
+Then the page shows the head hash, Memo text, transaction link, and export instructions
+And it explains that the Memo commits to the pre-anchor head
+And it explains that the anchor event is covered by a later anchor
+```
+
+### Feature: Operator frontend safety
+
+Scenario: admin token is memory-only
+
+```gherkin
+Given an operator enters a valid token on `/admin`
+When the page reloads
+Then the operator must enter the token again
+And browser storage contains no operator token
+```
+
+Scenario: disbursement and bot delivery are distinct states
+
+```gherkin
+Given a valid disbursement form and gift-card code
+When the operator records the disbursement
+Then the UI shows the ledger sequence number and event hash
+When the operator sends the code through the bot handoff
+Then the UI shows delivery status separately
+And the plaintext code is cleared after successful delivery
+```
+
 ## Per-invariant mapping
 
 | Invariant | Tests |
@@ -267,8 +354,8 @@ And any bot-internal correlation uses a redacted or truncated `telegram_user_ref
 | I-4 Anchor state outside ledger | failed anchor updates `anchor_runs` only; success appends immutable event |
 | I-5 UTF-8 pre-head anchor | Memo text regex/UTF-8 tests; pre-anchor-head scenario |
 | I-6 Wallet split | secret scans; anchor code loads only anchor key; treasury private key absent |
-| I-7 No plaintext Telegram identity at rest | schema denylist for `telegram_user_id`/`telegram_chat_id`/standalone `chat_id`; binding allowlist; HMAC stability and different-key tests; chat-route encryption round-trip/failure tests; public/log redaction tests |
-| I-8 No sensitive public fields by default | public API contract tests for no donor memos or internal handles |
+| I-7 No plaintext Telegram identity at rest | schema denylist for `telegram_user_id`/`telegram_chat_id`/standalone `chat_id`; binding allowlist; HMAC stability and different-key tests; chat-route encryption round-trip/failure tests; public/log redaction tests; pending-request response redaction tests |
+| I-8 No sensitive public fields by default | public API contract tests for no donor memos or internal handles; `public_beneficiary_ref` generation/null/reject-string contract tests; send-code log/storage redaction tests for gift-card codes |
 | I-9 Public verification | `/api/ledger-events` export recomputes exact head; Solana Memo comparison |
 | I-10 Ingest reliability | auth header, ACK-fast, duplicate replay, reconciliation, finality/retry tests |
 
@@ -293,12 +380,18 @@ And any bot-internal correlation uses a redacted or truncated `telegram_user_ref
 Exact command names may evolve with the repo, but the proof set remains:
 
 ```sh
-pnpm test
+pnpm check
+pnpm lint
+pnpm format:check
 pnpm exec vitest run
+pnpm exec playwright test
+pnpm build
 pytest
-pnpm e2e:smoke
 pnpm blockchain:local-validator
 ```
+
+`pnpm check` runs SvelteKit type generation plus `svelte-check`; browser tests
+run against a built preview server, not an untyped development-only path.
 
 Live smoke commands must fail closed unless their required environment variables
 are present and the cluster is explicit.
@@ -313,6 +406,8 @@ Green PR CI means:
 
 - unit, integration, invariant, and parity tests pass;
 - public API contract tests prove sensitive fields are absent;
+- SvelteKit check/lint/build and browser tests prove core public and operator
+  routes render correct states without sensitive fields;
 - bot identity storage tests prove HMAC refs, encrypted chat routes, schema
   denylist, and log/API redaction behavior;
 - local-validator blockchain tests pass or are explicitly skipped because the

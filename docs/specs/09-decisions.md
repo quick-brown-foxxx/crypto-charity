@@ -85,13 +85,17 @@
 - **Reasoning:** Helius expects fast `200` responses; durable async processing
   handles retries and duplicate replay safely.
 
-### Public beneficiary references are random
+### Public beneficiary references are server-generated
 
 - **Where:** `03-data-model.md`, `04-api.md`, `06-security-model.md`.
-- **Decision:** public APIs use `public_beneficiary_ref` or no reference, not
-  Telegram handles.
+- **Decision:** public APIs use server-generated `public_beneficiary_ref` values
+  or no reference. For `POST /api/disbursements`, callers may omit the field for
+  generation or set it to `null`; caller-supplied strings are rejected with
+  `422 VALIDATION_ERROR`.
 - **Reasoning:** handles are sensitive pseudonymous data and should not become a
-  public tracking key.
+  public tracking key. `vault-api-write` is structurally separated from `bot-db`,
+  so the safe MVP contract does not try to compare submitted refs with private
+  handles or opaque IDs.
 
 ### Telegram bot identity uses HMAC refs and encrypted chat routes
 
@@ -114,11 +118,17 @@
   encrypted storage is allowed only with short TTL for retry.
 - **Reasoning:** a full code is value-bearing secret data.
 
-### Frontend framework is React + Vite + TypeScript
+### Frontend framework is SvelteKit + Svelte 5 + TypeScript
 
-- **Where:** hosting and deployment.
-- **Decision:** use a static React/Vite site on Cloudflare Pages.
-- **Reasoning:** mature ecosystem, simple hosting, no server-side rendering need.
+- **Where:** `05-hosting-and-deploy.md`, `10-frontend-architecture.md`,
+  `11-public-frontend-ux.md`, `12-operator-frontend-ux.md`.
+- **Decision:** use SvelteKit 2.x with Svelte 5 runes, strict TypeScript,
+  `adapter-cloudflare`, `pnpm`, `svelte-check`, ESLint/Prettier, Superforms +
+  Valibot, Bits UI + shadcn-svelte, Playwright, and Vitest.
+- **Reasoning:** aligns this repo with the durable project proposal at
+  `/home/lord/Projects/myai/docs/proposals/sveltekit-as-default-web-framework.md`:
+  typed routes/load/actions, explicit reactivity, strong boundary validation,
+  Cloudflare deployment fit, and an agent-friendly standard library.
 
 ### Two D1 databases
 
@@ -155,9 +165,13 @@ receipt evidence.
 
 ### How stable should `public_beneficiary_ref` be?
 
-Default: generate a new random public reference per disbursement or request, not
-a permanent per-person reference. Revisit if donors need longitudinal aggregate
-counts without exposing handles.
+Default: `vault-api-write` generates a fresh `^benpub_[A-Z0-9]{16}$`
+public reference per disbursement when `POST /api/disbursements` omits
+`public_beneficiary_ref`, or stores no public reference when the caller sends
+`null`. Do not accept caller strings or create a permanent per-person reference.
+If bot conversation state stores this value, it stores only the server-generated
+value returned by the disbursement write, never request or operator input.
+Revisit if donors need longitudinal aggregate counts without exposing handles.
 
 ### How often should reconciliation run?
 
