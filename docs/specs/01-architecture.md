@@ -98,8 +98,26 @@ in [`02-invariants.md`](02-invariants.md).
   encrypted chat-route storage.
 - **`packages/vault-core`** — TypeScript event schemas, canonical JSON,
   hash-chain verification, Solana Memo builder, and public verification logic.
-- **`tools/anchor-job`** — optional Python backup/manual anchor tool with the
-  same canonical JSON and Memo rules.
+- **`packages/vault-db`** — shared Drizzle ORM schema definitions and D1 query
+  helpers for `vault-db`.
+- **`packages/bot-crypto`** — HMAC and authenticated-encryption helpers for
+  Telegram identity and chat-route storage.
+- **`tools/anchor-job`** — optional TypeScript backup/manual anchor CLI. Reuses
+  `packages/vault-core` and the same `@solana/web3.js` packages as
+  `apps/anchor-cron`.
+
+## Backend stack
+
+| Concern | Choice | Rationale |
+| --- | --- | --- |
+| Monorepo / package manager | `pnpm` workspaces | Same toolchain for frontend and backend. |
+| Runtime / hosting | Cloudflare Workers via `wrangler` | Edge-native, binds D1/KV/Secrets in-process, fits the existing deployment model. |
+| HTTP routing | **Hono** with `@hono/zod-validator` | Edge-native, TypeScript-first, tiny bundle, Cloudflare-recommended. NestJS/Express/Fastify are avoided because they target long-running Node.js servers and require heavy `nodejs_compat` shims. |
+| Validation / schemas | **Zod** | Schema-first boundary validation; schemas live in `packages/vault-core` and can be shared with the frontend. |
+| Database access | **Drizzle ORM** with D1 driver | Native D1 support, SQL-first type-safe queries, tiny runtime, migration discipline via `drizzle-kit`. Prisma is avoided because its D1 adapter is newer/heavier and a classic Prisma client does not run on Workers. |
+| Solana SDK | `@solana/web3.js` v2 + `@solana/spl-token` | TypeScript-native packages reused across Workers, scripts, and tests. |
+| Errors / expected failures | Explicit `Result<T, E>` or discriminated unions (e.g. `neverthrow`) | Engineering-principles aligned; transport layer converts, business logic returns. |
+| Logging | Structured JSON | Compatible with Cloudflare Workers observability; no plaintext secrets. |
 
 ## Wallet model
 

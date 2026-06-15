@@ -18,9 +18,9 @@
 
 | Level | Tooling | CI policy | What it proves |
 | --- | --- | --- | --- |
-| Unit | vitest / pytest | PR CI | Canonical JSON, hash preimages, schema validation, Memo text builder. |
-| Worker integration | vitest + miniflare/local D1 | PR CI | HTTP contracts, ledger appends, durable inbox behavior. |
-| Cross-language parity | pytest + vitest | PR CI | TypeScript and Python hash/verify logic match. |
+| Unit | vitest | PR CI | Canonical JSON, hash preimages, schema validation, Memo text builder. |
+| Worker integration | vitest + wrangler unstable_dev / miniflare / local D1 | PR CI | HTTP contracts, ledger appends, durable inbox behavior. |
+| Public verification | vitest + TypeScript verify script | PR CI | TypeScript verification script and public export recompute the same head hash and match known Solana anchors. |
 | Browser smoke | SvelteKit + Playwright | PR CI if stable | Public site renders seeded data, donate warnings, ledger, verify instructions, and `/admin` safe states. |
 | Local-validator blockchain | Solana local validator | PR CI if tooling permits | Real Memo and SPL token flows without secrets or funds. |
 | Devnet live smoke | Solana devnet | manual/nightly, env-gated | Real devnet send/fetch/finality behavior. |
@@ -350,7 +350,7 @@ And the plaintext code is cleared after successful delivery
 | --- | --- |
 | I-1 Append-only ledger | migration/static SQL check for no `UPDATE`/`DELETE` on `ledger_events`; correction event test |
 | I-2 Single chain | mixed-event round trip, monotonic sequence checks |
-| I-3 Payload-committing hash | payload mutation breaks chain; TS/Python canonical parity |
+| I-3 Payload-committing hash | payload mutation breaks chain; canonical JSON round-trip parity across packages and scripts |
 | I-4 Anchor state outside ledger | failed anchor updates `anchor_runs` only; success appends immutable event |
 | I-5 UTF-8 pre-head anchor | Memo text regex/UTF-8 tests; pre-anchor-head scenario |
 | I-6 Wallet split | secret scans; anchor code loads only anchor key; treasury private key absent |
@@ -386,7 +386,7 @@ pnpm format:check
 pnpm exec vitest run
 pnpm exec playwright test
 pnpm build
-pytest
+pnpm anchor-job --dry-run verify
 pnpm blockchain:local-validator
 ```
 

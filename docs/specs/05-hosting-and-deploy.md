@@ -121,11 +121,10 @@ PR CI must not require paid funds, real mainnet secrets, or a funded mainnet
 wallet. It runs:
 
 1. TypeScript lint, format, typecheck, SvelteKit `svelte-check`, and unit tests.
-2. Python lint, typecheck, and unit tests for verification/anchor tooling.
-3. D1 migration lint and schema invariant checks.
-4. Hash-chain parity tests.
-5. Local-validator blockchain tests if the toolchain is available in CI.
-6. Browser smoke tests against local or seeded data.
+2. D1 migration lint and schema invariant checks.
+3. Hash-chain canonical JSON and verification script tests.
+4. Local-validator blockchain tests if the toolchain is available in CI.
+5. Browser smoke tests against local or seeded data.
 
 If local Solana tooling is not available, PR CI reports the local-validator
 blockchain suite as skipped with a clear reason; it does not silently replace it

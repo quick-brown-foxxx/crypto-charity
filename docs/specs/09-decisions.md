@@ -143,6 +143,26 @@
   protect against full Cloudflare account compromise or account-admin misuse, and
   the product must not claim that level of anonymity.
 
+### Backend framework and data access
+
+- **Where:** `01-architecture.md`, `04-api.md`, `05-hosting-and-deploy.md`,
+  `08-testing-strategy.md`.
+- **Decision:** all backend Workers use **Hono** for HTTP routing,
+  **Zod** for request/response validation, and **Drizzle ORM** with the D1 driver
+  for database access. The monorepo uses **pnpm** and **TypeScript strict** for
+  all backend code.
+- **Reasoning:**
+  - Hono is edge-native, TypeScript-first, has a tiny bundle footprint, and is
+    recommended by Cloudflare for Workers. NestJS, Express, and Fastify target
+    long-running Node.js servers and require heavy `nodejs_compat` shims.
+  - Zod gives schema-first boundary validation; schemas can be shared with the
+    frontend via `packages/vault-core`.
+  - Drizzle has native D1 support, is SQL-first, type-safe, and much lighter
+    than Prisma. Prisma on Workers only works through a newer D1 adapter and is
+    overkill for the small append-only ledger schema.
+  - One language, one package manager, and one test runner keep the backend
+    consistent with the frontend and reduce operational overhead.
+
 ## Explicit deferrals
 
 | Item | Why deferred | Trigger to revisit |

@@ -19,7 +19,7 @@ contracts are in [`04-api.md`](04-api.md).
 | Runtime/hosting | `@sveltejs/adapter-cloudflare` on Cloudflare Pages | Deploy as the web surface for public pages and `/admin`; API authority stays in Workers. |
 | Language | TypeScript strict | No loose `any`; generated route types are part of the contract. |
 | Package manager | `pnpm` | Do not introduce npm/yarn lockfiles. |
-| Validation/forms | Valibot + Superforms | Validate route params, API responses, and forms at boundaries. |
+| Validation/forms | Valibot + Superforms (frontend); Zod (API contracts) | Validate route params, API responses, and forms at boundaries. The frontend may import read-only Zod schemas from `packages/vault-core` for API contract decoding, but it must never import backend internals or database modules. |
 | UI primitives | Bits UI + shadcn-svelte | Own copied component styling; do not build ad hoc accessible primitives. |
 | I18n | Russian-first copy; Paraglide when a second locale ships | Do not hand-roll locale routing if multi-locale becomes active. |
 | Tests | Vitest + Playwright | Unit tests for pure transforms; browser tests for public and operator flows. |

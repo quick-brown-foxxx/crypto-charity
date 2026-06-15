@@ -170,8 +170,8 @@ transactions against the pre-anchor heads.
 
 - **Enforced by:** `/api/ledger-events` or equivalent export endpoint and
   public verification scripts.
-- **Test:** TypeScript and Python verification scripts produce the same head
-  from public exports and match known Solana anchors.
+- **Test:** TypeScript verification script and public export recompute the same
+  head hash and match known Solana anchors.
 
 ### I-10: Blockchain ingest is duplicate-safe and eventually reconcilable
 
@@ -213,5 +213,5 @@ account history.
 | I-6 | secret allowlists, wallet role split | secret scans, anchor-key-only tests |
 | I-7 | D1 separation, binding allowlist, bot schema denylist, HMAC/encryption helpers | schema/binding tests, HMAC stability tests, chat-route encryption tests, log/API redaction tests |
 | I-8 | public schemas | public response contract tests |
-| I-9 | public export and scripts | TS/Python verify script tests |
+| I-9 | public export and scripts | TypeScript verify script tests |
 | I-10 | durable inbox, finality filters | webhook/reconciliation contract tests |

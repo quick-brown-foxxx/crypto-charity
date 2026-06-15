@@ -208,8 +208,7 @@ Response 200:
   },
   "previous_anchors": [],
   "instructions": {
-    "typescript": "npx tsx apps/web/scripts/verify.ts --api https://<host>",
-    "python": "uv run --directory apps/web/scripts python -m verify_chain --api https://<host>"
+    "typescript": "npx tsx apps/web/scripts/verify.ts --api https://<host>"
   },
   "anchor_stale": false
 }
