@@ -57,10 +57,10 @@ in [`02-invariants.md`](02-invariants.md).
 │ - reconciliation history      │                │ - Memo anchors             │
 └───────────────────────────────┘                └────────────────────────────┘
 
-              Beneficiary surface: separate privacy boundary
+              Beneficiary surface: separate app/db boundary
 ┌───────────────────────────────────────────────────────────────────────────┐
 │ tg-bot Worker                                                              │
-│ - separate Cloudflare account/boundary                                     │
+│ - same Cloudflare account, separate Worker + D1 binding                    │
 │ - bot-db binding only                                                      │
 │ - receives Telegram webhook                                                │
 │ - sends gift-card codes; does not retain full code after delivery          │
@@ -194,9 +194,9 @@ signals, not the source of truth for Solana history.
 | `ledger_events` hash chain | Public records have one append-only order and payload history. | Receipts are genuine. |
 | Solana Memo anchor | A specific pre-anchor head hash was publicly posted at a time. | The anchor event itself is included in that same transaction. |
 | Public verify/export | Donors can recompute what the site claims. | The operator bought a real gift card. |
-| Two database topology | Vault Workers cannot query bot identity mapping. | Telegram/provider metadata is anonymous to Telegram. |
+| Two database topology | Vault Workers cannot query bot identity mapping when bindings are kept separate. | Telegram/provider metadata is anonymous to Telegram. |
 | Bot identity storage | A `bot-db`-only leak does not reveal plaintext Telegram user IDs or chat IDs. | DB plus bot secrets, or bot runtime compromise, can still deanonymize or deliver. |
-| Bot account discipline | Operator does not casually read Telegram mapping. | State-adversary-grade protection. |
+| Bot binding discipline | Normal vault code does not casually read Telegram mapping. | State-adversary-grade or Cloudflare-account-compromise protection. |
 
 The architecture promises tamper-evidence and narrower operator visibility. It
 does not promise cryptographic proof of receipt truth or full anonymity.
@@ -213,5 +213,8 @@ does not promise cryptographic proof of receipt truth or full anonymity.
   an anchor-key compromise cannot spend donations.
 - **ACK-fast ingest.** Helius delivery reliability improves when the webhook
   endpoint returns `200` quickly and processes from a durable inbox.
-- **Two D1 databases.** The bot identity mapping is structurally outside the
-  vault database.
+- **One Cloudflare account, two D1 databases.** The rejected stronger option was
+  separate Cloudflare accounts for vault and bot. The accepted MVP and
+  foreseeable-future topology keeps one Cloudflare account for operational
+  simplicity, while preserving the important boundary with separate Workers,
+  separate D1 databases, separate secrets, and CI-enforced binding allowlists.

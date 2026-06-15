@@ -62,11 +62,12 @@ The operator tries to map a public record or bot handle to a Telegram account.
 
 ### T6: Bot compromise
 
-An attacker compromises the Telegram bot or bot Cloudflare account.
+An attacker compromises the Telegram bot runtime, bot secrets, or shared
+Cloudflare account.
 
-- **Mitigation:** separate account/bindings, bot token rotation, webhook secret
-  token, HMAC/encryption keys for stored Telegram identifiers, and minimal
-  gift-card code storage.
+- **Mitigation:** separate Worker/D1 bindings inside one Cloudflare account, bot
+  token rotation, webhook secret token, HMAC/encryption keys for stored Telegram
+  identifiers, and minimal gift-card code storage.
 - **Blast radius:** bot runtime compromise can see incoming Telegram identifiers,
   decrypt chat routes, and expose active requests. Treat internal handles and bot
   identity refs as compromised, rotate bot credentials, and rotate chat-route

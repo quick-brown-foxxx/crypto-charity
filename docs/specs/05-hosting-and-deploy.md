@@ -11,7 +11,7 @@
 | Web frontend | SvelteKit 2.x + Svelte 5 on Cloudflare Pages with `adapter-cloudflare` | Matches the project frontend standard, supports typed routes/load/actions, and keeps hosting on Cloudflare. |
 | Workers | Cloudflare Workers | Fits read API, write API, ingest, anchor, and bot webhooks. |
 | Ledger DB | Cloudflare D1 `vault-db` | SQLite-compatible, enough for MVP, simple migrations. |
-| Bot DB | Separate Cloudflare D1 `bot-db` | Structural privacy boundary for Telegram mapping. |
+| Bot DB | Separate Cloudflare D1 `bot-db` in the same Cloudflare account | Practical privacy boundary for Telegram mapping without multi-account ops overhead. |
 | Solana RPC / webhooks | Helius | Webhooks, RPC, devnet/mainnet endpoints, free tier suitable for MVP. |
 | CI/CD | GitHub Actions | Public repo CI is free; manual/live jobs can be separately gated. |
 | Anchor schedule | Cloudflare Cron plus operator-triggered backup run | Public liveness with an operator fallback through the same anchor code path. |
@@ -23,7 +23,13 @@ state handling.
 
 ## Cloudflare topology
 
-### Account A — Vault
+The accepted topology uses **one Cloudflare account** for both vault and bot
+resources. A previously considered two-account split was rejected for MVP and the
+foreseeable future because it adds operational overhead without enough benefit at
+this scale. The boundary is enforced with separate Workers, separate D1
+databases, separate secrets, and binding allowlist checks in CI.
+
+### Vault resources
 
 Resources:
 
@@ -36,15 +42,17 @@ Resources:
 - D1 database: `vault-db`.
 - Cron Trigger: daily anchor run, off the top of the hour.
 
-### Account B — Bot
+### Bot resources
 
 Resources:
 
 - Worker: `tg-bot` with `bot-db` only.
 - D1 database: `bot-db`.
 
-Account A Workers do not have the `bot-db` binding. The bot Worker does not
-have the `vault-db` binding; it calls HTTP APIs when it needs vault actions.
+Vault Workers do not receive the `bot-db` binding. The bot Worker does not
+receive the `vault-db` binding; it calls HTTP APIs when it needs vault actions.
+Cloudflare account admins can still access account resources, so this is not a
+state-adversary-grade isolation boundary.
 
 ## Secrets and environment variables
 

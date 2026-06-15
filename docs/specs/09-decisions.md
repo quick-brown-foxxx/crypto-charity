@@ -130,12 +130,18 @@
   typed routes/load/actions, explicit reactivity, strong boundary validation,
   Cloudflare deployment fit, and an agent-friendly standard library.
 
-### Two D1 databases
+### Single Cloudflare account with two D1 databases
 
 - **Where:** architecture, data model, security model.
 - **Decision:** `vault-db` and `bot-db` are separate databases with separate
-  Worker bindings.
-- **Reasoning:** the privacy boundary is structural, not only convention.
+  Worker bindings inside one Cloudflare account. The stronger two-account
+  Cloudflare split is rejected for MVP and the foreseeable future.
+- **Reasoning:** the important MVP boundary is preventing normal vault code from
+  reading bot identity mapping. Separate D1 databases, separate Worker bindings,
+  separate secrets, and CI binding checks provide that boundary with much less
+  operational overhead than managing two Cloudflare accounts. This does not
+  protect against full Cloudflare account compromise or account-admin misuse, and
+  the product must not claim that level of anonymity.
 
 ## Explicit deferrals
 

@@ -75,7 +75,8 @@ source of truth.
 
 ## Quarterly audits
 
-- Confirm Account A cannot read `bot-db` and Account B cannot read `vault-db`.
+- Confirm vault Workers do not have a `bot-db` binding and the bot Worker does
+  not have a `vault-db` binding.
 - Confirm the operator cannot access the bot Telegram account as an admin.
 - Confirm treasury private key material is absent from repo, CI, Workers, and
   logs.
