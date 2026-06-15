@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "tg-bot",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-15",
+  "d1_databases": [
+    {
+      "binding": "bot_db",
+      "database_name": "bot-db",
+      "database_id": "8a87d3ff-8689-4e77-a9c5-85b5ca19afd9"
+    }
+  ],
+  "secrets": {
+    "required": [
+      "OPERATOR_TOKEN",
+      "TG_BOT_TOKEN",
+      "TG_WEBHOOK_SECRET",
+      "TG_ID_HMAC_KEY",
+      "TG_CHAT_ENC_KEY"
+    ]
+  },
+  "observability": {
+    "enabled": true
+  }
+}

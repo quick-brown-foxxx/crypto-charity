@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "vault-api-read",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-15",
+  "d1_databases": [
+    {
+      "binding": "vault_db",
+      "database_name": "vault-db",
+      "database_id": "c6a73f10-728d-49e2-8d71-28ea3344a47b"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

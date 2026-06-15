@@ -1,5 +1,5 @@
 {
-  "name": "crypto-charity-vault",
+  "name": "open-care",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.6.0",
@@ -7,6 +7,8 @@
     "cloudflare-wrangler": "wrangler"
   },
   "devDependencies": {
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4",
     "wrangler": "^4"
   }
 }
