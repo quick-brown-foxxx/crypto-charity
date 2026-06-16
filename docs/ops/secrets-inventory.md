@@ -11,7 +11,7 @@ ready vs what still needs human action. AI coding agents should read this first.
 
 ### Secrets: All Pushed to Cloudflare Workers
 
-All 10 Worker secrets are set via `wrangler secret put` on the default
+All 8 Worker secrets are set via `wrangler secret put` on the default
 (staging) environment. No `--env production` secrets exist yet.
 
 | Secret                       | Workers                             | Status |
@@ -25,14 +25,18 @@ All 10 Worker secrets are set via `wrangler secret put` on the default
 | `TG_ID_HMAC_KEY`             | `tg-bot`                            | ✅ Set  |
 | `TG_CHAT_ENC_KEY`            | `tg-bot`                            | ✅ Set  |
 
-### CI/CD Secrets: Ready in GitHub Actions
+### CI/CD Secrets and Variables: Ready in GitHub Actions
 
-| Secret/Variable         | Location              | Status |
-| ----------------------- | --------------------- | ------ |
-| `CLOUDFLARE_API_TOKEN`  | GitHub Actions secret | ✅ Set  |
-| `CLOUDFLARE_ACCOUNT_ID` | GitHub Actions var    | ✅ Set  |
-| `HELIUS_API_KEY`        | GitHub Actions secret | ✅ Set  |
-| `ALLOW_MAINNET_SMOKE`   | Not set (default off) | 🔲 N/A  |
+| Secret/Variable           | Location              | Status |
+| ------------------------- | --------------------- | ------ |
+| `CLOUDFLARE_API_TOKEN`    | GitHub Actions secret | ✅ Set  |
+| `CLOUDFLARE_ACCOUNT_ID`   | GitHub Actions var    | ✅ Set  |
+| `HELIUS_API_KEY`          | GitHub Actions secret | ✅ Set  |
+| `DONOR_WALLET_SECRET`     | GitHub Actions secret | ✅ Set  |
+| `TELETHON_API_ID`         | GitHub Actions var    | ✅ Set  |
+| `TELETHON_API_HASH`       | GitHub Actions secret | ✅ Set  |
+| `TELETHON_SESSION_STRING` | GitHub Actions secret | ✅ Set  |
+| `ALLOW_MAINNET_SMOKE`     | Not set (default off) | 🔲 N/A  |
 
 ### Webhooks: Configured and Responding
 
@@ -68,9 +72,10 @@ Faucet alternatives when rate-limited: <https://www.devnetfaucet.org/>,
 | ------------------- | ----------------- | --------------------------------------------- |
 | `vault-ingest`      | ✅ Deployed (mock) | Route: `staging.open-care.org/webhook/helius` |
 | `tg-bot`            | ✅ Deployed (mock) | Route: `staging.open-care.org/tg/webhook`     |
+| `vault-api-write`   | ✅ Deployed (mock) | Has `OPERATOR_TOKEN` secret set               |
+| `vault-anchor-cron` | ✅ Deployed (mock) | Has `ANCHOR_WALLET_SECRET` and `HELIUS_RPC_URL` secrets set |
 | `vault-api-read`    | 🔲 Not deployed    | Wrangler config exists, no code               |
-| `vault-api-write`   | 🔲 Not deployed    | Wrangler config exists, no code               |
-| `vault-anchor-cron` | 🔲 Not deployed    | Wrangler config exists, no code               |
+| `vault-operator`    | 🔲 Not deployed    | Wrangler config exists, no code, no secrets   |
 
 ### What the AI Coding Agent Must Create
 
