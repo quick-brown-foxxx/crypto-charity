@@ -240,6 +240,89 @@ Local dev uses `.dev.vars` (gitignored) which `wrangler dev` reads automatically
 
 No `.env.staging` or `.env.prod` files exist — secrets for deployed environments go directly into Cloudflare/CI, never into repo files.
 
+## CLI commands for managing secrets
+
+### Cloudflare Worker secrets
+
+Set a secret (prompts for the value — paste it, no echo):
+
+```bash
+# Staging (default environment — no --env flag needed)
+(cd apps/ingest && pnpm exec wrangler secret put HELIUS_WEBHOOK_AUTH_HEADER)
+(cd apps/tg-bot && pnpm exec wrangler secret put TG_BOT_TOKEN)
+(cd apps/tg-bot && pnpm exec wrangler secret put TG_WEBHOOK_SECRET)
+(cd apps/tg-bot && pnpm exec wrangler secret put TG_ID_HMAC_KEY)
+(cd apps/tg-bot && pnpm exec wrangler secret put TG_CHAT_ENC_KEY)
+(cd apps/ingest && pnpm exec wrangler secret put HELIUS_RPC_URL)
+(cd apps/anchor-cron && pnpm exec wrangler secret put HELIUS_RPC_URL)
+(cd apps/anchor-cron && pnpm exec wrangler secret put ANCHOR_WALLET_SECRET)
+(cd apps/api-write && pnpm exec wrangler secret put OPERATOR_TOKEN)
+(cd apps/tg-bot && pnpm exec wrangler secret put OPERATOR_TOKEN)
+```
+
+List secrets for a Worker:
+
+```bash
+(cd apps/ingest && pnpm exec wrangler secret list)
+(cd apps/tg-bot && pnpm exec wrangler secret list)
+(cd apps/anchor-cron && pnpm exec wrangler secret list)
+(cd apps/api-write && pnpm exec wrangler secret list)
+```
+
+Delete a secret from a Worker:
+
+```bash
+(cd apps/<name> && pnpm exec wrangler secret delete SECRET_NAME)
+```
+
+For production, add `--env production` to every command above. Production secrets
+do not exist yet.
+
+### GitHub Actions secrets and variables
+
+Repository: `quick-brown-foxxx/open-care`
+
+**Secrets** (encrypted, not visible after set):
+
+```bash
+# Set a secret (prompts for value)
+gh2 secret set CLOUDFLARE_API_TOKEN -R quick-brown-foxxx/open-care
+gh2 secret set HELIUS_API_KEY -R quick-brown-foxxx/open-care
+gh2 secret set TELETHON_API_HASH -R quick-brown-foxxx/open-care
+gh2 secret set TELETHON_SESSION_STRING -R quick-brown-foxxx/open-care
+gh2 secret set DONOR_WALLET_SECRET -R quick-brown-foxxx/open-care
+
+# Set from a value directly (no prompt)
+gh2 secret set CLOUDFLARE_API_TOKEN -R quick-brown-foxxx/open-care --body "$TOKEN_VALUE"
+
+# List all secrets
+gh2 secret list -R quick-brown-foxxx/open-care
+
+# Delete a secret
+gh2 secret delete SECRET_NAME -R quick-brown-foxxx/open-care
+```
+
+**Variables** (plaintext, readable in GitHub UI):
+
+```bash
+# Set a variable (prompts for value)
+gh2 variable set CLOUDFLARE_ACCOUNT_ID -R quick-brown-foxxx/open-care
+gh2 variable set TELETHON_API_ID -R quick-brown-foxxx/open-care
+
+# Set from a value directly
+gh2 variable set CLOUDFLARE_ACCOUNT_ID -R quick-brown-foxxx/open-care --body "fc80d1f8195baa7bf1422b562f19b3eb"
+
+# List all variables
+gh2 variable list -R quick-brown-foxxx/open-care
+
+# Delete a variable
+gh2 variable delete VARIABLE_NAME -R quick-brown-foxxx/open-care
+```
+
+Note: `CLOUDFLARE_ACCOUNT_ID` and `TELETHON_API_ID` are non-secret values stored
+as **variables** (not secrets) because they are public config, not sensitive
+credentials. Everything else in the CI/CD table is a **secret**.
+
 ## Public config (non-secrets)
 
 These are safe in `.env.example`, frontend bundles, and repo.
