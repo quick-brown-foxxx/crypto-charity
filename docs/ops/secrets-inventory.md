@@ -384,7 +384,55 @@ Devnet wallets need SOL for transaction fees. Top up when balances run low.
 
 Faucets are rate-limited (typically 1 airdrop per address per 24h). Alternative faucets if the main one is down: <https://solfaucet.com>, <https://faucet.quicknode.com/solana/devnet>.
 
-ATAs (token accounts) are derived from the treasury/donor public keys and the devnet USDC mint. They don't need separate funding — they're created automatically when USDC is first sent to them.
+### Devnet USDC setup
+
+SOL faucet airdrops only give SOL (for transaction fees). USDC on devnet must be
+obtained separately:
+
+1. **Create ATAs (DONE)** (token accounts). Each wallet that holds USDC needs an
+   Associated Token Account. This is a one-time on-chain transaction:
+
+   ```bash
+   # Set Solana CLI to devnet
+   solana config set --url devnet
+
+   # Create the vault USDC ATA (fee paid by treasury keypair)
+   spl-token create-account 4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU \
+     --owner 8ufYGMkmAWeaYaM4CnANrxLxpQoaESKTGFN1BcgU71tG \
+     --url devnet --fee-payer /path/to/treasury-keypair.json
+
+   # Create the donor USDC ATA (fee paid by donor keypair)
+   spl-token create-account 4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU \
+     --owner 6dUAJZso3HThXQjReZKHWXNpMFYgZ8wbXu7GxXJ93hyL \
+     --url devnet --fee-payer /path/to/donor-keypair.json
+   ```
+
+   If you get "Account already exists", the ATA was already created — that's fine.
+
+2. **Claim devnet USDC (DONE)** from the Circle faucet. Go to
+   <https://faucet.circle.com/>, select "USDC" and "Solana Devnet", and paste
+   the **ATA address** (not the wallet address) of the donor:
+   `4tt1kW44W6ovHxiHV7tvD4o6Byr2NBCUoPQ97wGhDoiK`. The faucet gives ~20 USDC
+   every 2 hours per address.
+
+   You can also send USDC from donor to vault to test the donation flow:
+
+   ```bash
+   spl-token transfer 4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU 1 \
+     52MK6GwPWLvjfZuXm3K9fy9PozZAgUAKridA7ycSQUtG \
+     --url devnet --fee-payer /path/to/donor-keypair.json \
+     --owner /path/to/donor-keypair.json
+   ```
+
+3. **Verify balances (DONE)**
+
+   ```bash
+   spl-token accounts --owner 6dUAJZso3HThXQjReZKHWXNpMFYgZ8wbXu7GxXJ93hyL --url devnet
+   spl-token accounts --owner 8ufYGMkmAWeaYaM4CnANrxLxpQoaESKTGFN1BcgU71tG --url devnet
+   ```
+
+ATAs are derived from the wallet public key and the USDC mint address. Once
+created, they persist on-chain.
 
 | ATA            | Address                                        | Owner    |
 | -------------- | ---------------------------------------------- | -------- |
