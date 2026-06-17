@@ -7,7 +7,12 @@ import { errorResponse } from './errors';
  */
 export async function forwardToService(fetcher: Fetcher, request: Request): Promise<Response> {
   try {
-    return await fetcher.fetch(request);
+    // Clone and strip Authorization header before forwarding.
+    // Defense-in-depth: the OPERATOR_TOKEN should not travel further
+    // than the operator Worker, even over in-process service bindings.
+    const forwarded = new Request(request);
+    forwarded.headers.delete('Authorization');
+    return await fetcher.fetch(forwarded);
   } catch {
     return errorResponse('UNAVAILABLE', 'Downstream service unreachable.', 503);
   }

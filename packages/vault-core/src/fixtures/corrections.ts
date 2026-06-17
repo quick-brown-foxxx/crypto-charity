@@ -14,6 +14,6 @@ export const sampleCorrectionEvent: LedgerEventBase = {
   sequence_no: 7,
   event_type: "correction_recorded",
   payload: sampleCorrectionPayload,
-  prev_hash: "PLACEHOLDER_PREV_HASH_CORRECTION",
+  prev_hash: "0000000000000000000000000000000000000000000000000000000000000003",
   created_at_utc: "2026-06-16T10:00:00Z",
 };

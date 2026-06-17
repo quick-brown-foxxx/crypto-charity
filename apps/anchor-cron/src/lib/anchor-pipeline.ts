@@ -55,7 +55,7 @@ export async function runAnchor(
   const staleLocks = await findStaleLocks(db);
   for (const stale of staleLocks) {
     const connection = createConnection(env.HELIUS_RPC_URL);
-    await recoverStaleLock(db, connection, stale);
+    await recoverStaleLock(db, connection, stale, env.SOLANA_CLUSTER as Cluster);
   }
 
   // Step 1: Check for active lock (genuine concurrent run)

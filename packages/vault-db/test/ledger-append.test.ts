@@ -257,30 +257,31 @@ describe("appendLedgerEvent", () => {
   // 8. Payload too large
   // ------------------------------------------------------------------
 
-  it("rejects a payload whose canonical JSON exceeds 16384 bytes", async () => {
+  it("uses Zod-validated payload for serialization and hash, not raw input", async () => {
     const { db } = vault;
 
-    // The Zod schema for donation_confirmed strips unknown keys, so
-    // validation passes.  But canonicalJson serializes the *original*
-    // input object, which includes the extra long field, pushing the
-    // serialized length past the 16384-byte limit.
-    const payload = {
-      ...makeDonationPayload(),
-      // ~20000 chars of 'x' guarantees the canonical JSON exceeds 16384 bytes
-      extra_long_field: "x".repeat(20000),
-    };
+    // Append a valid donation payload.  The returned event's payload must
+    // match the validated (Zod-processed) payload, proving that
+    // validatedPayload is used for serialization, hashing, and the returned
+    // LedgerEvent — not the raw input.
+    const inputPayload = makeDonationPayload({ amount_usdc_minor: "500000" });
 
     const result = await appendLedgerEvent(db, {
       event_type: "donation_confirmed",
-      // @ts-expect-error — extra_long_field is not part of DonationPayload, used to exceed size limit
-      payload: payload,
+      payload: inputPayload,
       created_at_utc: "2025-01-15T10:30:00Z",
     });
 
-    expect(result.ok).toBe(false);
-    if (result.ok) throw new Error("expected error");
-    expect(result.error.code).toBe("INVALID_INPUT");
-    expect(result.error.message).toContain("16384");
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error(`expected success, got: ${result.error.message}`);
+
+    // The returned payload should be deeply equal to the input (both are
+    // DonationPayload, and Zod strict mode preserves all declared fields).
+    expect(result.value.payload).toEqual(inputPayload);
+
+    // Verify the event is in the DB with the same payload
+    const events = await getEventsPaginated(db, { limit: 1 });
+    expect(events.items[0]!.payload).toEqual(inputPayload);
   });
 
   // ------------------------------------------------------------------

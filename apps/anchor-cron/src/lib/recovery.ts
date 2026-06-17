@@ -3,27 +3,34 @@ import { anchorRuns } from '@open-care/vault-db/schema/vault-db';
 import { appendLedgerEvent } from '@open-care/vault-db';
 import type { VaultDb } from '@open-care/vault-db';
 import { parseAnchorMemo } from '@open-care/vault-core';
-// AnchorPayload and Cluster types are used implicitly through appendLedgerEvent's payload validation
-import { getTransaction } from './solana';
+import type { Cluster } from '@open-care/vault-core';
+import { getTransaction, getBalance } from './solana';
 import { utcNow } from './lock';
 import type { Connection } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 
 export async function recoverStaleLock(
   db: VaultDb,
   connection: Connection,
   staleRow: typeof anchorRuns.$inferSelect,
+  cluster: Cluster,
 ): Promise<void> {
   // If tx_signature exists, try to look it up
   if (staleRow.tx_signature) {
     const txResult = await getTransaction(connection, staleRow.tx_signature);
     if (txResult.ok && txResult.value !== null) {
-      // Transaction found and finalized — backfill
+      // Transaction found and finalized — backfill.
+      // Fetch anchor wallet balance for health monitoring.
+      const balanceResult = await getBalance(connection, new PublicKey(staleRow.anchor_wallet_address));
+      const solBalance = balanceResult.ok ? balanceResult.value : 0;
+
       await db
         .update(anchorRuns)
         .set({
           status: 'published',
           tx_signature: staleRow.tx_signature,
           locked_until_utc: null,
+          last_anchor_wallet_sol_lamports: solBalance,
           updated_at_utc: utcNow(),
         })
         .where(eq(anchorRuns.id, staleRow.id));
@@ -49,7 +56,7 @@ export async function recoverStaleLock(
               anchor_wallet_address: staleRow.anchor_wallet_address,
               memo_text: staleRow.memo_text,
               published_at_utc: publishedAtUtc,
-              cluster: 'devnet',
+              cluster,
             },
             created_at_utc: publishedAtUtc,
           });

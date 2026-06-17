@@ -11,7 +11,7 @@ const { handles } = botSchema;
  * Return the current UTC time as an ISO-8601 string with 'Z' suffix.
  */
 function utcNow(): string {
-  return new Date().toISOString();
+  return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
 /**
@@ -78,16 +78,15 @@ export async function handleStart(
       return `Sorry, @${arg} is already taken.`;
     }
 
-    // Generate new opaque_id and encrypt chat ID for the update
-    const opaqueId = crypto.randomUUID();
-    const encryptedChatId = await encryptChatId(encKey, 1, opaqueId, chatId);
+    // Preserve existing opaque_id to avoid FK violations on conversations table.
+    // Only update handle, chat encryption, and timestamp.
+    const encryptedChatId = await encryptChatId(encKey, 1, existingRow.opaque_id, chatId);
 
     // Update existing row
     await db
       .update(handles)
       .set({
         handle: arg,
-        opaque_id: opaqueId,
         telegram_chat_id_enc: encryptedChatId,
         telegram_chat_key_version: 1,
         last_seen_utc: utcNow(),

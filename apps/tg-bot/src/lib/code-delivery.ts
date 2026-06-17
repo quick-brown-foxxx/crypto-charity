@@ -40,7 +40,7 @@ export interface SendCodeSuccess {
  * Return the current UTC time as an ISO-8601 string with 'Z' suffix.
  */
 function utcNow(): string {
-  return new Date().toISOString();
+  return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
 /**
@@ -62,9 +62,9 @@ async function sha256Hex(input: string): Promise<string> {
 /**
  * Encrypt a gift card code for TTL-based retry storage.
  *
- * Uses AES-GCM with the same encryption key as chat IDs, but with a
- * different AAD prefix (`ccv:tg-code-ttl`) to prevent cross-protocol
- * ciphertext reuse.
+ * Uses AES-GCM with the same encryption key as chat IDs, but passes
+ * 'code-ttl:' + opaqueId as the opaqueId parameter so the AAD becomes
+ * 'ccv:tg-chat-route:code-ttl:...' — distinct from chat ID encryption AAD.
  */
 async function encryptCodeForTtl(
   encKey: CryptoKey,

@@ -184,7 +184,7 @@ describe('POST /tg/internal/send-code', () => {
     const json = await response.json<{ delivered_at_utc: string }>();
     expect(json.delivered_at_utc).toBeDefined();
     // Should be an ISO-8601 timestamp
-    expect(json.delivered_at_utc).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    expect(json.delivered_at_utc).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
 
     // Verify conversation updated
     const db = createBotDb(env.bot_db);

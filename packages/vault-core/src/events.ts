@@ -138,7 +138,7 @@ export const DonationPayloadSchema = z.object({
       },
       { message: "Must be a positive integer minor-unit amount" },
     ),
-});
+}).strict();
 
 /** Zod schema for {@link DisbursementPayload}. */
 export const DisbursementPayloadSchema = z
@@ -178,6 +178,7 @@ export const DisbursementPayloadSchema = z
     }),
     recorded_by: z.string().min(1).max(64),
   })
+  .strict()
   .superRefine((data, ctx) => {
     if (data.service === "Other" && data.service_note === null) {
       ctx.addIssue({
@@ -214,7 +215,7 @@ export const AnchorPayloadSchema = z.object({
     message: "Must be ISO-8601 second precision with Z suffix",
   }),
   cluster: z.enum(["mainnet-beta", "devnet", "localnet"] as const),
-});
+}).strict();
 
 /**
  * Zod schema for {@link ReplacementFields}.
@@ -242,7 +243,7 @@ export const CorrectionPayloadSchema = z.object({
     message: "Must be ISO-8601 second precision with Z suffix",
   }),
   recorded_by: z.string().min(1).max(64),
-});
+}).strict();
 
 /**
  * Map from event type to its corresponding payload schema.

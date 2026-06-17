@@ -99,24 +99,24 @@ describe('string escaping', () => {
     expect(canonicalJson('he\\llo')).toBe('"he\\\\llo"');
   });
 
-  it('escapes tab as \\t', () => {
-    expect(canonicalJson('he\tllo')).toBe('"he\\tllo"');
+  it('escapes tab as \\u0009', () => {
+    expect(canonicalJson('he\tllo')).toBe('"he\\u0009llo"');
   });
 
-  it('escapes newline as \\n', () => {
-    expect(canonicalJson('he\nllo')).toBe('"he\\nllo"');
+  it('escapes newline as \\u000a', () => {
+    expect(canonicalJson('he\nllo')).toBe('"he\\u000allo"');
   });
 
-  it('escapes carriage return as \\r', () => {
-    expect(canonicalJson('he\rllo')).toBe('"he\\rllo"');
+  it('escapes carriage return as \\u000d', () => {
+    expect(canonicalJson('he\rllo')).toBe('"he\\u000dllo"');
   });
 
-  it('escapes backspace as \\b', () => {
-    expect(canonicalJson('he\bllo')).toBe('"he\\bllo"');
+  it('escapes backspace as \\u0008', () => {
+    expect(canonicalJson('he\bllo')).toBe('"he\\u0008llo"');
   });
 
-  it('escapes form feed as \\f', () => {
-    expect(canonicalJson('he\fllo')).toBe('"he\\fllo"');
+  it('escapes form feed as \\u000c', () => {
+    expect(canonicalJson('he\fllo')).toBe('"he\\u000cllo"');
   });
 
   it('does NOT escape solidus (/)', () => {

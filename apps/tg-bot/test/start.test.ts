@@ -134,7 +134,8 @@ describe('/start command', () => {
     const secondRow = await getHandleRow(userId);
     expect(secondRow).toBeDefined();
     expect(secondRow!.handle).toBe('bob_new');
-    expect(secondRow!.opaque_id).not.toBe(firstOpaqueId);
+    // opaque_id is preserved on re-registration to avoid FK violations
+    expect(secondRow!.opaque_id).toBe(firstOpaqueId);
 
     // Reply text
     expect(sentMessages.length).toBe(1);
@@ -358,8 +359,8 @@ describe('/start command', () => {
     const secondRow = await getHandleRow(userId);
     expect(secondRow).toBeDefined();
     expect(secondRow!.handle).toBe('same_handle');
-    // opaque_id should change (re-registration always generates new)
-    expect(secondRow!.opaque_id).not.toBe(firstOpaqueId);
+    // opaque_id is preserved on re-registration to avoid FK violations
+    expect(secondRow!.opaque_id).toBe(firstOpaqueId);
     expect(sentMessages[0]!.text).toContain('Re-registered as @same_handle');
   });
 });

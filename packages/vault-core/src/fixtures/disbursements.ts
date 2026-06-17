@@ -33,7 +33,7 @@ export const sampleDisbursement1Event: LedgerEventBase = {
   sequence_no: 4,
   event_type: "disbursement_recorded",
   payload: sampleDisbursement1Payload,
-  prev_hash: "PLACEHOLDER_PREV_HASH_DISBURSEMENT_1",
+  prev_hash: "0000000000000000000000000000000000000000000000000000000000000001",
   created_at_utc: "2026-06-15T09:30:00Z",
 };
 
@@ -42,7 +42,7 @@ export const sampleDisbursement2Event: LedgerEventBase = {
   sequence_no: 5,
   event_type: "disbursement_recorded",
   payload: sampleDisbursement2Payload,
-  prev_hash: "PLACEHOLDER_PREV_HASH_DISBURSEMENT_2",
+  prev_hash: "0000000000000000000000000000000000000000000000000000000000000002",
   created_at_utc: "2026-06-15T14:15:00Z",
 };
 

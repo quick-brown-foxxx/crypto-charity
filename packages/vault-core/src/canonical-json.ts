@@ -26,6 +26,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function escapeString(s: string): string {
+  s = s.normalize('NFC');
   let result = '"';
   for (let i = 0; i < s.length; i++) {
     const c = s.charAt(i);
@@ -34,16 +35,6 @@ function escapeString(s: string): string {
       result += '\\"';
     } else if (c === '\\') {
       result += '\\\\';
-    } else if (code === 0x08) {
-      result += '\\b';
-    } else if (code === 0x09) {
-      result += '\\t';
-    } else if (code === 0x0a) {
-      result += '\\n';
-    } else if (code === 0x0c) {
-      result += '\\f';
-    } else if (code === 0x0d) {
-      result += '\\r';
     } else if (code <= 0x1f) {
       result += '\\u' + code.toString(16).padStart(4, '0');
     } else {
