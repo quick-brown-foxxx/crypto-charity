@@ -9,6 +9,7 @@
   "dependencies": {
     "@open-care/vault-core": "workspace:*",
     "@open-care/vault-db": "workspace:*",
+    "drizzle-orm": "^0.45.2",
     "hono": "^4"
   },
   "devDependencies": {
