@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getTotals, getDonations, getDisbursements } from '$lib/api/client.js';
+  import { getTotals, getLedgerEvents, getVerify } from '$lib/api/client.js';
   import { createFetch } from '$lib/state/api.svelte.js';
   import { formatUsdc } from '$lib/utils/format-usdc.js';
   import { formatDate } from '$lib/utils/format-date.js';
@@ -11,8 +11,8 @@
   import Button from '$lib/components/ui/button/button.svelte';
 
   const totals = createFetch(getTotals);
-  const donations = createFetch(() => getDonations({ limit: 5 }));
-  const disbursements = createFetch(() => getDisbursements({ limit: 5 }));
+  const ledgerFeed = createFetch(() => getLedgerEvents({ limit: 10 }));
+  const verify = createFetch(getVerify);
 </script>
 
 <svelte:head>
@@ -93,64 +93,38 @@
     {/if}
   </section>
 
+  <!-- Head info -->
+  {#if verify.data}
+    <section class="head-section">
+      <Card class="head-card">
+        <h2>Текущий HEAD реестра</h2>
+        <HashDisplay
+          hash={verify.data.head_hash}
+          full
+          label={`SEQ #${verify.data.head_sequence_no}`}
+        />
+      </Card>
+    </section>
+  {/if}
+
   <!-- Recent feed -->
   <section class="feed-section">
     <h2>Последние события</h2>
-    <div class="feed-grid">
-      <div class="feed-col">
-        <h3>Пожертвования</h3>
-        {#if donations.loading}
-          <p class="muted">Загрузка...</p>
-        {:else if donations.error}
-          <p class="muted">Недоступно</p>
-        {:else if donations.data && donations.data.items.length > 0}
-          {#each donations.data.items as item}
-            <EventCard
-              event={{
-                sequence_no: item.sequence_no,
-                event_type: 'donation_confirmed',
-                payload_json: JSON.stringify({
-                  amount_usdc_minor: item.amount_usdc_minor,
-                  tx_signature: item.tx_signature,
-                }),
-                prev_hash: '0'.repeat(64),
-                event_hash: '0'.repeat(64),
-                created_at_utc: item.block_time_utc,
-              }}
-            />
-          {/each}
-        {:else}
-          <p class="muted">Пока нет пожертвований.</p>
-        {/if}
+    {#if ledgerFeed.loading}
+      <p class="muted">Загрузка...</p>
+    {:else if ledgerFeed.error}
+      <p class="muted">Не удалось загрузить события.</p>
+    {:else if ledgerFeed.data && ledgerFeed.data.items.length > 0}
+      <div class="feed-list">
+        {#each ledgerFeed.data.items as event}
+          <a href="/ledger/{event.event_hash}" class="feed-link-item">
+            <EventCard {event} />
+          </a>
+        {/each}
       </div>
-      <div class="feed-col">
-        <h3>Выплаты</h3>
-        {#if disbursements.loading}
-          <p class="muted">Загрузка...</p>
-        {:else if disbursements.error}
-          <p class="muted">Недоступно</p>
-        {:else if disbursements.data && disbursements.data.items.length > 0}
-          {#each disbursements.data.items as item}
-            <EventCard
-              event={{
-                sequence_no: item.sequence_no,
-                event_type: 'disbursement_recorded',
-                payload_json: JSON.stringify({
-                  amount_usdc_minor: item.amount_usdc_minor,
-                  service: item.service,
-                  receipt_ref: item.receipt_ref,
-                }),
-                prev_hash: '0'.repeat(64),
-                event_hash: '0'.repeat(64),
-                created_at_utc: item.recorded_at_utc,
-              }}
-            />
-          {/each}
-        {:else}
-          <p class="muted">Пока нет выплат.</p>
-        {/if}
-      </div>
-    </div>
+    {:else}
+      <p class="muted">Пока нет событий в реестре.</p>
+    {/if}
     <p class="feed-link"><a href="/ledger">Открыть полный реестр →</a></p>
   </section>
 
@@ -260,20 +234,22 @@
     display: block;
     margin-top: 0.25rem;
   }
-  .feed-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
+  .head-card {
+    border-color: var(--color-primary);
+    border-width: 2px;
   }
-  @media (max-width: 768px) {
-    .feed-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-  .feed-col {
+  .feed-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
+  }
+  .feed-link-item {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+  .feed-link-item:hover {
+    text-decoration: none;
   }
   .feed-link {
     text-align: center;

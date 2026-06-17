@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getVerify } from '$lib/api/client.js';
+  import { getVerify, getBaseUrl } from '$lib/api/client.js';
   import { createFetch } from '$lib/state/api.svelte.js';
   import { formatDate } from '$lib/utils/format-date.js';
   import Card from '$lib/components/ui/card/card.svelte';
@@ -8,7 +8,26 @@
   import SolscanLink from '$lib/components/public/SolscanLink.svelte';
   import CopyButton from '$lib/components/public/CopyButton.svelte';
 
+  import type { ApiError } from '$lib/api/client.js';
+
   const verify = createFetch(getVerify);
+
+  /**
+   * Map an ApiError code to a stable Russian user-facing message.
+   * Never exposes raw error.message which may contain stack traces or internal paths.
+   */
+  function errorMessage(err: ApiError): string {
+    switch (err.code) {
+      case 'NETWORK_ERROR':
+        return 'Ошибка сети. Проверьте подключение и попробуйте снова.';
+      case 'VALIDATION_ERROR':
+        return 'Ошибка формата данных. Пожалуйста, сообщите об этом.';
+      case 'PARSE_ERROR':
+        return 'Ошибка обработки ответа сервера. Попробуйте обновить страницу.';
+      default:
+        return 'Произошла ошибка при загрузке данных. Попробуйте обновить страницу.';
+    }
+  }
 
   /**
    * Format a YYYY-MM-DD anchor date to DD.MM.YYYY for display.
@@ -52,9 +71,9 @@
     <!-- Error state -->
     <Card class="error-card">
       <h2>Ошибка загрузки</h2>
-      <p class="error-message">{verify.error.message}</p>
-      {#if verify.error.code}
-        <p class="error-code">Код: {verify.error.code}</p>
+      <p class="error-message">{errorMessage(verify.error)}</p>
+      {#if verify.error.requestId}
+        <p class="error-code">ID запроса: {verify.error.requestId}</p>
       {/if}
       <button type="button" class="retry-btn" onclick={() => verify.refetch()}>
         Попробовать снова
@@ -219,7 +238,7 @@
         независимой верификации хеш-цепочки.
       </p>
       <a
-        href="https://staging.open-care.org/api/ledger-events"
+        href="{getBaseUrl()}/api/ledger-events"
         class="export-link"
         target="_blank"
         rel="noopener noreferrer"

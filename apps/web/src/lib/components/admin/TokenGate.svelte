@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { setToken } from '$lib/state/token.svelte.js';
-  import { getHealth } from '$lib/api/client.js';
+  import { setToken, clearToken } from '$lib/state/token.svelte.js';
+  import { getPendingRequests } from '$lib/api/operator.js';
   import Input from '$lib/components/ui/input/input.svelte';
   import Button from '$lib/components/ui/button/button.svelte';
   import Card from '$lib/components/ui/card/card.svelte';
@@ -15,17 +15,17 @@
     checking = true;
     error = '';
 
-    // Set token temporarily and test with a health check
+    // Set token temporarily and test with an authenticated endpoint
     setToken(token.trim());
 
-    const result = await getHealth();
+    const result = await getPendingRequests();
     if (result.ok) {
       // Token is valid — TokenGate will hide itself via the layout
       checking = false;
     } else {
-      // Clear token on failure
-      import('$lib/state/token.svelte.js').then((m) => m.clearToken());
-      error = 'Неверный токен. Попробуйте снова.';
+      // Clear token on failure (especially 401)
+      clearToken();
+      error = result.error.message;
       checking = false;
     }
   }

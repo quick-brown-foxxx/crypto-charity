@@ -10,8 +10,6 @@
   import Select from '$lib/components/ui/select/select.svelte';
   import Button from '$lib/components/ui/button/button.svelte';
   import HashDisplay from '$lib/components/public/HashDisplay.svelte';
-  import AdminNav from '$lib/components/admin/AdminNav.svelte';
-
   let amount = $state('');
   let giftCardCount = $state(1);
   let service = $state('Alter');
@@ -67,8 +65,8 @@
       service,
       receipt_ref: receiptRef,
       purchased_at_utc: purchasedAtUtc
-        ? new Date(purchasedAtUtc + 'Z').toISOString().replace('.000', '')
-        : new Date().toISOString().replace('.000', ''),
+        ? new Date(purchasedAtUtc + 'Z').toISOString().replace(/\.\d{3}Z$/, 'Z')
+        : new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
     };
 
     if (service === 'Other') body.service_note = serviceNote.trim();
@@ -78,7 +76,7 @@
     if (res.ok) {
       result = res.value;
     } else {
-      error = res.error;
+      error = res.error.message;
     }
     submitting = false;
   }
@@ -95,8 +93,6 @@
     error = '';
   }
 </script>
-
-<AdminNav active="disbursements" />
 
 <section class="disbursement-page">
   <h1>Запись выплаты</h1>
@@ -117,6 +113,7 @@
         {/if}
       </dl>
       <p><a href="/ledger/{result.event_hash}">Открыть в реестре →</a></p>
+      <p>Следующий шаг: <a href="/admin/bot">отправить код через бота →</a></p>
       <Button variant="outline" onclick={resetForm}>Новая выплата</Button>
     </Card>
   {:else}
@@ -150,7 +147,11 @@
             <span class="field-label">Сервис</span>
             <Select
               value={service}
-              onchange={(e) => (service = (e.target as HTMLSelectElement).value)}
+              onchange={(e) => {
+                const newService = (e.target as HTMLSelectElement).value;
+                service = newService;
+                if (newService !== 'Other') serviceNote = '';
+              }}
               disabled={submitting}
             >
               <option value="Alter">Alter</option>
@@ -228,6 +229,12 @@
           <p class="form-error">{error}</p>
         {/if}
 
+        <p class="form-note">
+          Ошибки исправляются через отдельное корректирующее событие. Не отправляйте форму повторно
+          для исправления ошибки. Если доставка кода не удалась, не записывайте выплату заново —
+          повторите отправку кода через страницу бота.
+        </p>
+
         <Button type="submit" variant="primary" disabled={submitting}>
           {submitting ? 'Отправка...' : 'Записать выплату'}
         </Button>
@@ -262,6 +269,12 @@
     color: var(--color-danger);
     font-size: 0.85rem;
     margin: 0.5rem 0;
+  }
+  .form-note {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin: 0.5rem 0;
+    line-height: 1.4;
   }
   .radio-label {
     display: flex;

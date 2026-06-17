@@ -13,7 +13,7 @@
     class?: string;
   } = $props();
 
-  let qrSvg = $state<string>('');
+  let qrDataUri = $state<string>('');
 
   $effect(() => {
     // Dynamic import of qrcode to avoid SSR issues
@@ -26,21 +26,24 @@
           color: { dark: '#1a1a2e', light: '#ffffff' },
         })
           .then((svg: string) => {
-            qrSvg = svg;
+            // Convert SVG string to a safe data URI for <img> tag.
+            // This avoids {@html} while keeping the same QR rendering.
+            const encoded = encodeURIComponent(svg);
+            qrDataUri = `data:image/svg+xml,${encoded}`;
           })
           .catch(() => {
-            qrSvg = '';
+            qrDataUri = '';
           });
       })
       .catch(() => {
-        qrSvg = '';
+        qrDataUri = '';
       });
   });
 </script>
 
 <div class={cn('qr-code', className)} style="width: {size}px; height: {size}px;">
-  {#if qrSvg}
-    {@html qrSvg}
+  {#if qrDataUri}
+    <img src={qrDataUri} alt="QR-код адреса {text}" width={size} height={size} />
   {:else}
     <div class="qr-placeholder">QR</div>
   {/if}
@@ -56,7 +59,7 @@
     border-radius: var(--radius);
     overflow: hidden;
   }
-  .qr-code :global(svg) {
+  .qr-code :global(img) {
     display: block;
     width: 100%;
     height: 100%;

@@ -2,12 +2,16 @@
   import Card from '$lib/components/ui/card/card.svelte';
   import CopyButton from '$lib/components/public/CopyButton.svelte';
   import QrCode from '$lib/components/public/QrCode.svelte';
+  import Badge from '$lib/components/ui/badge/badge.svelte';
 
-  // Hardcoded for MVP — will be configurable later
-  const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
-  const TREASURY_ADDRESS = 'TREASURY_WALLET_ADDRESS';
-  const VAULT_USDC_ATA = 'VAULT_USDC_ATA_ADDRESS';
-  const CLUSTER = 'mainnet-beta';
+  // Staging (devnet) addresses from project config.
+  // These will be replaced with mainnet addresses for production.
+  const USDC_MINT = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU';
+  const TREASURY_ADDRESS = '8ufYGMkmAWeaYaM4CnANrxLxpQoaESKTGFN1BcgU71tG';
+  const VAULT_USDC_ATA = '52MK6GwPWLvjfZuXm3K9fy9PozZAgUAKridA7ycSQUtG';
+  const CLUSTER: string = 'devnet';
+
+  const isMainnet = CLUSTER === 'mainnet-beta';
 </script>
 
 <svelte:head>
@@ -17,6 +21,18 @@
 <section class="donate-page">
   <h1>Пожертвовать</h1>
   <p class="subtitle">Поддержите проект, отправив SPL USDC на кошелёк хранилища.</p>
+
+  {#if !isMainnet}
+    <Card class="warning-card">
+      <div class="warning-header">
+        <Badge variant="danger">⚠ Тестовая сеть</Badge>
+      </div>
+      <p>
+        Вы находитесь в тестовой среде (devnet). Адреса и токены ниже действительны только для
+        Solana devnet. Для реальных пожертвований дождитесь запуска на mainnet-beta.
+      </p>
+    </Card>
+  {/if}
 
   <!-- Network info -->
   <Card>
@@ -154,6 +170,9 @@
   .warning-card h3 {
     font-size: 1rem;
     margin-top: 1rem;
+  }
+  .warning-header {
+    margin-bottom: 0.75rem;
   }
   .muted {
     color: var(--color-text-muted);

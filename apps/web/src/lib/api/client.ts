@@ -59,6 +59,14 @@ export function setBaseUrl(url: string): void {
   baseUrl = url.replace(/\/+$/, '');
 }
 
+/**
+ * Get the current base URL. Use this when constructing links to API endpoints
+ * (e.g. export/download URLs) instead of hardcoding the staging domain.
+ */
+export function getBaseUrl(): string {
+  return baseUrl;
+}
+
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------

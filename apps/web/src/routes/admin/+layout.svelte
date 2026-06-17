@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from '$app/state';
   import { hasToken, onUserActivity } from '$lib/state/token.svelte.js';
   import TokenGate from '$lib/components/admin/TokenGate.svelte';
   import AdminNav from '$lib/components/admin/AdminNav.svelte';
@@ -6,6 +7,15 @@
   let { children } = $props();
 
   let authed = $derived(hasToken());
+
+  let activeTab = $derived.by(() => {
+    const path = page.url.pathname;
+    if (path === '/admin') return 'dashboard';
+    if (path.startsWith('/admin/disbursements')) return 'disbursements';
+    if (path.startsWith('/admin/bot')) return 'bot';
+    if (path.startsWith('/admin/anchors')) return 'anchors';
+    return 'dashboard';
+  });
 
   $effect(() => {
     if (authed) {
@@ -32,7 +42,7 @@
       <TokenGate />
     </div>
   {:else}
-    <AdminNav active="dashboard" />
+    <AdminNav active={activeTab} />
     <main>
       {@render children()}
     </main>

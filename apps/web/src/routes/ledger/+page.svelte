@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getLedgerEvents, getVerify } from '$lib/api/client.js';
+  import { getLedgerEvents, getVerify, getBaseUrl } from '$lib/api/client.js';
   import { createFetch } from '$lib/state/api.svelte.js';
   import { formatDate } from '$lib/utils/format-date.js';
   import { formatUsdc } from '$lib/utils/format-usdc.js';
@@ -92,7 +92,7 @@
 
   <!-- Export link -->
   <p class="export-link">
-    <a href="https://staging.open-care.org/api/ledger-events">Экспорт JSON (API) ↗</a>
+    <a href="{getBaseUrl()}/api/ledger-events">Экспорт JSON (API) ↗</a>
   </p>
 
   <!-- Filters -->

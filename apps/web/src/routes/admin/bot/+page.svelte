@@ -13,13 +13,11 @@
   import Badge from '$lib/components/ui/badge/badge.svelte';
   import Input from '$lib/components/ui/input/input.svelte';
   import Button from '$lib/components/ui/button/button.svelte';
-  import AdminNav from '$lib/components/admin/AdminNav.svelte';
-
-  /** Adapt operator OpResult (error: string) to public Result (error: ApiError). */
+  /** Adapt operator OpResult to public Result (both use ApiError now). */
   async function adaptedGetPendingRequests(): Promise<Result<PendingRequestsResponse>> {
     const res = await getPendingRequests();
     if (res.ok) return res;
-    return { ok: false, error: { status: 0, code: 'OPERATOR_ERROR', message: res.error } };
+    return { ok: false, error: res.error };
   }
 
   const requests = createFetch(adaptedGetPendingRequests);
@@ -29,6 +27,13 @@
   let sending = $state(false);
   let sendResult = $state<SendCodeResponse | null>(null);
   let sendError = $state('');
+
+  // Clear code on route leave / component destroy
+  $effect(() => {
+    return () => {
+      code = '';
+    };
+  });
 
   function selectRequest(req: PendingRequest): void {
     selected = req;
@@ -53,7 +58,7 @@
       sendResult = res.value;
       code = '';
     } else {
-      sendError = res.error;
+      sendError = res.error.message;
     }
     sending = false;
   }
@@ -65,8 +70,6 @@
     cancelled: 'Отменён',
   };
 </script>
-
-<AdminNav active="bot" />
 
 <section class="bot-page">
   <h1>Доставка сертификатов</h1>

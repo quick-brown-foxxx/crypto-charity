@@ -8,8 +8,6 @@
   import HashDisplay from '$lib/components/public/HashDisplay.svelte';
   import SolscanLink from '$lib/components/public/SolscanLink.svelte';
   import Button from '$lib/components/ui/button/button.svelte';
-  import AdminNav from '$lib/components/admin/AdminNav.svelte';
-
   const totals = createFetch(getTotals);
   const verify = createFetch(getVerify);
 
@@ -32,7 +30,7 @@
       anchorResult = res.value;
       totals.refetch();
     } else {
-      anchorError = res.error;
+      anchorError = res.error.message;
     }
     running = false;
     confirmed = false;
@@ -44,8 +42,6 @@
     confirmed = false;
   }
 </script>
-
-<AdminNav active="anchors" />
 
 <section class="anchor-page">
   <h1>Управление якорем</h1>
@@ -94,22 +90,43 @@
   <h2>Публикация якоря</h2>
 
   {#if anchorResult}
-    <Card class="success-card">
-      <h3>Якорь опубликован</h3>
-      <dl class="result-grid">
-        <dt>Статус</dt>
-        <dd>{anchorResult.status}</dd>
-        <dt>Закреплённый HEAD</dt>
-        <dd><HashDisplay hash={anchorResult.anchored_head_hash} full={true} /></dd>
-        <dt>Memo</dt>
-        <dd><code>{anchorResult.memo_text}</code></dd>
-        <dt>Транзакция</dt>
-        <dd><SolscanLink txSignature={anchorResult.tx_signature} /></dd>
-        <dt>Длительность</dt>
-        <dd>{anchorResult.duration_ms}ms</dd>
-      </dl>
-      <Button variant="outline" onclick={reset}>ОК</Button>
-    </Card>
+    {#if anchorResult.status === 'already_published'}
+      <Card class="info-card">
+        <h3>HEAD уже закреплён ранее</h3>
+        <p>Текущий HEAD уже был опубликован как якорь. Новая транзакция не отправлялась.</p>
+        {#if totals.data?.anchor}
+          <dl class="result-grid">
+            <dt>Закреплённый HEAD</dt>
+            <dd><HashDisplay hash={totals.data.anchor.anchored_head_hash} full={true} /></dd>
+            <dt>Опубликован</dt>
+            <dd>{formatDate(totals.data.anchor.published_at_utc)}</dd>
+            <dt>Транзакция</dt>
+            <dd><SolscanLink txSignature={totals.data.anchor.tx_signature} /></dd>
+          </dl>
+        {/if}
+        <Button variant="outline" onclick={reset}>ОК</Button>
+      </Card>
+    {:else}
+      <Card class="success-card">
+        <h3>Якорь опубликован</h3>
+        <dl class="result-grid">
+          <dt>Статус</dt>
+          <dd>{anchorResult.status}</dd>
+          <dt>ID запуска</dt>
+          <dd>#{anchorResult.anchor_runs_id}</dd>
+          <dt>Закреплённый HEAD</dt>
+          <dd><HashDisplay hash={anchorResult.anchored_head_hash} full={true} /></dd>
+          <dt>Memo</dt>
+          <dd><code>{anchorResult.memo_text}</code></dd>
+          <dt>Транзакция</dt>
+          <dd><SolscanLink txSignature={anchorResult.tx_signature} /></dd>
+          <dt>Длительность</dt>
+          <dd>{anchorResult.duration_ms}ms</dd>
+        </dl>
+        <p><a href="/verify">Проверить на странице верификации →</a></p>
+        <Button variant="outline" onclick={reset}>ОК</Button>
+      </Card>
+    {/if}
   {:else if anchorError}
     <Card class="error-card">
       <h3>Ошибка</h3>
@@ -149,6 +166,10 @@
   .success-card {
     background: #f0fdf4;
     border-color: var(--color-accent);
+  }
+  .info-card {
+    background: #eff6ff;
+    border-color: #3b82f6;
   }
   .confirm-card {
     background: #fffbeb;
