@@ -2,7 +2,7 @@
 
 **Status:** Environment Ready  
 **Date:** 2026-06-16  
-**Purpose:** Canonical list of every secret, env var, and public config value the project needs. AI agents read this to know what exists, where it lives, and who owns it.  
+**Purpose:** Canonical list of every secret, env var, and public config value the project needs. AI agents read this to know what exists, where it lives, and who owns it.
 
 ## Environment Readiness Status (2026-06-16)
 
@@ -18,44 +18,43 @@ one still pending — human must run `cd apps/operator && pnpm exec wrangler sec
 (see `01-architecture.md` §"Operator Worker trust model").
 No `--env production` secrets exist yet.
 
-| Secret                       | Workers                                      | Status    |
-| ---------------------------- | -------------------------------------------- | --------- |
-| `OPERATOR_TOKEN`             | `vault-operator` only                          | ⚠️ `vault-operator` pending |
-| `HELIUS_RPC_URL`             | `vault-ingest`, `vault-anchor-cron`          | ✅ Set     |
-| `HELIUS_WEBHOOK_AUTH_HEADER` | `vault-ingest`                               | ✅ Set     |
-| `ANCHOR_WALLET_SECRET`       | `vault-anchor-cron`                          | ✅ Set     |
-| `TG_BOT_TOKEN`               | `tg-bot`                                     | ✅ Set     |
-| `TG_WEBHOOK_SECRET`          | `tg-bot`                                     | ✅ Set     |
-| `TG_ID_HMAC_KEY`             | `tg-bot`                                     | ✅ Set     |
-| `TG_CHAT_ENC_KEY`            | `tg-bot`                                     | ✅ Set     |
+| Secret                       | Workers                             | Status                      |
+| ---------------------------- | ----------------------------------- | --------------------------- |
+| `OPERATOR_TOKEN`             | `vault-operator` only               | ⚠️ `vault-operator` pending |
+| `HELIUS_RPC_URL`             | `vault-ingest`, `vault-anchor-cron` | ✅ Set                      |
+| `HELIUS_WEBHOOK_AUTH_HEADER` | `vault-ingest`                      | ✅ Set                      |
+| `ANCHOR_WALLET_SECRET`       | `vault-anchor-cron`                 | ✅ Set                      |
+| `TG_BOT_TOKEN`               | `tg-bot`                            | ✅ Set                      |
+| `TG_WEBHOOK_SECRET`          | `tg-bot`                            | ✅ Set                      |
+| `TG_ID_HMAC_KEY`             | `tg-bot`                            | ✅ Set                      |
+| `TG_CHAT_ENC_KEY`            | `tg-bot`                            | ✅ Set                      |
 
 ### CI/CD Secrets and Variables: Ready in GitHub Actions
 
 | Secret/Variable           | Location              | Status |
 | ------------------------- | --------------------- | ------ |
-| `CLOUDFLARE_API_TOKEN`    | GitHub Actions secret | ✅ Set  |
-| `CLOUDFLARE_ACCOUNT_ID`   | GitHub Actions var    | ✅ Set  |
-| `HELIUS_API_KEY`          | GitHub Actions secret | ✅ Set  |
-| `DONOR_WALLET_SECRET`     | GitHub Actions secret | ✅ Set  |
-| `TELETHON_API_ID`         | GitHub Actions var    | ✅ Set  |
-| `TELETHON_API_HASH`       | GitHub Actions secret | ✅ Set  |
-| `TELETHON_SESSION_STRING` | GitHub Actions secret | ✅ Set  |
-| `ALLOW_MAINNET_SMOKE`     | Not set (default off) | 🔲 N/A  |
+| `CLOUDFLARE_API_TOKEN`    | GitHub Actions secret | ✅ Set |
+| `CLOUDFLARE_ACCOUNT_ID`   | GitHub Actions var    | ✅ Set |
+| `HELIUS_API_KEY`          | GitHub Actions secret | ✅ Set |
+| `DONOR_WALLET_SECRET`     | GitHub Actions secret | ✅ Set |
+| `TELETHON_API_ID`         | GitHub Actions var    | ✅ Set |
+| `TELETHON_API_HASH`       | GitHub Actions secret | ✅ Set |
+| `TELETHON_SESSION_STRING` | GitHub Actions secret | ✅ Set |
+| `ALLOW_MAINNET_SMOKE`     | Not set (default off) | 🔲 N/A |
 
 ### Webhooks: Configured and Responding
 
-| Webhook  | URL                                                 | Auth mechanism                         | Status        |
-| -------- | --------------------------------------------------- | -------------------------------------- | ------------- |
+| Webhook  | URL                                                 | Auth mechanism                         | Status         |
+| -------- | --------------------------------------------------- | -------------------------------------- | -------------- |
 | Helius   | `POST https://staging.open-care.org/webhook/helius` | `Authorization: Bearer <token>` header | ✅ Live (mock) |
 | Telegram | `POST https://staging.open-care.org/tg/webhook`     | `X-Telegram-Bot-Api-Secret-Token`      | ✅ Live (mock) |
 
-Both endpoints are served by minimal mock Workers that validate auth and return
-200. These will be replaced with full implementations by the coding agent.
+Both endpoints are served by minimal mock Workers that validate auth and return 200. These will be replaced with full implementations by the coding agent.
 
 ### DNS and Domains
 
-| Domain                  | Purpose                | Status  |
-| ----------------------- | ---------------------- | ------- |
+| Domain                  | Purpose                | Status   |
+| ----------------------- | ---------------------- | -------- |
 | `staging.open-care.org` | Staging frontend + API | ✅ Live  |
 | `open-care.org` (TBD)   | Production             | 🔲 Later |
 
@@ -63,22 +62,22 @@ Both endpoints are served by minimal mock Workers that validate auth and return
 
 | Wallet   | Address                                        | SOL funded | Purpose            |
 | -------- | ---------------------------------------------- | ---------- | ------------------ |
-| Treasury | `8ufYGMkmAWeaYaM4CnANrxLxpQoaESKTGFN1BcgU71tG` | ✅ Yes      | Receives test USDC |
-| Anchor   | `BhKtkM1oHADwo8ap5P6Lymj7b3iaspiAm37RA9KMn8YG` | ✅ Yes      | Signs Memo anchors |
-| Donor    | `6dUAJZso3HThXQjReZKHWXNpMFYgZ8wbXu7GxXJ93hyL` | 🔲 Pending  | Sends test USDC    |
+| Treasury | `8ufYGMkmAWeaYaM4CnANrxLxpQoaESKTGFN1BcgU71tG` | ✅ Yes     | Receives test USDC |
+| Anchor   | `BhKtkM1oHADwo8ap5P6Lymj7b3iaspiAm37RA9KMn8YG` | ✅ Yes     | Signs Memo anchors |
+| Donor    | `6dUAJZso3HThXQjReZKHWXNpMFYgZ8wbXu7GxXJ93hyL` | 🔲 Pending | Sends test USDC    |
 
 Faucet alternatives when rate-limited: <https://www.devnetfaucet.org/>,
 <https://solfate.com/faucet>, <https://tools.solrocket.io/sol-faucet>.
 
 ### Deployed Workers
 
-| Worker              | Status            | Notes                                                       |
-| ------------------- | ----------------- | ----------------------------------------------------------- |
-| `vault-ingest`      | ✅ Deployed (mock) | Route: `staging.open-care.org/webhook/helius`               |
-| `tg-bot`            | ✅ Deployed (mock) | Route: `staging.open-care.org/tg/webhook`                   |
-| `vault-api-write`   | ✅ Deployed (mock) | No secrets needed (reached via service binding from `vault-operator`) |
-| `vault-anchor-cron` | ✅ Deployed (mock) | Has `ANCHOR_WALLET_SECRET` and `HELIUS_RPC_URL` secrets set |
-| `vault-api-read`    | ✅ Deployed (mock) | Public read API mock, no secrets needed                     |
+| Worker              | Status             | Notes                                                                               |
+| ------------------- | ------------------ | ----------------------------------------------------------------------------------- |
+| `vault-ingest`      | ✅ Deployed (mock) | Route: `staging.open-care.org/webhook/helius`                                       |
+| `tg-bot`            | ✅ Deployed (mock) | Route: `staging.open-care.org/tg/webhook`                                           |
+| `vault-api-write`   | ✅ Deployed (mock) | No secrets needed (reached via service binding from `vault-operator`)               |
+| `vault-anchor-cron` | ✅ Deployed (mock) | Has `ANCHOR_WALLET_SECRET` and `HELIUS_RPC_URL` secrets set                         |
+| `vault-api-read`    | ✅ Deployed (mock) | Public read API mock, no secrets needed                                             |
 | `vault-operator`    | ✅ Deployed (mock) | Service bindings to api-write, anchor-cron, tg-bot; `OPERATOR_TOKEN` secret pending |
 
 ### What the AI Coding Agent Must Create
@@ -118,11 +117,11 @@ These are not environment blockers — they are implementation tasks:
 
 ## Cloudflare resources
 
-| Resource                | Name                    | Details                                                                                                     |
-| ----------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Resource                | Name                    | Details                                                                                                      |
+| ----------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Pages project           | `open-care-web`         | SvelteKit frontend. Default domain: `open-care-web.pages.dev`. Production branch: `main`. First deploy done. |
-| Pages staging domain    | `staging.open-care.org` | Custom domain for staging. Live and serving the SvelteKit mock frontend.        |
-| Pages production domain | `open-care.org` (TBD)   | Custom domain for production. Set up later.                                                                 |
+| Pages staging domain    | `staging.open-care.org` | Custom domain for staging. Live and serving the SvelteKit mock frontend.                                     |
+| Pages production domain | `open-care.org` (TBD)   | Custom domain for production. Set up later.                                                                  |
 | Workers.dev subdomain   | `open-care-dev`         | Workers.dev subdomain for Workers without custom routes: `*.open-care-dev.workers.dev`                       |
 
 ## D1 databases
@@ -136,14 +135,14 @@ These are not environment blockers — they are implementation tasks:
 
 ### Vault-side secrets
 
-| Name                         | Kind   | Location                                                 | Owner                               | PR CI?                       | Purpose                                                                                                                                                                                                    |
-| ---------------------------- | ------ | -------------------------------------------------------- | ----------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Name                         | Kind   | Location                                                 | Owner                               | PR CI?                       | Purpose                                                                                                                                                                                                                      |
+| ---------------------------- | ------ | -------------------------------------------------------- | ----------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `OPERATOR_TOKEN`             | Secret | `vault-operator` Worker Secret (sole holder)             | Human → Wrangler                    | No                           | Operator write auth. The operator Worker validates this token and forwards requests to downstream Workers via service binding. Downstream Workers (`vault-api-write`, `tg-bot`) do NOT hold this token. Strong random token. |
-| `HELIUS_API_KEY`             | Secret | GitHub Actions secret (deploy/live envs)                 | Human (Helius dashboard)            | No                           | Helius management/RPC access.                                                                                                                                                                              |
-| `HELIUS_RPC_URL`             | Secret | `vault-ingest`, `vault-anchor-cron` env                  | Human (Helius dashboard)            | No (optional for live smoke) | Solana RPC endpoint URL.                                                                                                                                                                                   |
-| `HELIUS_WEBHOOK_AUTH_HEADER` | Secret | `vault-ingest` Worker Secret                             | Human (Helius dashboard → Wrangler) | No                           | Bearer token (without `Bearer ` prefix) for Helius webhook auth. The Worker extracts the token from the incoming `Authorization: Bearer <token>` header and compares just the token.                       |
-| `ANCHOR_WALLET_SECRET`       | Secret | `vault-anchor-cron` Worker Secret, gated manual job      | Human → Wrangler                    | No                           | Anchor wallet keypair. Holds only SOL for Memo fees. Never the treasury key. Base58-encoded keypair string from `solana-keygen`.                                                                           |
-| `DONOR_WALLET_SECRET`        | Secret | `.dev.vars` (local), GitHub Actions secret (nightly E2E) | Human → file/CI                     | No                           | Donor wallet keypair. Devnet throwaway for staging/localnet generated key for local dev. Used by E2E smoke tests to send test USDC. **Never mainnet.** Not a Worker secret; test scripts read it directly. |
+| `HELIUS_API_KEY`             | Secret | GitHub Actions secret (deploy/live envs)                 | Human (Helius dashboard)            | No                           | Helius management/RPC access.                                                                                                                                                                                                |
+| `HELIUS_RPC_URL`             | Secret | `vault-ingest`, `vault-anchor-cron` env                  | Human (Helius dashboard)            | No (optional for live smoke) | Solana RPC endpoint URL.                                                                                                                                                                                                     |
+| `HELIUS_WEBHOOK_AUTH_HEADER` | Secret | `vault-ingest` Worker Secret                             | Human (Helius dashboard → Wrangler) | No                           | Bearer token (without `Bearer ` prefix) for Helius webhook auth. The Worker extracts the token from the incoming `Authorization: Bearer <token>` header and compares just the token.                                         |
+| `ANCHOR_WALLET_SECRET`       | Secret | `vault-anchor-cron` Worker Secret, gated manual job      | Human → Wrangler                    | No                           | Anchor wallet keypair. Holds only SOL for Memo fees. Never the treasury key. Base58-encoded keypair string from `solana-keygen`.                                                                                             |
+| `DONOR_WALLET_SECRET`        | Secret | `.dev.vars` (local), GitHub Actions secret (nightly E2E) | Human → file/CI                     | No                           | Donor wallet keypair. Devnet throwaway for staging/localnet generated key for local dev. Used by E2E smoke tests to send test USDC. **Never mainnet.** Not a Worker secret; test scripts read it directly.                   |
 
 ### Bot-side secrets
 
@@ -213,7 +212,7 @@ environment variables or `.dev.vars`.
 
 - **Local dev:** Add `DONOR_WALLET_SECRET=<local_keypair>` to `.dev.vars`.
   Use a locally generated keypair (e.g. `solana-keygen new --no-bip39-passphrase
-  --outfile /dev/null`). Fund it with local-validator SOL.
+--outfile /dev/null`). Fund it with local-validator SOL.
 - **Staging (devnet E2E):** Set to the devnet throwaway donor keypair from
   your password manager (`Crypto Charity / Devnet Wallets`, address
   `6dUAJZso3HThXQjReZKHWXNpMFYgZ8wbXu7GxXJ93hyL`). Store as a GitHub
@@ -443,7 +442,7 @@ created, they persist on-chain.
 
 | Secret                 | Rotation impact                                                                                                                                                    |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `OPERATOR_TOKEN`       | Rotate on leak. Update `vault-operator` Worker secret only. Downstream Workers do not hold this token. Old token rejected immediately.                              |
+| `OPERATOR_TOKEN`       | Rotate on leak. Update `vault-operator` Worker secret only. Downstream Workers do not hold this token. Old token rejected immediately.                             |
 | `TG_BOT_TOKEN`         | Revoke/regenerate via BotFather. Update Worker secret.                                                                                                             |
 | `TG_ID_HMAC_KEY`       | **Hard rotation.** All `telegram_user_ref` values change. Requires beneficiary re-registration or planned migration because plaintext Telegram IDs are not stored. |
 | `TG_CHAT_ENC_KEY`      | **Soft rotation.** New writes use new key version. Old rows decrypted by recorded version. Re-encrypt under current version during planned rotation.               |

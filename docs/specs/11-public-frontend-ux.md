@@ -13,27 +13,27 @@ hash chain, and report problems. Frontend architecture is in
 
 ## Public UX principles
 
-| Principle | Rule |
-| --- | --- |
-| Russian-first and plain | Default copy is warm Russian copy; technical labels stay precise where useful (`tx`, `sha256`, `HEAD`). |
-| Honest before optimistic | Pending, stale, unanchored, and failed states are visible. |
-| Transparent without identity | Public records show amounts, dates, hashes, tx links, receipt refs, and server-generated public refs only. |
-| Simple first, auditable second | Landing gives a readable preview; `/ledger` and `/verify` provide the audit depth. |
-| Canonicality is backend-owned | A wallet-reported transaction is not canonical until backend ingest/reconciliation records it in the ledger. |
+| Principle                      | Rule                                                                                                         |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Russian-first and plain        | Default copy is warm Russian copy; technical labels stay precise where useful (`tx`, `sha256`, `HEAD`).      |
+| Honest before optimistic       | Pending, stale, unanchored, and failed states are visible.                                                   |
+| Transparent without identity   | Public records show amounts, dates, hashes, tx links, receipt refs, and server-generated public refs only.   |
+| Simple first, auditable second | Landing gives a readable preview; `/ledger` and `/verify` provide the audit depth.                           |
+| Canonicality is backend-owned  | A wallet-reported transaction is not canonical until backend ingest/reconciliation records it in the ledger. |
 
 ## Route map
 
-| Route | Purpose | Primary data |
-| --- | --- | --- |
-| `/` | Warm public landing and recent history preview. | `/api/totals`, recent donations/disbursements/anchors. |
-| `/donate` | Donation instructions and warnings. | Public config: treasury address, vault ATA, USDC mint, cluster. |
-| `/donate/[donationRef]` | Optional status page for a public transaction signature. | Public ledger/search by signature when available. |
-| `/ledger` | Full public ledger browser. | `/api/ledger-events`, `/api/donations`, `/api/disbursements`. |
-| `/ledger/[eventHash]` | Single event detail. | Ledger export/detail derived from public endpoint. |
-| `/verify` | Canonical proof/export page. | `/api/verify`, `/api/ledger-events`. |
-| `/about` | Project, operator, scope, and manual loop explanation. | Static SvelteKit page (prerendered; content is committed copy under `apps/web/src/routes/about/+page.svelte`). |
-| `/faq` | Honest limits and common questions. | Static SvelteKit page (prerendered; content is committed copy under `apps/web/src/routes/faq/+page.svelte`). |
-| `/contact` | Report mismatch/privacy issue/support path. | Static contact/report config. |
+| Route                   | Purpose                                                  | Primary data                                                                                                   |
+| ----------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `/`                     | Warm public landing and recent history preview.          | `/api/totals`, recent donations/disbursements/anchors.                                                         |
+| `/donate`               | Donation instructions and warnings.                      | Public config: treasury address, vault ATA, USDC mint, cluster.                                                |
+| `/donate/[donationRef]` | Optional status page for a public transaction signature. | Public ledger/search by signature when available.                                                              |
+| `/ledger`               | Full public ledger browser.                              | `/api/ledger-events`, `/api/donations`, `/api/disbursements`.                                                  |
+| `/ledger/[eventHash]`   | Single event detail.                                     | Ledger export/detail derived from public endpoint.                                                             |
+| `/verify`               | Canonical proof/export page.                             | `/api/verify`, `/api/ledger-events`.                                                                           |
+| `/about`                | Project, operator, scope, and manual loop explanation.   | Static SvelteKit page (prerendered; content is committed copy under `apps/web/src/routes/about/+page.svelte`). |
+| `/faq`                  | Honest limits and common questions.                      | Static SvelteKit page (prerendered; content is committed copy under `apps/web/src/routes/faq/+page.svelte`).   |
+| `/contact`              | Report mismatch/privacy issue/support path.              | Static contact/report config.                                                                                  |
 
 `/verify` is the canonical proof route. Do not ship a separate `/proof` route in
 the MVP.
@@ -45,15 +45,15 @@ a warm GitHub-like multi-rail public history feed.
 
 ### Required sections
 
-| Section | Requirements |
-| --- | --- |
-| Hero | Russian-first headline about transparent help for therapy sessions; primary CTA to `/donate`, secondary CTA to `/verify` or `/ledger`. |
-| Metrics | Total in, total out, current balance, donation count, disbursement count, latest anchor status. |
-| Recent feed | Multi-rail preview for donations, gift-card disbursements, anchors, and current ledger head. |
-| How it works | Donor sends Solana USDC → backend records finalized transfer → operator buys gift card → ledger records receipt ref → bot delivers privately. |
-| Privacy promise | Names, contacts, Telegram IDs, chat IDs, internal handles, donor memos, and gift-card codes are not public. |
-| Honest proof | Explain that hashes/anchors prove the public history was not silently rewritten; they do not prove receipt truth. |
-| Report path | Link to `/contact` for hash mismatch, privacy issue, or donor support. |
+| Section         | Requirements                                                                                                                                  |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hero            | Russian-first headline about transparent help for therapy sessions; primary CTA to `/donate`, secondary CTA to `/verify` or `/ledger`.        |
+| Metrics         | Total in, total out, current balance, donation count, disbursement count, latest anchor status.                                               |
+| Recent feed     | Multi-rail preview for donations, gift-card disbursements, anchors, and current ledger head.                                                  |
+| How it works    | Donor sends Solana USDC → backend records finalized transfer → operator buys gift card → ledger records receipt ref → bot delivers privately. |
+| Privacy promise | Names, contacts, Telegram IDs, chat IDs, internal handles, donor memos, and gift-card codes are not public.                                   |
+| Honest proof    | Explain that hashes/anchors prove the public history was not silently rewritten; they do not prove receipt truth.                             |
+| Report path     | Link to `/contact` for hash mismatch, privacy issue, or donor support.                                                                        |
 
 The landing is a preview, not the complete audit dashboard. It should link to the
 full `/ledger` and `/verify` pages instead of exposing every raw record inline.
@@ -62,28 +62,28 @@ full `/ledger` and `/verify` pages instead of exposing every raw record inline.
 
 ### Required content
 
-| Item | Requirement |
-| --- | --- |
-| Network | Show `SOLANA_CLUSTER` and warn when not `mainnet-beta`. |
-| Token | Show USDC mint address and label SPL USDC only. |
-| Destination | Show treasury wallet address and vault USDC ATA; make clear donations are SPL token transfers to the vault ATA. |
-| QR/copy | Provide QR and copy buttons for public address/ATA/mint. |
-| Instructions | Explain wallet steps in Russian-first copy with short technical details. |
-| Public-chain warning | Donor transfers are visible on Solana; donor wallet address may be linkable by chain analytics. |
-| Memo warning | Donors should not put names, contact info, or beneficiary details in on-chain memos; the site does not republish donor memos by default. |
-| Canonicality warning | Wallet success is not final site truth; the ledger updates only after finalized backend ingest or reconciliation. |
-| Troubleshooting | If a donation does not appear after the expected window, link to `/contact` with tx signature guidance. |
+| Item                 | Requirement                                                                                                                              |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Network              | Show `SOLANA_CLUSTER` and warn when not `mainnet-beta`.                                                                                  |
+| Token                | Show USDC mint address and label SPL USDC only.                                                                                          |
+| Destination          | Show treasury wallet address and vault USDC ATA; make clear donations are SPL token transfers to the vault ATA.                          |
+| QR/copy              | Provide QR and copy buttons for public address/ATA/mint.                                                                                 |
+| Instructions         | Explain wallet steps in Russian-first copy with short technical details.                                                                 |
+| Public-chain warning | Donor transfers are visible on Solana; donor wallet address may be linkable by chain analytics.                                          |
+| Memo warning         | Donors should not put names, contact info, or beneficiary details in on-chain memos; the site does not republish donor memos by default. |
+| Canonicality warning | Wallet success is not final site truth; the ledger updates only after finalized backend ingest or reconciliation.                        |
+| Troubleshooting      | If a donation does not appear after the expected window, link to `/contact` with tx signature guidance.                                  |
 
 ### Optional `/donate/[donationRef]`
 
 If implemented, `donationRef` is a public Solana transaction signature, not a
 donor identity, private memo, or account. The page may poll public data and show:
 
-| Status | Meaning |
-| --- | --- |
-| Pending | Wallet returned a signature, but no finalized `donation_confirmed` ledger event exists yet. |
-| Confirmed | A matching `donation_confirmed` ledger event exists; show sequence number, event hash, amount, and tx link. |
-| Not found | No matching ledger event after the normal window; link to `/contact` and explain reconciliation may still run. |
+| Status                  | Meaning                                                                                                           |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Pending                 | Wallet returned a signature, but no finalized `donation_confirmed` ledger event exists yet.                       |
+| Confirmed               | A matching `donation_confirmed` ledger event exists; show sequence number, event hash, amount, and tx link.       |
+| Not found               | No matching ledger event after the normal window; link to `/contact` and explain reconciliation may still run.    |
 | Wrong token/destination | The transaction is visible but does not match configured SPL USDC mint and vault ATA; it is not a donation event. |
 
 The status page must not ask for or display private donor identity.
@@ -140,10 +140,10 @@ Required content:
 
 ## `/about`, `/faq`, and `/contact`
 
-| Route | Required content |
-| --- | --- |
-| `/about` | What the project is, manual operator loop, Solana USDC scope, treasury/anchor wallet split, and why beneficiaries remain private. |
-| `/faq` | What hashes prove; what anchors prove; what receipts do not prove; why donor transfers are public; why Telegram/private data is not public; why manual conversion is MVP. |
+| Route      | Required content                                                                                                                                                                         |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/about`   | What the project is, manual operator loop, Solana USDC scope, treasury/anchor wallet split, and why beneficiaries remain private.                                                        |
+| `/faq`     | What hashes prove; what anchors prove; what receipts do not prove; why donor transfers are public; why Telegram/private data is not public; why manual conversion is MVP.                |
 | `/contact` | Report hash mismatch, missing donation, privacy concern, secret exposure suspicion, or general donor question. Include expected information without requesting private beneficiary data. |
 
 Contact copy must ask for the minimum useful data: transaction signature,
@@ -153,24 +153,24 @@ signing messages.
 
 ## UI state matrix
 
-| Surface | Loading | Empty | Error | Stale | Success |
-| --- | --- | --- | --- | --- | --- |
-| Metrics | Skeleton cards with labels. | Zero totals with “пока нет записей”. | Friendly degraded card with retry and `/contact`. | Label data age and keep values visible. | Totals, counts, balance, latest anchor status. |
-| Landing feed | Timeline skeleton. | Explain first donations/disbursements will appear here. | Show feed unavailable without hiding donate/verify links. | Mark “обновлено N минут назад”. | Multi-rail feed with public-safe events. |
-| Donate | Config skeleton; disable copy until loaded. | Not applicable if config exists; fail closed if missing. | Do not show partial address if validation fails. | Warn if public config age is unknown. | QR/copy/instructions with canonicality warning. |
-| Donation status | Spinner with “ждём подтверждения реестра”. | No ledger event yet; explain reconciliation window. | Show request-safe error and report link. | Keep pending with last checked time. | Show confirmed ledger event and tx link. |
-| Ledger | Table/timeline skeleton. | Explain no ledger events exist yet. | Show retry/export fallback if possible. | Label potentially cached data. | Paginated public events and export link. |
-| Verification | Proof skeleton. | No anchor yet; ledger can still be hash-checked. | Show verification unavailable and report path. | Mark anchor stale and explain risk. | Head, anchor, commands, export, honest limits. |
+| Surface         | Loading                                     | Empty                                                    | Error                                                     | Stale                                   | Success                                         |
+| --------------- | ------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------- | --------------------------------------- | ----------------------------------------------- |
+| Metrics         | Skeleton cards with labels.                 | Zero totals with “пока нет записей”.                     | Friendly degraded card with retry and `/contact`.         | Label data age and keep values visible. | Totals, counts, balance, latest anchor status.  |
+| Landing feed    | Timeline skeleton.                          | Explain first donations/disbursements will appear here.  | Show feed unavailable without hiding donate/verify links. | Mark “обновлено N минут назад”.         | Multi-rail feed with public-safe events.        |
+| Donate          | Config skeleton; disable copy until loaded. | Not applicable if config exists; fail closed if missing. | Do not show partial address if validation fails.          | Warn if public config age is unknown.   | QR/copy/instructions with canonicality warning. |
+| Donation status | Spinner with “ждём подтверждения реестра”.  | No ledger event yet; explain reconciliation window.      | Show request-safe error and report link.                  | Keep pending with last checked time.    | Show confirmed ledger event and tx link.        |
+| Ledger          | Table/timeline skeleton.                    | Explain no ledger events exist yet.                      | Show retry/export fallback if possible.                   | Label potentially cached data.          | Paginated public events and export link.        |
+| Verification    | Proof skeleton.                             | No anchor yet; ledger can still be hash-checked.         | Show verification unavailable and report path.            | Mark anchor stale and explain risk.     | Head, anchor, commands, export, honest limits.  |
 
 ## Content tone and Russian-first copy direction
 
-| Copy area | Direction |
-| --- | --- |
-| Emotional frame | Warm care language: “помочь оплатить сессии”, “история заботы”, “без имён и контактов”. |
-| Technical proof | Short Russian explanation first, exact terms second: `tx`, `sha256`, `HEAD`, `Memo`, `USDC mint`. |
-| Limits | Direct and calm: “это не доказывает подлинность чека”, “переводы видны в Solana”. |
-| Privacy | Repeat boundaries in simple words: public money/proof facts, private beneficiary identity and delivery. |
-| Errors | Actionable, non-blaming, no stack traces or provider internals. |
+| Copy area       | Direction                                                                                               |
+| --------------- | ------------------------------------------------------------------------------------------------------- |
+| Emotional frame | Warm care language: “помочь оплатить сессии”, “история заботы”, “без имён и контактов”.                 |
+| Technical proof | Short Russian explanation first, exact terms second: `tx`, `sha256`, `HEAD`, `Memo`, `USDC mint`.       |
+| Limits          | Direct and calm: “это не доказывает подлинность чека”, “переводы видны в Solana”.                       |
+| Privacy         | Repeat boundaries in simple words: public money/proof facts, private beneficiary identity and delivery. |
+| Errors          | Actionable, non-blaming, no stack traces or provider internals.                                         |
 
 Final legal/project name wording can evolve, but the MVP must not overpromise
 receipt truth, donor anonymity, or beneficiary anonymity beyond the documented

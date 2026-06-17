@@ -6,15 +6,15 @@
 
 ## Hosting decisions
 
-| Concern | Choice | Why |
-| --- | --- | --- |
-| Web frontend | SvelteKit 2.x + Svelte 5 on Cloudflare Pages with `adapter-cloudflare` | Matches the project frontend standard, supports typed routes/load/actions, and keeps hosting on Cloudflare. |
-| Workers | Cloudflare Workers | Fits read API, write API, ingest, anchor, and bot webhooks. |
-| Ledger DB | Cloudflare D1 `vault-db` | SQLite-compatible, enough for MVP, simple migrations. |
-| Bot DB | Separate Cloudflare D1 `bot-db` in the same Cloudflare account | Practical privacy boundary for Telegram mapping without multi-account ops overhead. |
-| Solana RPC / webhooks | Helius | Webhooks, RPC, devnet/mainnet endpoints, free tier suitable for MVP. |
-| CI/CD | GitHub Actions | Public repo CI is free; manual/live jobs can be separately gated. |
-| Anchor schedule | Cloudflare Cron plus operator-triggered backup run | Public liveness with an operator fallback through the same anchor code path. |
+| Concern               | Choice                                                                 | Why                                                                                                         |
+| --------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Web frontend          | SvelteKit 2.x + Svelte 5 on Cloudflare Pages with `adapter-cloudflare` | Matches the project frontend standard, supports typed routes/load/actions, and keeps hosting on Cloudflare. |
+| Workers               | Cloudflare Workers                                                     | Fits read API, write API, ingest, anchor, and bot webhooks.                                                 |
+| Ledger DB             | Cloudflare D1 `vault-db`                                               | SQLite-compatible, enough for MVP, simple migrations.                                                       |
+| Bot DB                | Separate Cloudflare D1 `bot-db` in the same Cloudflare account         | Practical privacy boundary for Telegram mapping without multi-account ops overhead.                         |
+| Solana RPC / webhooks | Helius                                                                 | Webhooks, RPC, devnet/mainnet endpoints, free tier suitable for MVP.                                        |
+| CI/CD                 | GitHub Actions                                                         | Public repo CI is free; manual/live jobs can be separately gated.                                           |
+| Anchor schedule       | Cloudflare Cron plus operator-triggered backup run                     | Public liveness with an operator fallback through the same anchor code path.                                |
 
 The operator-triggered backup run is not a separate anchoring system. It invokes
 the same anchor logic as the scheduled Cloudflare Cron run, with the same
@@ -70,22 +70,22 @@ boundary. The binding allowlist is checked in CI per invariant I-7.
 
 ## Secrets and environment variables
 
-| Name | Location | Required for PR CI? | Purpose |
-| --- | --- | --- | --- |
-| `OPERATOR_TOKEN` | `vault-operator` Worker Secret | no | Sole holder of the operator write auth. Validated by `vault-operator` and forwarded via service binding to `vault-api-write`, `vault-anchor-cron`, and `tg-bot`. The downstream Workers do not hold the token. |
-| `TG_BOT_TOKEN` | `tg-bot` Workers Secret | no | Telegram Bot API. |
-| `TG_WEBHOOK_SECRET` | `tg-bot` Workers Secret | no | Telegram webhook secret-token validation. |
-| `TG_ID_HMAC_KEY` | `tg-bot` Workers Secret | no | Keyed HMAC for non-reversible stable Telegram user references. |
-| `TG_CHAT_ENC_KEY` | `tg-bot` Workers Secret | no | Authenticated encryption key for Telegram chat delivery routes. |
-| `HELIUS_API_KEY` | deploy/live environments | no | Helius management/RPC access. |
-| `HELIUS_RPC_URL` | ingest/anchor environments | no for PR; optional for live smoke | Solana RPC endpoint. |
-| `HELIUS_WEBHOOK_AUTH_HEADER` | `vault-ingest` Workers Secret | no | Bearer token (without `Bearer ` prefix) for Helius webhook auth. The Worker strips the `Bearer ` prefix from the incoming `Authorization` header before comparing. Set in the Helius dashboard `authHeader` field as just the token value. |
-| `TREASURY_WALLET_ADDRESS` | public config + ingest env | yes as non-secret test value | Owner of the vault USDC ATA. |
-| `VAULT_USDC_ATA` | public config + ingest env | yes as non-secret test value | USDC token account watched for donations. |
-| `USDC_MINT` | public config | yes as non-secret test value | Cluster-specific USDC mint. |
-| `ANCHOR_WALLET_ADDRESS` | public config + anchor env | yes as non-secret test value | Public signer for Memo anchors. |
-| `ANCHOR_WALLET_SECRET` | `vault-anchor-cron` Worker Secret | no | Anchor wallet keypair; holds only SOL for fees. **Not in `vault-operator`** — manual triggers are routed through `vault-operator` to `vault-anchor-cron` via service binding. |
-| `SOLANA_CLUSTER` | all blockchain-aware environments | yes | `localnet`, `devnet`, or `mainnet-beta`. |
+| Name                         | Location                          | Required for PR CI?                | Purpose                                                                                                                                                                                                                                    |
+| ---------------------------- | --------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `OPERATOR_TOKEN`             | `vault-operator` Worker Secret    | no                                 | Sole holder of the operator write auth. Validated by `vault-operator` and forwarded via service binding to `vault-api-write`, `vault-anchor-cron`, and `tg-bot`. The downstream Workers do not hold the token.                             |
+| `TG_BOT_TOKEN`               | `tg-bot` Workers Secret           | no                                 | Telegram Bot API.                                                                                                                                                                                                                          |
+| `TG_WEBHOOK_SECRET`          | `tg-bot` Workers Secret           | no                                 | Telegram webhook secret-token validation.                                                                                                                                                                                                  |
+| `TG_ID_HMAC_KEY`             | `tg-bot` Workers Secret           | no                                 | Keyed HMAC for non-reversible stable Telegram user references.                                                                                                                                                                             |
+| `TG_CHAT_ENC_KEY`            | `tg-bot` Workers Secret           | no                                 | Authenticated encryption key for Telegram chat delivery routes.                                                                                                                                                                            |
+| `HELIUS_API_KEY`             | deploy/live environments          | no                                 | Helius management/RPC access.                                                                                                                                                                                                              |
+| `HELIUS_RPC_URL`             | ingest/anchor environments        | no for PR; optional for live smoke | Solana RPC endpoint.                                                                                                                                                                                                                       |
+| `HELIUS_WEBHOOK_AUTH_HEADER` | `vault-ingest` Workers Secret     | no                                 | Bearer token (without `Bearer ` prefix) for Helius webhook auth. The Worker strips the `Bearer ` prefix from the incoming `Authorization` header before comparing. Set in the Helius dashboard `authHeader` field as just the token value. |
+| `TREASURY_WALLET_ADDRESS`    | public config + ingest env        | yes as non-secret test value       | Owner of the vault USDC ATA.                                                                                                                                                                                                               |
+| `VAULT_USDC_ATA`             | public config + ingest env        | yes as non-secret test value       | USDC token account watched for donations.                                                                                                                                                                                                  |
+| `USDC_MINT`                  | public config                     | yes as non-secret test value       | Cluster-specific USDC mint.                                                                                                                                                                                                                |
+| `ANCHOR_WALLET_ADDRESS`      | public config + anchor env        | yes as non-secret test value       | Public signer for Memo anchors.                                                                                                                                                                                                            |
+| `ANCHOR_WALLET_SECRET`       | `vault-anchor-cron` Worker Secret | no                                 | Anchor wallet keypair; holds only SOL for fees. **Not in `vault-operator`** — manual triggers are routed through `vault-operator` to `vault-anchor-cron` via service binding.                                                              |
+| `SOLANA_CLUSTER`             | all blockchain-aware environments | yes                                | `localnet`, `devnet`, or `mainnet-beta`.                                                                                                                                                                                                   |
 
 The treasury private key is intentionally absent from CI, Workers, repository
 files, and normal app runtime.
@@ -118,11 +118,11 @@ the bot environment; vault Workers never receive them.
 
 ## Cluster configuration
 
-| Cluster | USDC mint | Use |
-| --- | --- | --- |
-| `mainnet-beta` | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` | Production donations. |
-| `devnet` | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` | Live smoke tests with no financial value. |
-| `localnet` | Local test mint | Local validator tests. |
+| Cluster        | USDC mint                                      | Use                                       |
+| -------------- | ---------------------------------------------- | ----------------------------------------- |
+| `mainnet-beta` | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` | Production donations.                     |
+| `devnet`       | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` | Live smoke tests with no financial value. |
+| `localnet`     | Local test mint                                | Local validator tests.                    |
 
 Every transaction fetch used for ingestion or verification finality uses
 `commitment: "finalized"` and `maxSupportedTransactionVersion: 0`.

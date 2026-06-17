@@ -50,12 +50,12 @@ This is intentionally **not** the full audit dashboard. The landing gives donors
 
 The left rail has multiple lanes:
 
-| Lane | Meaning |
-| --- | --- |
-| **вход** | incoming donations |
-| **карты** | outgoing gift-card purchases / receipts |
-| **подтверждение** | daily hash anchors / public proof |
-| **реестр** | main ledger history / current state |
+| Lane              | Meaning                                 |
+| ----------------- | --------------------------------------- |
+| **вход**          | incoming donations                      |
+| **карты**         | outgoing gift-card purchases / receipts |
+| **подтверждение** | daily hash anchors / public proof       |
+| **реестр**        | main ledger history / current state     |
 
 ---
 
@@ -114,13 +114,13 @@ The future full dashboard can contain:
 
 The current Russian copy is intentionally soft and plain:
 
-| UI text | Intent |
-| --- | --- |
-| **Живая история заботы.** | Main emotional frame: care, not finance. |
-| **Публичная история помощи** | Explains the feed without saying “ledger” first. |
-| **Помочь оплатить сессии** | Direct donor CTA tied to therapy sessions. |
-| **Получатели остаются без имён и контактов.** | Privacy promise in simple words. |
-| **Любой может пересчитать публичный реестр...** | Honest technical trust affordance. |
+| UI text                                         | Intent                                           |
+| ----------------------------------------------- | ------------------------------------------------ |
+| **Живая история заботы.**                       | Main emotional frame: care, not finance.         |
+| **Публичная история помощи**                    | Explains the feed without saying “ledger” first. |
+| **Помочь оплатить сессии**                      | Direct donor CTA tied to therapy sessions.       |
+| **Получатели остаются без имён и контактов.**   | Privacy promise in simple words.                 |
+| **Любой может пересчитать публичный реестр...** | Honest technical trust affordance.               |
 
 Technical labels (`tx`, `sha256`, `HEAD`, `latest_hash`) remain in English because they are standard verification language and would be awkward or less precise if translated fully.
 

@@ -133,11 +133,11 @@ parsed payload object participates in event_hash
 It must not contain secrets, private beneficiary identifiers, Telegram user IDs,
 raw Helius webhook bodies, donor memos, or full gift-card codes.
 
-| Term | Meaning |
-| --- | --- |
-| `payload_json` | Canonical JSON text stored in the database. |
-| `payload` | Parsed JSON object produced from `payload_json` before hashing. |
-| Event payload | The immutable, donor-visible facts for one ledger event. |
+| Term           | Meaning                                                         |
+| -------------- | --------------------------------------------------------------- |
+| `payload_json` | Canonical JSON text stored in the database.                     |
+| `payload`      | Parsed JSON object produced from `payload_json` before hashing. |
+| Event payload  | The immutable, donor-visible facts for one ledger event.        |
 
 The event payload comes from the subsystem that observed or created the event:
 
@@ -292,17 +292,17 @@ CREATE TABLE wallets (
 
 MVP rows:
 
-| Role | Purpose | Private key location |
-| --- | --- | --- |
+| Role       | Purpose                                        | Private key location                     |
+| ---------- | ---------------------------------------------- | ---------------------------------------- |
 | `treasury` | owns the vault USDC ATA and receives donations | not in CI, Workers, repo, or app runtime |
-| `anchor` | signs Solana Memo anchor transactions | `ANCHOR_WALLET_SECRET` only |
+| `anchor`   | signs Solana Memo anchor transactions          | `ANCHOR_WALLET_SECRET` only              |
 
 USDC mint addresses:
 
-| Cluster | USDC mint |
-| --- | --- |
+| Cluster | USDC mint                                      |
+| ------- | ---------------------------------------------- |
 | Mainnet | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` |
-| Devnet | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` |
+| Devnet  | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` |
 
 ### `anchor_runs`
 
@@ -517,14 +517,14 @@ CREATE TABLE conversations (
 
 The `status` column has a precise state machine:
 
-| From         | To           | Triggered by                                                                          |
-| ------------ | ------------ | ------------------------------------------------------------------------------------- |
-| (new)        | `pending`    | `/card` command creates the conversation row.                                         |
-| `pending`    | `in_flight`  | `POST /tg/internal/send-code` begins; bot decrypts the chat route and calls Telegram.  |
-| `in_flight`  | `delivered`  | Telegram returns 200 with a successful `Message` response.                            |
-| `in_flight`  | `failed`     | Telegram returns 4xx/5xx, the bot cannot decrypt, or a network error.                |
-| `failed`     | `in_flight`  | Operator re-issues `send-code` with the same `opaque_id`/`conversation_id` and a new code. |
-| `delivered`  | (terminal)   | No transitions out of `delivered`. Re-sends require a new `opaque_id`/`conversation_id`. |
+| From        | To          | Triggered by                                                                               |
+| ----------- | ----------- | ------------------------------------------------------------------------------------------ |
+| (new)       | `pending`   | `/card` command creates the conversation row.                                              |
+| `pending`   | `in_flight` | `POST /tg/internal/send-code` begins; bot decrypts the chat route and calls Telegram.      |
+| `in_flight` | `delivered` | Telegram returns 200 with a successful `Message` response.                                 |
+| `in_flight` | `failed`    | Telegram returns 4xx/5xx, the bot cannot decrypt, or a network error.                      |
+| `failed`    | `in_flight` | Operator re-issues `send-code` with the same `opaque_id`/`conversation_id` and a new code. |
+| `delivered` | (terminal)  | No transitions out of `delivered`. Re-sends require a new `opaque_id`/`conversation_id`.   |
 
 `/tg/internal/pending-requests` filters with
 `WHERE status != 'delivered'` so delivered rows are excluded by

@@ -6,14 +6,14 @@
 
 ## Monitoring stack
 
-| Tool | Use | Notes |
-| --- | --- | --- |
-| Cloudflare Workers logs | Request/error inspection | Keep logs low-sensitivity. |
-| Cloudflare Analytics | Public traffic and request counts | Product/ops signal only. |
-| UptimeRobot | `/api/health` from multiple regions | Alerts on degraded/unavailable. |
-| GitHub Actions | CI, deploy, scheduled/manual checks | Live checks are environment-gated. |
-| Helius dashboard/logs | Webhook delivery and replay debugging | Also used for contract smoke tests. |
-| Solana explorers/RPC | Anchor and transfer confirmation | Verification source for donors. |
+| Tool                    | Use                                   | Notes                               |
+| ----------------------- | ------------------------------------- | ----------------------------------- |
+| Cloudflare Workers logs | Request/error inspection              | Keep logs low-sensitivity.          |
+| Cloudflare Analytics    | Public traffic and request counts     | Product/ops signal only.            |
+| UptimeRobot             | `/api/health` from multiple regions   | Alerts on degraded/unavailable.     |
+| GitHub Actions          | CI, deploy, scheduled/manual checks   | Live checks are environment-gated.  |
+| Helius dashboard/logs   | Webhook delivery and replay debugging | Also used for contract smoke tests. |
+| Solana explorers/RPC    | Anchor and transfer confirmation      | Verification source for donors.     |
 
 ## Health checks
 
@@ -29,23 +29,23 @@ Any failed check returns `status: "degraded"`.
 
 ## Failure modes
 
-| # | Failure | Detection | Response |
-| --- | --- | --- | --- |
-| F-1 | Scheduled anchor missed | `anchor_stale`; scheduled workflow failure | Run manual anchor from `/admin`; inspect `anchor_runs`. |
-| F-2 | Anchor transaction fails | `anchor_runs.status='failed'`; workflow/log error | Retry if transient; inspect RPC errors; do not append ledger anchor event until tx is known. |
-| F-3 | Anchor wallet low SOL | `/api/health`; low-SOL dashboard alert | Replenish anchor wallet from operator funding wallet; confirm balance. |
-| F-4 | Anchor wallet compromised | Unexpected Memo tx or leaked secret | Rotate anchor wallet, update config, publish notice, keep treasury unchanged. |
-| F-5 | Helius webhook delivery down | No inbox events; Helius dashboard failures | Fix endpoint/config, then run reconciliation/backfill from Solana history. |
-| F-6 | Helius duplicate replay | Duplicate inbox signatures | Return `200`; do not append duplicate ledger events. |
-| F-7 | RPC returns `null` before finality | Async processor retry logs | Retry with finalized commitment and backoff. |
-| F-8 | RPC 429/5xx | Retry/error counters | Backoff; keep inbox row failed/pending for later retry. |
-| F-9 | `vault-db` unavailable | `/api/health` degraded or 503 | Wait for Cloudflare recovery; surface temporary unavailable message. |
-| F-10 | `bot-db` unavailable | Bot errors/timeouts | Bot replies with temporary unavailable message when possible. |
-| F-11 | `OPERATOR_TOKEN` leaked | Operator suspicion, unexpected writes | Rotate token on the `vault-operator` Worker only (`wrangler secret put OPERATOR_TOKEN`); inspect appended events; no other Worker is affected because no other Worker holds the token. |
-| F-12 | Bot token/account or Telegram identity secret compromised | Bot abuse, provider alert, or secret suspicion | Revoke token, redeploy bot, treat handles/identity refs as compromised, rotate chat-route keys, notify beneficiaries through safe channel. |
-| F-13 | Donor reports hash mismatch | Email/contact report | Re-run public verification, inspect ledger export and anchors, publish incident if real. |
-| F-14 | Deploy fails | GitHub Actions failure | Last good deploy stays live; fix and rerun. |
-| F-15 | D1 migration fails partially | Deploy smoke failure | Treat as incident; do not mutate `ledger_events` to hide the issue. |
+| #    | Failure                                                   | Detection                                         | Response                                                                                                                                                                               |
+| ---- | --------------------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F-1  | Scheduled anchor missed                                   | `anchor_stale`; scheduled workflow failure        | Run manual anchor from `/admin`; inspect `anchor_runs`.                                                                                                                                |
+| F-2  | Anchor transaction fails                                  | `anchor_runs.status='failed'`; workflow/log error | Retry if transient; inspect RPC errors; do not append ledger anchor event until tx is known.                                                                                           |
+| F-3  | Anchor wallet low SOL                                     | `/api/health`; low-SOL dashboard alert            | Replenish anchor wallet from operator funding wallet; confirm balance.                                                                                                                 |
+| F-4  | Anchor wallet compromised                                 | Unexpected Memo tx or leaked secret               | Rotate anchor wallet, update config, publish notice, keep treasury unchanged.                                                                                                          |
+| F-5  | Helius webhook delivery down                              | No inbox events; Helius dashboard failures        | Fix endpoint/config, then run reconciliation/backfill from Solana history.                                                                                                             |
+| F-6  | Helius duplicate replay                                   | Duplicate inbox signatures                        | Return `200`; do not append duplicate ledger events.                                                                                                                                   |
+| F-7  | RPC returns `null` before finality                        | Async processor retry logs                        | Retry with finalized commitment and backoff.                                                                                                                                           |
+| F-8  | RPC 429/5xx                                               | Retry/error counters                              | Backoff; keep inbox row failed/pending for later retry.                                                                                                                                |
+| F-9  | `vault-db` unavailable                                    | `/api/health` degraded or 503                     | Wait for Cloudflare recovery; surface temporary unavailable message.                                                                                                                   |
+| F-10 | `bot-db` unavailable                                      | Bot errors/timeouts                               | Bot replies with temporary unavailable message when possible.                                                                                                                          |
+| F-11 | `OPERATOR_TOKEN` leaked                                   | Operator suspicion, unexpected writes             | Rotate token on the `vault-operator` Worker only (`wrangler secret put OPERATOR_TOKEN`); inspect appended events; no other Worker is affected because no other Worker holds the token. |
+| F-12 | Bot token/account or Telegram identity secret compromised | Bot abuse, provider alert, or secret suspicion    | Revoke token, redeploy bot, treat handles/identity refs as compromised, rotate chat-route keys, notify beneficiaries through safe channel.                                             |
+| F-13 | Donor reports hash mismatch                               | Email/contact report                              | Re-run public verification, inspect ledger export and anchors, publish incident if real.                                                                                               |
+| F-14 | Deploy fails                                              | GitHub Actions failure                            | Last good deploy stays live; fix and rerun.                                                                                                                                            |
+| F-15 | D1 migration fails partially                              | Deploy smoke failure                              | Treat as incident; do not mutate `ledger_events` to hide the issue.                                                                                                                    |
 
 ## Reconciliation/backfill runbook
 

@@ -5,7 +5,7 @@
   "compatibility_date": "2026-06-15",
   "vars": {
     "SOLANA_CLUSTER": "devnet",
-    "SITE_URL": "https://staging.open-care.org"
+    "SITE_URL": "https://staging.open-care.org",
   },
   // Secrets are managed via `wrangler secret put`, not declared here.
   // The set of required secrets is documented in
@@ -23,23 +23,23 @@
   "routes": [
     {
       "pattern": "staging.open-care.org/api/disbursements",
-      "zone_id": "d3ce85436c3b589b4f83814991bf2c78"
+      "zone_id": "d3ce85436c3b589b4f83814991bf2c78",
     },
     {
       "pattern": "staging.open-care.org/api/anchor/manual",
-      "zone_id": "d3ce85436c3b589b4f83814991bf2c78"
+      "zone_id": "d3ce85436c3b589b4f83814991bf2c78",
     },
     {
       "pattern": "staging.open-care.org/tg/internal/*",
-      "zone_id": "d3ce85436c3b589b4f83814991bf2c78"
-    }
+      "zone_id": "d3ce85436c3b589b4f83814991bf2c78",
+    },
   ],
   "services": [
     { "binding": "VAULT_API_WRITE", "service": "vault-api-write" },
     { "binding": "VAULT_ANCHOR_CRON", "service": "vault-anchor-cron" },
-    { "binding": "TG_BOT", "service": "tg-bot" }
+    { "binding": "TG_BOT", "service": "tg-bot" },
   ],
   "observability": {
-    "enabled": true
-  }
+    "enabled": true,
+  },
 }

@@ -7,8 +7,8 @@
     {
       "binding": "vault_db",
       "database_name": "vault-db",
-      "database_id": "c6a73f10-728d-49e2-8d71-28ea3344a47b"
-    }
+      "database_id": "c6a73f10-728d-49e2-8d71-28ea3344a47b",
+    },
   ],
   "vars": {
     "SOLANA_CLUSTER": "devnet",
@@ -16,13 +16,13 @@
     "TREASURY_WALLET_ADDRESS": "8ufYGMkmAWeaYaM4CnANrxLxpQoaESKTGFN1BcgU71tG",
     "VAULT_USDC_ATA": "52MK6GwPWLvjfZuXm3K9fy9PozZAgUAKridA7ycSQUtG",
     "ANCHOR_WALLET_ADDRESS": "BhKtkM1oHADwo8ap5P6Lymj7b3iaspiAm37RA9KMn8YG",
-    "SITE_URL": "https://staging.open-care.org"
+    "SITE_URL": "https://staging.open-care.org",
   },
   // Secrets are managed via `wrangler secret put`, not declared here.
   // The set of required secrets is documented in
   // docs/ops/secrets-inventory.md. The MVP deploy script verifies
   // presence; missing secrets fail the deploy.
   "observability": {
-    "enabled": true
-  }
+    "enabled": true,
+  },
 }

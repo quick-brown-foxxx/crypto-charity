@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono } from 'hono';
 
 type Bindings = {
   vault_db: D1Database;
@@ -8,8 +8,8 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-app.get("/api/health", (c) => {
-  return c.json({ status: "ok" }, 200);
+app.get('/api/health', (c) => {
+  return c.json({ status: 'ok' }, 200);
 });
 
 // The real handler must compute the merkle root of unanchored ledger
@@ -17,11 +17,11 @@ app.get("/api/health", (c) => {
 // transaction, and update `last_anchor_wallet_sol_lamports`. The mock
 // returns `{ ok: true, message: "..." }`. This endpoint is reached via
 // service binding from vault-operator for manual triggers.
-app.post("/api/anchor/manual", (c) => {
-  return c.json({ ok: true, message: "anchor job triggered (mock)" }, 200);
+app.post('/api/anchor/manual', (c) => {
+  return c.json({ ok: true, message: 'anchor job triggered (mock)' }, 200);
 });
 
-app.all("*", (c) => {
+app.all('*', (c) => {
   return c.notFound();
 });
 
@@ -30,12 +30,8 @@ app.all("*", (c) => {
 // pipeline as /api/anchor/manual. The mock logs and returns.
 export default {
   fetch: app.fetch,
-  scheduled: async (
-    _event: ScheduledEvent,
-    _env: Bindings,
-    _ctx: ExecutionContext,
-  ) => {
+  scheduled: async (_event: ScheduledEvent, _env: Bindings, _ctx: ExecutionContext) => {
     // Real implementation: run anchor pipeline.
-    console.log("anchor cron triggered (mock)");
+    console.log('anchor cron triggered (mock)');
   },
 };

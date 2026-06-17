@@ -1,0 +1,31 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/vault-core" },
+    { "path": "packages/vault-db" },
+    { "path": "packages/bot-crypto" },
+    { "path": "apps/ingest" },
+    { "path": "apps/tg-bot" },
+    { "path": "apps/api-read" },
+    { "path": "apps/api-write" },
+    { "path": "apps/anchor-cron" },
+    { "path": "apps/operator" },
+    { "path": "apps/web" }
+  ],
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  }
+}

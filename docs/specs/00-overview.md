@@ -44,22 +44,22 @@ real-world identity.
 
 ## What the MVP does not deliver
 
-| Item | Why deferred |
-| --- | --- |
-| Narrative / marketing / stories layer | The first donor pool is small; trust mechanics matter more than marketing. |
-| Automated receipt verification | Receipt truth remains operational unless an Alter API or opt-in proof path exists. |
-| Therapist vetting | The therapy platform owns therapist vetting. |
-| Referral / anti-abuse system | MVP beneficiaries are invited personally. |
-| Hardened state-adversary opsec | The project is not claiming state-adversary-grade anonymity. |
-| Multi-sig / cold storage | The treasury key is kept out of CI/Workers; multi-sig is a later custody upgrade. |
-| Matrix / alternative messengers | Telegram is the realistic MVP channel. |
-| Psychiatry | The initial scope is psychological support. |
-| Automated conversion loop | Manual conversion is part of the MVP validation. |
-| Multi-currency / cross-chain | Solana USDC is the MVP rail. |
-| Donor accounts or recurring donations | Donors send to a public address; no account system. |
-| Public beneficiary signup | Beneficiaries are personally invited. |
-| Exchange widget | MVP can link to external conversion options; no embedded exchange integration. |
-| Receipt image storage | MVP stores structured receipt references, not images. |
+| Item                                  | Why deferred                                                                       |
+| ------------------------------------- | ---------------------------------------------------------------------------------- |
+| Narrative / marketing / stories layer | The first donor pool is small; trust mechanics matter more than marketing.         |
+| Automated receipt verification        | Receipt truth remains operational unless an Alter API or opt-in proof path exists. |
+| Therapist vetting                     | The therapy platform owns therapist vetting.                                       |
+| Referral / anti-abuse system          | MVP beneficiaries are invited personally.                                          |
+| Hardened state-adversary opsec        | The project is not claiming state-adversary-grade anonymity.                       |
+| Multi-sig / cold storage              | The treasury key is kept out of CI/Workers; multi-sig is a later custody upgrade.  |
+| Matrix / alternative messengers       | Telegram is the realistic MVP channel.                                             |
+| Psychiatry                            | The initial scope is psychological support.                                        |
+| Automated conversion loop             | Manual conversion is part of the MVP validation.                                   |
+| Multi-currency / cross-chain          | Solana USDC is the MVP rail.                                                       |
+| Donor accounts or recurring donations | Donors send to a public address; no account system.                                |
+| Public beneficiary signup             | Beneficiaries are personally invited.                                              |
+| Exchange widget                       | MVP can link to external conversion options; no embedded exchange integration.     |
+| Receipt image storage                 | MVP stores structured receipt references, not images.                              |
 
 ## Pre-build validation gate — manual loop must be validated first
 

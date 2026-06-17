@@ -5,5 +5,8 @@
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
-  "exports": {}
+  "exports": {},
+  "dependencies": {
+    "@open-care/vault-core": "workspace:*"
+  }
 }

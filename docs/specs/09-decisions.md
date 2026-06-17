@@ -186,8 +186,8 @@
   - `/api/disbursements` → `vault-api-write`
   - `/api/anchor/manual` → `vault-anchor-cron`
   - `/tg/internal/*` → `tg-bot`
-  The downstream Workers do not hold `OPERATOR_TOKEN` and are not
-  publicly routable for these routes.
+    The downstream Workers do not hold `OPERATOR_TOKEN` and are not
+    publicly routable for these routes.
 - **Reasoning:** the rejected alternatives were (a) share
   `OPERATOR_TOKEN` between `vault-api-write` and `tg-bot` (a leak
   in one Worker compromises both) and (b) split into two tokens
@@ -313,21 +313,21 @@
 
 ## Explicit deferrals
 
-| Item | Why deferred | Trigger to revisit |
-| --- | --- | --- |
-| Multi-sig treasury custody | Adds complexity before meaningful funds exist. | Treasury balance or operator count grows. |
-| Cold storage workflow | Manual MVP custody is enough to validate the model. | Larger sustained balance. |
-| Automated conversion loop | Manual conversion is a validation requirement. | Operator time exceeds target. |
-| Receipt image storage | Receipt references are enough to start; images need redaction/storage policy. | Donors ask for visual proof. |
-| Automated receipt verification | Needs platform API or opt-in beneficiary proof. | Receipt authenticity becomes donor blocker. |
-| Public beneficiary signup | MVP beneficiaries are personally invited. | Beneficiary count grows beyond manual onboarding. |
-| Referral / anti-abuse system | Not needed for a small invited cohort. | Abuse pressure appears. |
-| Matrix or alternative messenger | Telegram is the practical MVP. | Telegram becomes unusable for the beneficiary group. |
-| Psychiatry support | Initial scope is psychological support. | Separate legal/medical plan exists. |
-| Multi-currency/cross-chain | USDC on Solana is enough to validate the product. | Repeated donor demand for another rail. |
-| Donor accounts/recurring donations | Adds auth and privacy complexity. | Donor retention needs account features. |
-| Exchange widget | Static instructions are enough to start. | Donation conversion becomes a major drop-off. |
-| Queryable historical logs | Free live logs are enough initially. | Incidents require older log search. |
+| Item                               | Why deferred                                                                  | Trigger to revisit                                   |
+| ---------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Multi-sig treasury custody         | Adds complexity before meaningful funds exist.                                | Treasury balance or operator count grows.            |
+| Cold storage workflow              | Manual MVP custody is enough to validate the model.                           | Larger sustained balance.                            |
+| Automated conversion loop          | Manual conversion is a validation requirement.                                | Operator time exceeds target.                        |
+| Receipt image storage              | Receipt references are enough to start; images need redaction/storage policy. | Donors ask for visual proof.                         |
+| Automated receipt verification     | Needs platform API or opt-in beneficiary proof.                               | Receipt authenticity becomes donor blocker.          |
+| Public beneficiary signup          | MVP beneficiaries are personally invited.                                     | Beneficiary count grows beyond manual onboarding.    |
+| Referral / anti-abuse system       | Not needed for a small invited cohort.                                        | Abuse pressure appears.                              |
+| Matrix or alternative messenger    | Telegram is the practical MVP.                                                | Telegram becomes unusable for the beneficiary group. |
+| Psychiatry support                 | Initial scope is psychological support.                                       | Separate legal/medical plan exists.                  |
+| Multi-currency/cross-chain         | USDC on Solana is enough to validate the product.                             | Repeated donor demand for another rail.              |
+| Donor accounts/recurring donations | Adds auth and privacy complexity.                                             | Donor retention needs account features.              |
+| Exchange widget                    | Static instructions are enough to start.                                      | Donation conversion becomes a major drop-off.        |
+| Queryable historical logs          | Free live logs are enough initially.                                          | Incidents require older log search.                  |
 
 ## Open questions
 

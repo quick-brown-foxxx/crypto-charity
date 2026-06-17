@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono } from 'hono';
 
 type Bindings = {
   vault_db: D1Database;
@@ -14,11 +14,11 @@ const app = new Hono<{ Bindings: Bindings }>();
 // The real handler must validate the disbursement request body, persist
 // the disbursement row in vault_db, and enqueue the on-chain transfer
 // for operator approval. The mock returns `{ ok: true }`.
-app.post("/api/disbursements", (c) => {
+app.post('/api/disbursements', (c) => {
   return c.json({ ok: true }, 200);
 });
 
-app.all("*", (c) => {
+app.all('*', (c) => {
   return c.notFound();
 });
 

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.svelte-kit/
+.wrangler/
+coverage/
+pnpm-lock.yaml
+*.sql
+*.d.ts
+# Generated composite build outputs
+packages/*/vitest.config.js
+packages/*/vitest.config.d.ts
+vitest.shared.js
+vitest.shared.d.ts

@@ -8,8 +8,8 @@
       "binding": "bot_db",
       "database_name": "bot-db",
       "database_id": "8a87d3ff-8689-4e77-a9c5-85b5ca19afd9",
-      "migrations_dir": "migrations"
-    }
+      "migrations_dir": "migrations",
+    },
   ],
   "vars": {
     "SOLANA_CLUSTER": "devnet",
@@ -17,7 +17,7 @@
     "TREASURY_WALLET_ADDRESS": "8ufYGMkmAWeaYaM4CnANrxLxpQoaESKTGFN1BcgU71tG",
     "VAULT_USDC_ATA": "52MK6GwPWLvjfZuXm3K9fy9PozZAgUAKridA7ycSQUtG",
     "ANCHOR_WALLET_ADDRESS": "BhKtkM1oHADwo8ap5P6Lymj7b3iaspiAm37RA9KMn8YG",
-    "SITE_URL": "https://staging.open-care.org"
+    "SITE_URL": "https://staging.open-care.org",
   },
   // Secrets are managed via `wrangler secret put`, not declared here.
   // The set of required secrets is documented in
@@ -26,10 +26,10 @@
   "routes": [
     {
       "pattern": "staging.open-care.org/tg/webhook",
-      "zone_id": "d3ce85436c3b589b4f83814991bf2c78"
-    }
+      "zone_id": "d3ce85436c3b589b4f83814991bf2c78",
+    },
   ],
   "observability": {
-    "enabled": true
-  }
+    "enabled": true,
+  },
 }

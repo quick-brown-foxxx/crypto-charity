@@ -83,34 +83,34 @@ Rules:
 - `details` is optional and must contain only public-safe validation or conflict
   information.
 
-| Status | Typical code | Meaning |
-| --- | --- | --- |
-| 400 | `BAD_REQUEST` | Invalid JSON, unsupported query params, or malformed route input. |
-| 401 | `UNAUTHORIZED` | Missing/invalid operator, Helius, Telegram, or internal token. |
-| 403 | `FORBIDDEN` | Authenticated but not allowed for this action. |
-| 404 | `NOT_FOUND` | Resource or event does not exist. |
-| 409 | `CONFLICT` | Duplicate, already-published, or state conflict. |
-| 422 | `VALIDATION_ERROR` | Semantically invalid form/API input. |
-| 429 | `RATE_LIMITED` | Too many requests; retry later. |
-| 500 | `INTERNAL_ERROR` | Server bug or unexpected failure; details are hidden. |
-| 503 | `UNAVAILABLE` | Dependency or service temporarily unavailable. |
+| Status | Typical code       | Meaning                                                           |
+| ------ | ------------------ | ----------------------------------------------------------------- |
+| 400    | `BAD_REQUEST`      | Invalid JSON, unsupported query params, or malformed route input. |
+| 401    | `UNAUTHORIZED`     | Missing/invalid operator, Helius, Telegram, or internal token.    |
+| 403    | `FORBIDDEN`        | Authenticated but not allowed for this action.                    |
+| 404    | `NOT_FOUND`        | Resource or event does not exist.                                 |
+| 409    | `CONFLICT`         | Duplicate, already-published, or state conflict.                  |
+| 422    | `VALIDATION_ERROR` | Semantically invalid form/API input.                              |
+| 429    | `RATE_LIMITED`     | Too many requests; retry later.                                   |
+| 500    | `INTERNAL_ERROR`   | Server bug or unexpected failure; details are hidden.             |
+| 503    | `UNAVAILABLE`      | Dependency or service temporarily unavailable.                    |
 
 ## Endpoint summary
 
-| Method | Path | Auth | Worker | Purpose |
-| --- | --- | --- | --- | --- |
-| GET | `/api/totals` | none | `vault-api-read` | Totals, balance, anchor status |
-| GET | `/api/donations` | none | `vault-api-read` | Paginated public donation records |
-| GET | `/api/disbursements` | none | `vault-api-read` | Paginated public disbursement records |
-| GET | `/api/ledger-events` | none | `vault-api-read` | Canonical ledger export for verification |
-| GET | `/api/verify` | none | `vault-api-read` | Latest head, anchors, verification instructions |
-| GET | `/api/health` | none | `vault-api-read` | Health probe |
-| POST | `/api/disbursements` | `OPERATOR_TOKEN` | `vault-operator` (forwards to `vault-api-write` via service binding) | Record gift-card purchase |
-| POST | `/api/anchor/manual` | `OPERATOR_TOKEN` | `vault-operator` (forwards to `vault-anchor-cron` via service binding) | Trigger anchor run |
-| POST | `/webhook/helius` | `Authorization: Bearer <token>` | `vault-ingest` | Receive Helius events |
-| POST | `/tg/webhook` | Telegram secret token | `tg-bot` | Receive Telegram updates |
-| GET | `/tg/internal/pending-requests` | `OPERATOR_TOKEN` | `vault-operator` (forwards to `tg-bot` via service binding) | List redacted pending bot requests |
-| POST | `/tg/internal/send-code` | `OPERATOR_TOKEN` | `vault-operator` (forwards to `tg-bot` via service binding) | Send gift-card code by `opaque_id` |
+| Method | Path                            | Auth                            | Worker                                                                 | Purpose                                         |
+| ------ | ------------------------------- | ------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------- |
+| GET    | `/api/totals`                   | none                            | `vault-api-read`                                                       | Totals, balance, anchor status                  |
+| GET    | `/api/donations`                | none                            | `vault-api-read`                                                       | Paginated public donation records               |
+| GET    | `/api/disbursements`            | none                            | `vault-api-read`                                                       | Paginated public disbursement records           |
+| GET    | `/api/ledger-events`            | none                            | `vault-api-read`                                                       | Canonical ledger export for verification        |
+| GET    | `/api/verify`                   | none                            | `vault-api-read`                                                       | Latest head, anchors, verification instructions |
+| GET    | `/api/health`                   | none                            | `vault-api-read`                                                       | Health probe                                    |
+| POST   | `/api/disbursements`            | `OPERATOR_TOKEN`                | `vault-operator` (forwards to `vault-api-write` via service binding)   | Record gift-card purchase                       |
+| POST   | `/api/anchor/manual`            | `OPERATOR_TOKEN`                | `vault-operator` (forwards to `vault-anchor-cron` via service binding) | Trigger anchor run                              |
+| POST   | `/webhook/helius`               | `Authorization: Bearer <token>` | `vault-ingest`                                                         | Receive Helius events                           |
+| POST   | `/tg/webhook`                   | Telegram secret token           | `tg-bot`                                                               | Receive Telegram updates                        |
+| GET    | `/tg/internal/pending-requests` | `OPERATOR_TOKEN`                | `vault-operator` (forwards to `tg-bot` via service binding)            | List redacted pending bot requests              |
+| POST   | `/tg/internal/send-code`        | `OPERATOR_TOKEN`                | `vault-operator` (forwards to `tg-bot` via service binding)            | Send gift-card code by `opaque_id`              |
 
 ## Public read endpoints
 
@@ -554,7 +554,7 @@ Async processing:
   different transfer and produce a valid event. The MVP does not split
   a single tx into multiple `donation_confirmed` events; one signature
   yields one event. A tx with two valid USDC transfers to the vault
-  ATA is treated as a single event for the *first* valid transfer; if
+  ATA is treated as a single event for the _first_ valid transfer; if
   a future revision splits, the `instruction_index` field makes the
   decision reproducible.
 - Ignore native SOL transfers for donation accounting.

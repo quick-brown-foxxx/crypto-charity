@@ -10,22 +10,22 @@
 
 ## Current State
 
-| What | Status |
-|------|--------|
-| D1 migrations (`vault-db`, `bot-db`) | ✅ Real, deployed, spec-aligned |
-| `wrangler.jsonc` configs (bindings, routes, D1 IDs, vars) | ✅ Real, preserve |
-| `package.json` files (names, deps, scripts) | ✅ Real, preserve |
-| `tsconfig.json` files | ❌ Minimalistic, remove and overwrite |
-| `pnpm-workspace.yaml`, `.env.example` | ✅ Real, preserve |
-| Worker `src/index.ts` (all 6) | ❌ Draft — hardcoded responses, `!==` auth |
-| `packages/vault-core/src/` | ❌ Empty scaffold (`export {}`) |
-| `packages/vault-db/src/` | ❌ Empty scaffold |
-| `packages/bot-crypto/src/` | ❌ Empty scaffold |
-| `apps/web/src/` | ❌ Hardcoded Russian text, no API calls |
-| ESLint, Prettier, Vitest, Playwright configs | ❌ Missing |
-| Root `tsconfig.json` (project references) | ❌ Missing |
-| Drizzle ORM schemas | ❌ Missing |
-| GitHub Actions CI workflow | ❌ Missing |
+| What                                                      | Status                                     |
+| --------------------------------------------------------- | ------------------------------------------ |
+| D1 migrations (`vault-db`, `bot-db`)                      | ✅ Real, deployed, spec-aligned            |
+| `wrangler.jsonc` configs (bindings, routes, D1 IDs, vars) | ✅ Real, preserve                          |
+| `package.json` files (names, deps, scripts)               | ✅ Real, preserve                          |
+| `tsconfig.json` files                                     | ❌ Minimalistic, remove and overwrite      |
+| `pnpm-workspace.yaml`, `.env.example`                     | ✅ Real, preserve                          |
+| Worker `src/index.ts` (all 6)                             | ❌ Draft — hardcoded responses, `!==` auth |
+| `packages/vault-core/src/`                                | ❌ Empty scaffold (`export {}`)            |
+| `packages/vault-db/src/`                                  | ❌ Empty scaffold                          |
+| `packages/bot-crypto/src/`                                | ❌ Empty scaffold                          |
+| `apps/web/src/`                                           | ❌ Hardcoded Russian text, no API calls    |
+| ESLint, Prettier, Vitest, Playwright configs              | ❌ Missing                                 |
+| Root `tsconfig.json` (project references)                 | ❌ Missing                                 |
+| Drizzle ORM schemas                                       | ❌ Missing                                 |
+| GitHub Actions CI workflow                                | ❌ Missing                                 |
 
 ---
 
@@ -73,6 +73,7 @@
 ### Slice 0.5: Workers Clean Slate
 
 For each of the 6 Workers, **delete everything in `src/`** and write clean stubs:
+
 - Typed Hono app with correct bindings
 - Route stubs matching spec (empty handlers)
 - `export default app` (Workers) or `export default { fetch, scheduled }` (anchor-cron)
@@ -279,16 +280,16 @@ For each of the 6 Workers, **delete everything in `src/`** and write clean stubs
 
 ## Key Decisions
 
-| Decision | Choice |
-|----------|--------|
-| Drop all draft code? | Yes — overwrite `src/` everywhere |
+| Decision                | Choice                                                                         |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| Drop all draft code?    | Yes — overwrite `src/` everywhere                                              |
 | Preserve infra configs? | Yes — wrangler.jsonc, package.json names/deps, tsconfig options, D1 migrations |
-| Frontend restart? | Yes — delete `apps/web/src/` entirely, fresh SvelteKit scaffold |
-| Hash canonicalization | RFC 8785 (JCS), normative test vector pinned |
-| Solana SDK | `@solana/web3.js` v1 (`^1.98.4`) |
-| HTTP routing | Hono |
-| Validation | Zod (backend), Valibot (frontend) |
-| ORM | Drizzle with D1 driver |
-| Test runner | Vitest |
-| Browser tests | Playwright |
-| Telegram E2E | Telethon + pytest (manual/nightly, not PR CI) |
+| Frontend restart?       | Yes — delete `apps/web/src/` entirely, fresh SvelteKit scaffold                |
+| Hash canonicalization   | RFC 8785 (JCS), normative test vector pinned                                   |
+| Solana SDK              | `@solana/web3.js` v1 (`^1.98.4`)                                               |
+| HTTP routing            | Hono                                                                           |
+| Validation              | Zod (backend), Valibot (frontend)                                              |
+| ORM                     | Drizzle with D1 driver                                                         |
+| Test runner             | Vitest                                                                         |
+| Browser tests           | Playwright                                                                     |
+| Telegram E2E            | Telethon + pytest (manual/nightly, not PR CI)                                  |

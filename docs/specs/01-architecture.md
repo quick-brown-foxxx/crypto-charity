@@ -162,23 +162,23 @@ This means:
 
 ## Backend stack
 
-| Concern | Choice | Rationale |
-| --- | --- | --- |
-| Monorepo / package manager | `pnpm` workspaces | Same toolchain for frontend and backend. |
-| Runtime / hosting | Cloudflare Workers via `wrangler` | Edge-native, binds D1/KV/Secrets in-process, fits the existing deployment model. |
-| HTTP routing | **Hono** with `@hono/zod-validator` | Edge-native, TypeScript-first, tiny bundle, Cloudflare-recommended. NestJS/Express/Fastify are avoided because they target long-running Node.js servers and require heavy `nodejs_compat` shims. |
-| Validation / schemas | **Zod** | Schema-first boundary validation; schemas live in `packages/vault-core` and can be shared with the frontend. |
-| Database access | **Drizzle ORM** with D1 driver | Native D1 support, SQL-first type-safe queries, tiny runtime, migration discipline via `drizzle-kit`. Prisma is avoided because its D1 adapter is newer/heavier and a classic Prisma client does not run on Workers. |
-| Solana SDK | `@solana/web3.js` v1 (`^1.98.4`) + `@solana/spl-token` (`^0.4.14`) | The `latest` dist-tag on npm. v1 is in maintenance mode (security patches continue) and is what every third-party Solana tool targets (Python `solana-py`, Rust `solana-sdk`, Helius docs, all donor-facing verifiers). `@solana/web3.js` v2 is published on the `next` dist-tag (a major API rewrite: `createSolanaRpc(...)` + `.send()` instead of `new Connection(...)`), and `@solana/spl-token` v2 does not exist on `latest` at all. The MVP uses v1. **Migration trigger:** when `@solana/web3.js` v2 reaches the `latest` dist-tag AND has at least one stable patch release AND the Helius + donor-verifier ecosystem publishes v2-compatible libraries, plan a one-week evaluation window and migrate. |
-| Errors / expected failures | Explicit `Result<T, E>` or discriminated unions (e.g. `neverthrow`) | Engineering-principles aligned; transport layer converts, business logic returns. |
-| Logging | Structured JSON | Compatible with Cloudflare Workers observability; no plaintext secrets. |
+| Concern                    | Choice                                                              | Rationale                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| -------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Monorepo / package manager | `pnpm` workspaces                                                   | Same toolchain for frontend and backend.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Runtime / hosting          | Cloudflare Workers via `wrangler`                                   | Edge-native, binds D1/KV/Secrets in-process, fits the existing deployment model.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| HTTP routing               | **Hono** with `@hono/zod-validator`                                 | Edge-native, TypeScript-first, tiny bundle, Cloudflare-recommended. NestJS/Express/Fastify are avoided because they target long-running Node.js servers and require heavy `nodejs_compat` shims.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Validation / schemas       | **Zod**                                                             | Schema-first boundary validation; schemas live in `packages/vault-core` and can be shared with the frontend.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Database access            | **Drizzle ORM** with D1 driver                                      | Native D1 support, SQL-first type-safe queries, tiny runtime, migration discipline via `drizzle-kit`. Prisma is avoided because its D1 adapter is newer/heavier and a classic Prisma client does not run on Workers.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Solana SDK                 | `@solana/web3.js` v1 (`^1.98.4`) + `@solana/spl-token` (`^0.4.14`)  | The `latest` dist-tag on npm. v1 is in maintenance mode (security patches continue) and is what every third-party Solana tool targets (Python `solana-py`, Rust `solana-sdk`, Helius docs, all donor-facing verifiers). `@solana/web3.js` v2 is published on the `next` dist-tag (a major API rewrite: `createSolanaRpc(...)` + `.send()` instead of `new Connection(...)`), and `@solana/spl-token` v2 does not exist on `latest` at all. The MVP uses v1. **Migration trigger:** when `@solana/web3.js` v2 reaches the `latest` dist-tag AND has at least one stable patch release AND the Helius + donor-verifier ecosystem publishes v2-compatible libraries, plan a one-week evaluation window and migrate. |
+| Errors / expected failures | Explicit `Result<T, E>` or discriminated unions (e.g. `neverthrow`) | Engineering-principles aligned; transport layer converts, business logic returns.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Logging                    | Structured JSON                                                     | Compatible with Cloudflare Workers observability; no plaintext secrets.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 ## Wallet model
 
-| Wallet | Role | Secret availability | Public monitoring |
-| --- | --- | --- | --- |
-| Treasury wallet | Owns the vault USDC ATA and receives donations | No private key in CI, Workers, repo, or normal app runtime | Vault USDC ATA balance and transfer history; owner scan only for reconciliation candidate discovery |
-| Anchor wallet | Signs Memo anchor transactions | `ANCHOR_WALLET_SECRET` in anchor Worker / gated manual tool only | SOL balance, Memo transactions |
+| Wallet          | Role                                           | Secret availability                                              | Public monitoring                                                                                   |
+| --------------- | ---------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Treasury wallet | Owns the vault USDC ATA and receives donations | No private key in CI, Workers, repo, or normal app runtime       | Vault USDC ATA balance and transfer history; owner scan only for reconciliation candidate discovery |
+| Anchor wallet   | Signs Memo anchor transactions                 | `ANCHOR_WALLET_SECRET` in anchor Worker / gated manual tool only | SOL balance, Memo transactions                                                                      |
 
 The anchor wallet holds only enough SOL for fees. Ops includes a low-SOL alert
 and a manual replenishment step from an operator-controlled wallet.
@@ -265,14 +265,14 @@ signals, not the source of truth for Solana history.
 
 ## Trust boundaries
 
-| Layer | Proves | Does not prove |
-| --- | --- | --- |
-| `ledger_events` hash chain | Public records have one append-only order and payload history. | Receipts are genuine. |
-| Solana Memo anchor | A specific pre-anchor head hash was publicly posted at a time. | The anchor event itself is included in that same transaction. |
-| Public verify/export | Donors can recompute what the site claims. | The operator bought a real gift card. |
-| Two database topology | Vault Workers cannot query bot identity mapping when bindings are kept separate. | Telegram/provider metadata is anonymous to Telegram. |
-| Bot identity storage | A `bot-db`-only leak does not reveal plaintext Telegram user IDs or chat IDs. | DB plus bot secrets, or bot runtime compromise, can still deanonymize or deliver. |
-| Bot binding discipline | Normal vault code does not casually read Telegram mapping. | State-adversary-grade or Cloudflare-account-compromise protection. |
+| Layer                      | Proves                                                                           | Does not prove                                                                    |
+| -------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `ledger_events` hash chain | Public records have one append-only order and payload history.                   | Receipts are genuine.                                                             |
+| Solana Memo anchor         | A specific pre-anchor head hash was publicly posted at a time.                   | The anchor event itself is included in that same transaction.                     |
+| Public verify/export       | Donors can recompute what the site claims.                                       | The operator bought a real gift card.                                             |
+| Two database topology      | Vault Workers cannot query bot identity mapping when bindings are kept separate. | Telegram/provider metadata is anonymous to Telegram.                              |
+| Bot identity storage       | A `bot-db`-only leak does not reveal plaintext Telegram user IDs or chat IDs.    | DB plus bot secrets, or bot runtime compromise, can still deanonymize or deliver. |
+| Bot binding discipline     | Normal vault code does not casually read Telegram mapping.                       | State-adversary-grade or Cloudflare-account-compromise protection.                |
 
 The architecture promises tamper-evidence and narrower operator visibility. It
 does not promise cryptographic proof of receipt truth or full anonymity.
@@ -297,10 +297,10 @@ does not promise cryptographic proof of receipt truth or full anonymity.
 - **One operator Worker holds `OPERATOR_TOKEN`.** The rejected alternative was
   sharing the token between `vault-api-write` and `tg-bot` (a leak in one
   Worker compromises both), or splitting into two tokens (`VAULT_OPERATOR_TOKEN`
-  + `BOT_OPERATOR_TOKEN`, two secrets, two rotations, two-token UI for a
-  single-operator MVP). The accepted topology is a single thin Worker
-  (`vault-operator`) that auths every operator request once, then forwards
-  via service binding to the right downstream Worker. One trust boundary,
-  one secret, one rotation. Service bindings are in-process and
-  not-publicly-routable, so a downstream Worker that holds no
-  `OPERATOR_TOKEN` of its own is unreachable from the public internet.
+  - `BOT_OPERATOR_TOKEN`, two secrets, two rotations, two-token UI for a
+    single-operator MVP). The accepted topology is a single thin Worker
+    (`vault-operator`) that auths every operator request once, then forwards
+    via service binding to the right downstream Worker. One trust boundary,
+    one secret, one rotation. Service bindings are in-process and
+    not-publicly-routable, so a downstream Worker that holds no
+    `OPERATOR_TOKEN` of its own is unreachable from the public internet.

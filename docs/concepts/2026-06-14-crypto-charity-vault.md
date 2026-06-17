@@ -127,22 +127,22 @@ chat routes instead of plaintext Telegram IDs.
 
 ## Explicit Deferrals
 
-| Item | Why deferred |
-| --- | --- |
-| Narrative / marketing / stories layer | The first donor pool is small; trust mechanics matter more than marketing. |
-| Optional quote/share prompt | It creates sensitive content handling before the core delivery loop is proven. |
-| Automated receipt verification | Receipt truth remains operational unless an Alter API or opt-in proof path exists. |
-| Receipt screenshots/images | Need redaction, storage rules, and review before public use. |
-| Therapist vetting | The therapy platform owns therapist vetting. |
-| Referral / anti-abuse system | MVP beneficiaries are personally invited. |
-| Hardened state-adversary opsec | The project is not claiming state-adversary-grade anonymity. |
-| Multi-sig / cold storage | Single-operator custody is acceptable at MVP scale; the treasury key still stays out of CI and Workers. |
-| Matrix / alternative messengers | Telegram is the realistic MVP channel. |
-| Psychiatry | The initial scope is psychological support. |
-| Automated conversion loop | Manual conversion is part of MVP validation. |
-| Multi-currency / cross-chain | Solana USDC is the MVP rail. |
-| Donor accounts or recurring donations | Donors send to a public address; no account system. |
-| Public beneficiary signup | Beneficiaries are personally invited. |
+| Item                                  | Why deferred                                                                                            |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Narrative / marketing / stories layer | The first donor pool is small; trust mechanics matter more than marketing.                              |
+| Optional quote/share prompt           | It creates sensitive content handling before the core delivery loop is proven.                          |
+| Automated receipt verification        | Receipt truth remains operational unless an Alter API or opt-in proof path exists.                      |
+| Receipt screenshots/images            | Need redaction, storage rules, and review before public use.                                            |
+| Therapist vetting                     | The therapy platform owns therapist vetting.                                                            |
+| Referral / anti-abuse system          | MVP beneficiaries are personally invited.                                                               |
+| Hardened state-adversary opsec        | The project is not claiming state-adversary-grade anonymity.                                            |
+| Multi-sig / cold storage              | Single-operator custody is acceptable at MVP scale; the treasury key still stays out of CI and Workers. |
+| Matrix / alternative messengers       | Telegram is the realistic MVP channel.                                                                  |
+| Psychiatry                            | The initial scope is psychological support.                                                             |
+| Automated conversion loop             | Manual conversion is part of MVP validation.                                                            |
+| Multi-currency / cross-chain          | Solana USDC is the MVP rail.                                                                            |
+| Donor accounts or recurring donations | Donors send to a public address; no account system.                                                     |
+| Public beneficiary signup             | Beneficiaries are personally invited.                                                                   |
 
 ---
 

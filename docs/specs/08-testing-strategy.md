@@ -16,17 +16,17 @@
 
 ## Test levels
 
-| Level | Tooling | CI policy | What it proves |
-| --- | --- | --- | --- |
-| Unit | vitest | PR CI | Canonical JSON, hash preimages, schema validation, Memo text builder. |
-| Worker integration | vitest + wrangler unstable_dev / miniflare / local D1 | PR CI | HTTP contracts, ledger appends, durable inbox behavior. |
-| Public verification | vitest + TypeScript verify script | PR CI | TypeScript verification script and public export recompute the same head hash and match known Solana anchors. |
-| Browser smoke | SvelteKit + Playwright | PR CI if stable | Public site renders seeded data, donate warnings, ledger, verify instructions, and `/admin` safe states. |
-| Local-validator blockchain | Solana local validator | PR CI if tooling permits | Real Memo and SPL token flows without secrets or funds. |
-| Devnet live smoke | Solana devnet | manual/nightly, env-gated | Real devnet send/fetch/finality behavior. |
-| Helius webhook contract | Helius + public HTTPS staging | manual/nightly, env-gated | Provider auth header, payload shape, retry/duplicate behavior. |
-| Telegram E2E | Telethon + pytest, staging bot + test user account | manual/nightly, env-gated | Real user→bot→user flow: `/start`, `/card`, delivery, no sensitive data in responses. |
-| Tiny mainnet smoke | Solana mainnet | optional manual release gate only | Real mainnet compatibility with tiny paid transactions. |
+| Level                      | Tooling                                               | CI policy                         | What it proves                                                                                                |
+| -------------------------- | ----------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Unit                       | vitest                                                | PR CI                             | Canonical JSON, hash preimages, schema validation, Memo text builder.                                         |
+| Worker integration         | vitest + wrangler unstable_dev / miniflare / local D1 | PR CI                             | HTTP contracts, ledger appends, durable inbox behavior.                                                       |
+| Public verification        | vitest + TypeScript verify script                     | PR CI                             | TypeScript verification script and public export recompute the same head hash and match known Solana anchors. |
+| Browser smoke              | SvelteKit + Playwright                                | PR CI if stable                   | Public site renders seeded data, donate warnings, ledger, verify instructions, and `/admin` safe states.      |
+| Local-validator blockchain | Solana local validator                                | PR CI if tooling permits          | Real Memo and SPL token flows without secrets or funds.                                                       |
+| Devnet live smoke          | Solana devnet                                         | manual/nightly, env-gated         | Real devnet send/fetch/finality behavior.                                                                     |
+| Helius webhook contract    | Helius + public HTTPS staging                         | manual/nightly, env-gated         | Provider auth header, payload shape, retry/duplicate behavior.                                                |
+| Telegram E2E               | Telethon + pytest, staging bot + test user account    | manual/nightly, env-gated         | Real user→bot→user flow: `/start`, `/card`, delivery, no sensitive data in responses.                         |
+| Tiny mainnet smoke         | Solana mainnet                                        | optional manual release gate only | Real mainnet compatibility with tiny paid transactions.                                                       |
 
 ## Blockchain test tiers
 
@@ -480,40 +480,40 @@ And the plaintext code is cleared after successful delivery
 
 ## Per-invariant mapping
 
-| Invariant | Tests |
-| --- | --- |
-| I-1 Append-only ledger | migration/static SQL check for no `UPDATE`/`DELETE` on `ledger_events`; correction event test |
-| I-2 Single chain | mixed-event round trip, monotonic sequence checks |
-| I-3 Payload-committing hash (RFC 8785) | normative test vector (writer and Python verifier produce the same hash); payload mutation breaks chain; cross-implementation parity; second-precision timestamp check; closed-schema check (no optional fields, only nullable) |
-| I-4 Anchor state outside ledger; lock protocol; recovery | failed anchor updates `anchor_runs` only; success appends immutable event; concurrent cron + manual returns 409; crash-recovery backfills event with `created_at_utc` = on-chain block time |
-| I-5 UTF-8 pre-head anchor | Memo text regex/UTF-8 tests; pre-anchor-head scenario |
-| I-6 Wallet split | secret scans; anchor code loads only anchor key; treasury private key absent |
+| Invariant                                                     | Tests                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I-1 Append-only ledger                                        | migration/static SQL check for no `UPDATE`/`DELETE` on `ledger_events`; correction event test                                                                                                                                                                                                                                             |
+| I-2 Single chain                                              | mixed-event round trip, monotonic sequence checks                                                                                                                                                                                                                                                                                         |
+| I-3 Payload-committing hash (RFC 8785)                        | normative test vector (writer and Python verifier produce the same hash); payload mutation breaks chain; cross-implementation parity; second-precision timestamp check; closed-schema check (no optional fields, only nullable)                                                                                                           |
+| I-4 Anchor state outside ledger; lock protocol; recovery      | failed anchor updates `anchor_runs` only; success appends immutable event; concurrent cron + manual returns 409; crash-recovery backfills event with `created_at_utc` = on-chain block time                                                                                                                                               |
+| I-5 UTF-8 pre-head anchor                                     | Memo text regex/UTF-8 tests; pre-anchor-head scenario                                                                                                                                                                                                                                                                                     |
+| I-6 Wallet split                                              | secret scans; anchor code loads only anchor key; treasury private key absent                                                                                                                                                                                                                                                              |
 | I-7 No plaintext Telegram identity at rest; handle char class | schema denylist for `telegram_user_id`/`telegram_chat_id`/standalone `chat_id`; binding allowlist; HMAC stability and different-key tests; chat-route encryption round-trip/failure tests; public/log redaction tests; pending-request response redaction tests; handle `[A-Za-z0-9_]{3,32}` character class; handle `benpub_` prefix ban |
-| I-8 No sensitive public fields by default | public API contract tests for no donor memos or internal handles; `public_beneficiary_ref` generation/null/reject-string contract tests; send-code log/storage redaction tests for gift-card codes |
-| I-9 Public verification | `/api/ledger-events` export recomputes exact head using the normative test vector; Solana Memo comparison |
-| I-10 Ingest reliability (two-source PK) | auth header (constant-time), ACK-fast, duplicate replay, reconciliation, finality/retry tests, "same signature via webhook + reconciliation" scenario |
-| I-11 Correction policy | whitelist acceptance (`receipt_ref`, `service_note`); whitelist rejection (other keys); public API byte-for-byte round-trip (no silent value substitution) |
+| I-8 No sensitive public fields by default                     | public API contract tests for no donor memos or internal handles; `public_beneficiary_ref` generation/null/reject-string contract tests; send-code log/storage redaction tests for gift-card codes                                                                                                                                        |
+| I-9 Public verification                                       | `/api/ledger-events` export recomputes exact head using the normative test vector; Solana Memo comparison                                                                                                                                                                                                                                 |
+| I-10 Ingest reliability (two-source PK)                       | auth header (constant-time), ACK-fast, duplicate replay, reconciliation, finality/retry tests, "same signature via webhook + reconciliation" scenario                                                                                                                                                                                     |
+| I-11 Correction policy                                        | whitelist acceptance (`receipt_ref`, `service_note`); whitelist rejection (other keys); public API byte-for-byte round-trip (no silent value substitution)                                                                                                                                                                                |
 
 ## Environment variables by test type
 
-| Variable | PR CI | Local validator | Devnet smoke | Helius contract | Mainnet smoke | TG E2E |
-| --- | --- | --- | --- | --- | --- | --- |
-| `SOLANA_CLUSTER` | test/local value | `localnet` | `devnet` | `devnet` | `mainnet-beta` | `devnet` |
-| `USDC_MINT` | test/local value | local mint | devnet USDC mint | devnet USDC mint | mainnet USDC mint | devnet USDC mint |
-| `TREASURY_WALLET_ADDRESS` | fake/local | local keypair pubkey | throwaway devnet | throwaway devnet | throwaway mainnet | devnet pubkey |
-| `VAULT_USDC_ATA` | fake/local | local ATA | devnet ATA | devnet ATA | throwaway mainnet ATA | devnet ATA |
-| `ANCHOR_WALLET_ADDRESS` | fake/local | local keypair pubkey | devnet pubkey | optional | throwaway mainnet pubkey | devnet pubkey |
-| `ANCHOR_WALLET_SECRET` | no | local generated only | required | optional | required, throwaway only | no |
-| `DONOR_WALLET_SECRET` | no | no | required | no | no | required |
-| `HELIUS_API_KEY` | no | no | optional | required | required | no |
-| `HELIUS_RPC_URL` | no | no | required | required | required | no |
-| `HELIUS_WEBHOOK_AUTH_HEADER` | no | no | optional | required | optional | no |
-| `WEBHOOK_URL` | no | no | no | required public HTTPS staging URL | optional | no |
-| `TELETHON_API_ID` | no | no | no | no | no | required |
-| `TELETHON_API_HASH` | no | no | no | no | no | required |
-| `TELETHON_SESSION_STRING` | no | no | no | no | no | required |
-| `TG_BOT_TOKEN` | no | no | no | no | no | required (staging bot) |
-| `ALLOW_MAINNET_SMOKE` | no | no | no | no | must be `true` | no |
+| Variable                     | PR CI            | Local validator      | Devnet smoke     | Helius contract                   | Mainnet smoke            | TG E2E                 |
+| ---------------------------- | ---------------- | -------------------- | ---------------- | --------------------------------- | ------------------------ | ---------------------- |
+| `SOLANA_CLUSTER`             | test/local value | `localnet`           | `devnet`         | `devnet`                          | `mainnet-beta`           | `devnet`               |
+| `USDC_MINT`                  | test/local value | local mint           | devnet USDC mint | devnet USDC mint                  | mainnet USDC mint        | devnet USDC mint       |
+| `TREASURY_WALLET_ADDRESS`    | fake/local       | local keypair pubkey | throwaway devnet | throwaway devnet                  | throwaway mainnet        | devnet pubkey          |
+| `VAULT_USDC_ATA`             | fake/local       | local ATA            | devnet ATA       | devnet ATA                        | throwaway mainnet ATA    | devnet ATA             |
+| `ANCHOR_WALLET_ADDRESS`      | fake/local       | local keypair pubkey | devnet pubkey    | optional                          | throwaway mainnet pubkey | devnet pubkey          |
+| `ANCHOR_WALLET_SECRET`       | no               | local generated only | required         | optional                          | required, throwaway only | no                     |
+| `DONOR_WALLET_SECRET`        | no               | no                   | required         | no                                | no                       | required               |
+| `HELIUS_API_KEY`             | no               | no                   | optional         | required                          | required                 | no                     |
+| `HELIUS_RPC_URL`             | no               | no                   | required         | required                          | required                 | no                     |
+| `HELIUS_WEBHOOK_AUTH_HEADER` | no               | no                   | optional         | required                          | optional                 | no                     |
+| `WEBHOOK_URL`                | no               | no                   | no               | required public HTTPS staging URL | optional                 | no                     |
+| `TELETHON_API_ID`            | no               | no                   | no               | no                                | no                       | required               |
+| `TELETHON_API_HASH`          | no               | no                   | no               | no                                | no                       | required               |
+| `TELETHON_SESSION_STRING`    | no               | no                   | no               | no                                | no                       | required               |
+| `TG_BOT_TOKEN`               | no               | no                   | no               | no                                | no                       | required (staging bot) |
+| `ALLOW_MAINNET_SMOKE`        | no               | no                   | no               | no                                | must be `true`           | no                     |
 
 ## Local and CI commands
 

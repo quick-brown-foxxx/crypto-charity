@@ -35,7 +35,13 @@
           radial-gradient(circle at 84% 18%, rgba(136, 198, 153, 0.34), transparent 30%),
           var(--page-bg);
         font-family:
-          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
       }
 
       .page {
@@ -98,7 +104,7 @@
       }
 
       .kicker::before {
-        content: "";
+        content: '';
         width: 8px;
         height: 8px;
         border-radius: 50%;
@@ -224,10 +230,22 @@
         transform: translateX(-50%);
       }
 
-      .rail-mini .in { left: 18px; color: var(--green); }
-      .rail-mini .out { left: 38px; color: var(--amber); }
-      .rail-mini .proof { left: 58px; color: var(--blue); }
-      .rail-mini .main { left: 78px; color: var(--title); }
+      .rail-mini .in {
+        left: 18px;
+        color: var(--green);
+      }
+      .rail-mini .out {
+        left: 38px;
+        color: var(--amber);
+      }
+      .rail-mini .proof {
+        left: 58px;
+        color: var(--blue);
+      }
+      .rail-mini .main {
+        left: 78px;
+        color: var(--title);
+      }
 
       .event {
         display: grid;
@@ -274,14 +292,29 @@
         background: var(--rail-muted);
       }
 
-      .lane.main { left: var(--x-main); background: var(--rail-main); }
-      .lane.in { left: var(--x-in); }
-      .lane.out { left: var(--x-out); }
-      .lane.proof { left: var(--x-proof); }
+      .lane.main {
+        left: var(--x-main);
+        background: var(--rail-main);
+      }
+      .lane.in {
+        left: var(--x-in);
+      }
+      .lane.out {
+        left: var(--x-out);
+      }
+      .lane.proof {
+        left: var(--x-proof);
+      }
 
-      .rail.in .lane.in { background: color-mix(in srgb, var(--green) 72%, var(--rail-muted)); }
-      .rail.out .lane.out { background: color-mix(in srgb, var(--amber) 72%, var(--rail-muted)); }
-      .rail.anchor .lane.proof { background: color-mix(in srgb, var(--blue) 72%, var(--rail-muted)); }
+      .rail.in .lane.in {
+        background: color-mix(in srgb, var(--green) 72%, var(--rail-muted));
+      }
+      .rail.out .lane.out {
+        background: color-mix(in srgb, var(--amber) 72%, var(--rail-muted));
+      }
+      .rail.anchor .lane.proof {
+        background: color-mix(in srgb, var(--blue) 72%, var(--rail-muted));
+      }
 
       .merge {
         position: absolute;
@@ -333,12 +366,27 @@
         box-shadow: 0 0 0 5px var(--page-bg);
       }
 
-      .rail.in .node { left: var(--x-in); --node-color: var(--green); }
-      .rail.out .node { left: var(--x-out); --node-color: var(--amber); }
-      .rail.anchor .node { left: var(--x-proof); --node-color: var(--blue); border-radius: 7px; }
+      .rail.in .node {
+        left: var(--x-in);
+        --node-color: var(--green);
+      }
+      .rail.out .node {
+        left: var(--x-out);
+        --node-color: var(--amber);
+      }
+      .rail.anchor .node {
+        left: var(--x-proof);
+        --node-color: var(--blue);
+        border-radius: 7px;
+      }
       .rail.system .node,
-      .rail.head .node { left: var(--x-main); --node-color: var(--purple); }
-      .rail.head .node { --node-color: var(--blue); }
+      .rail.head .node {
+        left: var(--x-main);
+        --node-color: var(--purple);
+      }
+      .rail.head .node {
+        --node-color: var(--blue);
+      }
 
       .card {
         align-self: center;
@@ -373,9 +421,15 @@
         font-variant-numeric: tabular-nums;
       }
 
-      .amount.in { color: var(--green); }
-      .amount.out { color: var(--amber); }
-      .amount.anchor { color: var(--blue); }
+      .amount.in {
+        color: var(--green);
+      }
+      .amount.out {
+        color: var(--amber);
+      }
+      .amount.anchor {
+        color: var(--blue);
+      }
 
       .meta {
         display: flex;
@@ -432,27 +486,62 @@
       }
 
       @media (max-width: 980px) {
-        .hero { grid-template-columns: 1fr; }
-        .links { display: none; }
+        .hero {
+          grid-template-columns: 1fr;
+        }
+        .links {
+          display: none;
+        }
       }
 
       @media (max-width: 760px) {
-        .wrap { padding: 20px; }
-        .topline { align-items: start; flex-direction: column; }
-        .metrics { grid-template-columns: 1fr; }
-        .rail-labels { display: none; }
-        .event { grid-template-columns: 28px 1fr; padding: 10px 14px; }
-        .date { grid-column: 2; text-align: left; padding-top: 0; order: 2; }
-        .rail { grid-column: 1; grid-row: 1 / span 2; min-height: auto; }
-        .rail .lane:not(.main), .rail .merge { display: none; }
-        .rail .lane.main { left: 12px; }
+        .wrap {
+          padding: 20px;
+        }
+        .topline {
+          align-items: start;
+          flex-direction: column;
+        }
+        .metrics {
+          grid-template-columns: 1fr;
+        }
+        .rail-labels {
+          display: none;
+        }
+        .event {
+          grid-template-columns: 28px 1fr;
+          padding: 10px 14px;
+        }
+        .date {
+          grid-column: 2;
+          text-align: left;
+          padding-top: 0;
+          order: 2;
+        }
+        .rail {
+          grid-column: 1;
+          grid-row: 1 / span 2;
+          min-height: auto;
+        }
+        .rail .lane:not(.main),
+        .rail .merge {
+          display: none;
+        }
+        .rail .lane.main {
+          left: 12px;
+        }
         .node,
         .rail.in .node,
         .rail.out .node,
         .rail.anchor .node,
         .rail.system .node,
-        .rail.head .node { left: 12px; top: 10px; }
-        .card { grid-column: 2; }
+        .rail.head .node {
+          left: 12px;
+          top: 10px;
+        }
+        .card {
+          grid-column: 2;
+        }
       }
     </style>
   </head>
@@ -471,8 +560,8 @@
             <div class="kicker">Публичная история помощи</div>
             <h1>Живая история поддержки.</h1>
             <p class="lead">
-              Пожертвования, покупки карт и ежедневные подтверждения сходятся в одну публичную историю.
-              Получатели не раскрывают имён и контактов.
+              Пожертвования, покупки карт и ежедневные подтверждения сходятся в одну публичную
+              историю. Получатели не раскрывают имён и контактов.
             </p>
             <div class="cta">
               <button class="btn primary">Помочь оплатить сессии</button>
@@ -489,56 +578,186 @@
             <div class="feed-head"><strong>Публичная история</strong></div>
             <div class="rail-labels">
               <span></span>
-              <div class="rail-mini"><span class="in">вход</span><span class="out">карты</span><span class="proof">доказательство</span><span class="main">реестр</span></div>
+              <div class="rail-mini">
+                <span class="in">вход</span><span class="out">карты</span
+                ><span class="proof">доказательство</span><span class="main">реестр</span>
+              </div>
               <span>детали события</span>
             </div>
 
             <div class="event">
               <div class="date"><b>8 июн</b>09:10</div>
-              <div class="rail system"><span class="lane in"></span><span class="lane out"></span><span class="lane proof"></span><span class="lane main"></span><span class="merge"></span><span class="node">◇</span></div>
-              <article class="card"><div class="card-main"><div class="row-top"><span class="title">Фонд создан</span><span class="amount">#0001</span></div><div class="meta"><span>кошелёк <code>7vaU1t9Q...b3mK</code></span><span>prev_hash <code>0000000000000000</code></span></div></div></article>
+              <div class="rail system">
+                <span class="lane in"></span><span class="lane out"></span
+                ><span class="lane proof"></span><span class="lane main"></span
+                ><span class="merge"></span><span class="node">◇</span>
+              </div>
+              <article class="card">
+                <div class="card-main">
+                  <div class="row-top">
+                    <span class="title">Фонд создан</span><span class="amount">#0001</span>
+                  </div>
+                  <div class="meta">
+                    <span>кошелёк <code>7vaU1t9Q...b3mK</code></span
+                    ><span>prev_hash <code>0000000000000000</code></span>
+                  </div>
+                </div>
+              </article>
             </div>
 
             <div class="event">
               <div class="date"><b>8 июн</b>10:42</div>
-              <div class="rail in"><span class="lane in"></span><span class="lane out"></span><span class="lane proof"></span><span class="lane main"></span><span class="merge"></span><span class="node">+</span></div>
-              <article class="card"><div class="card-main"><div class="row-top"><span class="title">Анонимное пожертвование · Phantom</span><span class="amount in">+250 USDC</span></div><div class="meta"><span>tx <a href="#">solscan.io/tx/4pV9qL...8xQm</a></span><span>hash <code>1d9c8a2b7e31</code></span></div></div></article>
+              <div class="rail in">
+                <span class="lane in"></span><span class="lane out"></span
+                ><span class="lane proof"></span><span class="lane main"></span
+                ><span class="merge"></span><span class="node">+</span>
+              </div>
+              <article class="card">
+                <div class="card-main">
+                  <div class="row-top">
+                    <span class="title">Анонимное пожертвование · Phantom</span
+                    ><span class="amount in">+250 USDC</span>
+                  </div>
+                  <div class="meta">
+                    <span>tx <a href="#">solscan.io/tx/4pV9qL...8xQm</a></span
+                    ><span>hash <code>1d9c8a2b7e31</code></span>
+                  </div>
+                </div>
+              </article>
             </div>
 
             <div class="event">
               <div class="date"><b>10 июн</b>15:03</div>
-              <div class="rail in"><span class="lane in"></span><span class="lane out"></span><span class="lane proof"></span><span class="lane main"></span><span class="merge"></span><span class="node">+</span></div>
-              <article class="card"><div class="card-main"><div class="row-top"><span class="title">Анонимное пожертвование · Solflare</span><span class="amount in">+1 000 USDC</span></div><div class="meta"><span>tx <a href="#">solscan.io/tx/5GkT3h...dP91</a></span><span>от <code>9Jm4...Kq2v</code></span></div></div></article>
+              <div class="rail in">
+                <span class="lane in"></span><span class="lane out"></span
+                ><span class="lane proof"></span><span class="lane main"></span
+                ><span class="merge"></span><span class="node">+</span>
+              </div>
+              <article class="card">
+                <div class="card-main">
+                  <div class="row-top">
+                    <span class="title">Анонимное пожертвование · Solflare</span
+                    ><span class="amount in">+1 000 USDC</span>
+                  </div>
+                  <div class="meta">
+                    <span>tx <a href="#">solscan.io/tx/5GkT3h...dP91</a></span
+                    ><span>от <code>9Jm4...Kq2v</code></span>
+                  </div>
+                </div>
+              </article>
             </div>
 
             <div class="event">
               <div class="date"><b>10 июн</b>18:20</div>
-              <div class="rail out"><span class="lane in"></span><span class="lane out"></span><span class="lane proof"></span><span class="lane main"></span><span class="merge"></span><span class="node">−</span></div>
-              <article class="card"><div class="card-main"><div class="row-top"><span class="title">Куплены подарочные карты Alter ×5</span><span class="amount out">−500 USDC</span></div><div class="meta"><span>чек <a href="#">/receipts/ALT-2026-0610-001.png</a></span><span>получатели <code>ben-7x2</code>, <code>ben-k91</code></span></div><div class="chip-row"><span class="chip">без имён получателей</span><span class="chip">чек опубликован</span></div></div></article>
+              <div class="rail out">
+                <span class="lane in"></span><span class="lane out"></span
+                ><span class="lane proof"></span><span class="lane main"></span
+                ><span class="merge"></span><span class="node">−</span>
+              </div>
+              <article class="card">
+                <div class="card-main">
+                  <div class="row-top">
+                    <span class="title">Куплены подарочные карты Alter ×5</span
+                    ><span class="amount out">−500 USDC</span>
+                  </div>
+                  <div class="meta">
+                    <span>чек <a href="#">/receipts/ALT-2026-0610-001.png</a></span
+                    ><span>получатели <code>ben-7x2</code>, <code>ben-k91</code></span>
+                  </div>
+                  <div class="chip-row">
+                    <span class="chip">без имён получателей</span
+                    ><span class="chip">чек опубликован</span>
+                  </div>
+                </div>
+              </article>
             </div>
 
             <div class="event">
               <div class="date"><b>11 июн</b>09:00</div>
-              <div class="rail anchor"><span class="lane in"></span><span class="lane out"></span><span class="lane proof"></span><span class="lane main"></span><span class="merge"></span><span class="node">#</span></div>
-              <article class="card"><div class="card-main"><div class="row-top"><span class="title">Хэш реестра закреплён в Solana</span><span class="amount anchor">ok</span></div><div class="meta"><span>anchor tx <a href="#">solscan.io/tx/2PqhV...7mAb</a></span><span>sha256 <code>9fd7e2b7c4a1f83ad442b0e6</code></span></div></div><div class="card-extra">Любой может пересчитать публичный реестр и сравнить хэш с этим якорем.</div></article>
+              <div class="rail anchor">
+                <span class="lane in"></span><span class="lane out"></span
+                ><span class="lane proof"></span><span class="lane main"></span
+                ><span class="merge"></span><span class="node">#</span>
+              </div>
+              <article class="card">
+                <div class="card-main">
+                  <div class="row-top">
+                    <span class="title">Хэш реестра закреплён в Solana</span
+                    ><span class="amount anchor">ok</span>
+                  </div>
+                  <div class="meta">
+                    <span>anchor tx <a href="#">solscan.io/tx/2PqhV...7mAb</a></span
+                    ><span>sha256 <code>9fd7e2b7c4a1f83ad442b0e6</code></span>
+                  </div>
+                </div>
+                <div class="card-extra">
+                  Любой может пересчитать публичный реестр и сравнить хэш с этим якорем.
+                </div>
+              </article>
             </div>
 
             <div class="event">
               <div class="date"><b>12 июн</b>11:30</div>
-              <div class="rail out"><span class="lane in"></span><span class="lane out"></span><span class="lane proof"></span><span class="lane main"></span><span class="merge"></span><span class="node">−</span></div>
-              <article class="card"><div class="card-main"><div class="row-top"><span class="title">Куплены подарочные карты Alter ×12</span><span class="amount out">−1 200 USDC</span></div><div class="meta"><span>чек <a href="#">/receipts/ALT-2026-0612-002.pdf</a></span><span>пакет <code>batch-ru-msk-02</code></span></div></div></article>
+              <div class="rail out">
+                <span class="lane in"></span><span class="lane out"></span
+                ><span class="lane proof"></span><span class="lane main"></span
+                ><span class="merge"></span><span class="node">−</span>
+              </div>
+              <article class="card">
+                <div class="card-main">
+                  <div class="row-top">
+                    <span class="title">Куплены подарочные карты Alter ×12</span
+                    ><span class="amount out">−1 200 USDC</span>
+                  </div>
+                  <div class="meta">
+                    <span>чек <a href="#">/receipts/ALT-2026-0612-002.pdf</a></span
+                    ><span>пакет <code>batch-ru-msk-02</code></span>
+                  </div>
+                </div>
+              </article>
             </div>
 
             <div class="event">
               <div class="date"><b>13 июн</b>20:15</div>
-              <div class="rail in"><span class="lane in"></span><span class="lane out"></span><span class="lane proof"></span><span class="lane main"></span><span class="merge"></span><span class="node">+</span></div>
-              <article class="card"><div class="card-main"><div class="row-top"><span class="title">Анонимное пожертвование · multisend batch</span><span class="amount in">+2 000 USDC</span></div><div class="meta"><span>tx <a href="#">solscan.io/tx/AS7qB...k20V</a></span><span>получено <code>08:42 UTC</code></span></div></div></article>
+              <div class="rail in">
+                <span class="lane in"></span><span class="lane out"></span
+                ><span class="lane proof"></span><span class="lane main"></span
+                ><span class="merge"></span><span class="node">+</span>
+              </div>
+              <article class="card">
+                <div class="card-main">
+                  <div class="row-top">
+                    <span class="title">Анонимное пожертвование · multisend batch</span
+                    ><span class="amount in">+2 000 USDC</span>
+                  </div>
+                  <div class="meta">
+                    <span>tx <a href="#">solscan.io/tx/AS7qB...k20V</a></span
+                    ><span>получено <code>08:42 UTC</code></span>
+                  </div>
+                </div>
+              </article>
             </div>
 
             <div class="event">
               <div class="date"><b>14 июн</b>сейчас</div>
-              <div class="rail head"><span class="lane in"></span><span class="lane out"></span><span class="lane proof"></span><span class="lane main"></span><span class="merge"></span><span class="node">H</span></div>
-              <article class="card"><div class="card-main"><div class="row-top"><span class="title">Текущее публичное состояние</span><span class="amount anchor">4 350 USDC</span></div><div class="meta"><span>HEAD <code>#0018</code></span><span>latest_hash <code>aa42c2e0…</code></span><span>следующий якорь 15 июн, 09:00 UTC</span></div></div></article>
+              <div class="rail head">
+                <span class="lane in"></span><span class="lane out"></span
+                ><span class="lane proof"></span><span class="lane main"></span
+                ><span class="merge"></span><span class="node">H</span>
+              </div>
+              <article class="card">
+                <div class="card-main">
+                  <div class="row-top">
+                    <span class="title">Текущее публичное состояние</span
+                    ><span class="amount anchor">4 350 USDC</span>
+                  </div>
+                  <div class="meta">
+                    <span>HEAD <code>#0018</code></span
+                    ><span>latest_hash <code>aa42c2e0…</code></span
+                    ><span>следующий якорь 15 июн, 09:00 UTC</span>
+                  </div>
+                </div>
+              </article>
             </div>
           </section>
         </main>

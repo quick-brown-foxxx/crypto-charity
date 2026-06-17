@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono } from 'hono';
 
 type Bindings = {
   bot_db: D1Database;
@@ -10,9 +10,9 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-app.post("/tg/webhook", async (c) => {
+app.post('/tg/webhook', async (c) => {
   const expected = c.env.TG_WEBHOOK_SECRET;
-  const received = c.req.header("X-Telegram-Bot-Api-Secret-Token");
+  const received = c.req.header('X-Telegram-Bot-Api-Secret-Token');
 
   if (!received || received !== expected) {
     // Real implementation MUST use a constant-time comparison. The
@@ -22,8 +22,8 @@ app.post("/tg/webhook", async (c) => {
     return c.json(
       {
         error: {
-          code: "UNAUTHORIZED",
-          message: "Invalid webhook secret.",
+          code: 'UNAUTHORIZED',
+          message: 'Invalid webhook secret.',
         },
       },
       401,
@@ -37,9 +37,8 @@ app.post("/tg/webhook", async (c) => {
   return c.json({ ok: true }, 200);
 });
 
-app.all("*", (c) => {
+app.all('*', (c) => {
   return c.notFound();
 });
 
 export default app;
-

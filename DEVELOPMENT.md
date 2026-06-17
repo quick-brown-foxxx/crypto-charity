@@ -1,7 +1,7 @@
 # Development Guide
 
 **Status:** Preparation complete; implementation phase begins.  
-**Date:** 2026-06-16  
+**Date:** 2026-06-16
 
 Quick-start patterns for working on this project. Read `docs/ops/secrets-inventory.md`
 first for what's already deployed.
@@ -31,6 +31,7 @@ pnpm dev                    # wrangler dev → http://localhost:8787
 ```
 
 What happens:
+
 - `wrangler dev` runs the real Cloudflare runtime (Workerd) locally.
 - D1 bindings point to a local SQLite file (auto-created).
 - `.dev.vars` secrets are injected as env bindings.

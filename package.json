@@ -4,11 +4,32 @@
   "type": "module",
   "packageManager": "pnpm@11.6.0",
   "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "tsc -b",
+    "test": "vitest run",
+    "build": "tsc -b && pnpm --filter open-care-web build",
     "cloudflare-wrangler": "wrangler"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.16.16",
+    "@cloudflare/workers-types": "^4.20260616.1",
+    "@eslint/js": "^9.24.0",
+    "@playwright/test": "^1.55.0",
     "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",
+    "@types/node": "^25.9.3",
+    "eslint": "^9.24.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import-x": "^4.16.2",
+    "eslint-plugin-svelte": "^3.19.0",
+    "globals": "^17.6.0",
+    "prettier": "^3.6.2",
+    "prettier-plugin-svelte": "^3.5.1",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.61.1",
+    "vitest": "^4.1.9",
     "wrangler": "^4"
   }
 }

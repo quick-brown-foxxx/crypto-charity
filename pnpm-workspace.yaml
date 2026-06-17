@@ -1,15 +1,22 @@
 packages:
-  - "apps/*"
-  - "packages/*"
-  - "tools/*"
+  - 'apps/*'
+  - 'packages/*'
+  - 'tools/*'
 
 allowBuilds:
+  better-sqlite3: true
   bigint-buffer: true
   bufferutil: true
   esbuild: true
   sharp: true
+  unrs-resolver: true
   utf-8-validate: true
   workerd: true
+
+minimumReleaseAgeExclude:
+  - '@cloudflare/vitest-pool-workers@0.16.16'
+  - miniflare@4.20260616.0
+  - wrangler@4.101.0
 
 onlyBuiltDependencies:
   - esbuild

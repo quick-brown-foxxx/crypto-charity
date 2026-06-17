@@ -3,7 +3,30 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
-  "exports": {}
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./schema/vault-db": {
+      "types": "./src/schema/vault-db.ts",
+      "default": "./src/schema/vault-db.ts"
+    },
+    "./schema/bot-db": {
+      "types": "./src/schema/bot-db.ts",
+      "default": "./src/schema/bot-db.ts"
+    }
+  },
+  "dependencies": {
+    "@open-care/vault-core": "workspace:*",
+    "better-sqlite3": "^12.11.1",
+    "drizzle-orm": "^0.45.2",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "drizzle-kit": "^0.31.10"
+  }
 }

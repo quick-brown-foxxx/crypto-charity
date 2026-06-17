@@ -1,188 +1,201 @@
 /* Open Care — Global Styles */
 :root {
-	--color-bg: #fafafa;
-	--color-surface: #ffffff;
-	--color-text: #1a1a2e;
-	--color-text-muted: #6b7280;
-	--color-primary: #2563eb;
-	--color-primary-hover: #1d4ed8;
-	--color-accent: #059669;
-	--color-accent-hover: #047857;
-	--color-border: #e5e7eb;
-	--color-danger: #dc2626;
-	--color-warning: #f59e0b;
-	--color-code-bg: #f3f4f6;
-	--max-width: 72rem;
-	--radius: 0.5rem;
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-text: #1a1a2e;
+  --color-text-muted: #6b7280;
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-accent: #059669;
+  --color-accent-hover: #047857;
+  --color-border: #e5e7eb;
+  --color-danger: #dc2626;
+  --color-warning: #f59e0b;
+  --color-code-bg: #f3f4f6;
+  --max-width: 72rem;
+  --radius: 0.5rem;
 }
 
 *,
 *::before,
 *::after {
-	box-sizing: border-box;
-	margin: 0;
-	padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html {
-	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-		sans-serif;
-	line-height: 1.6;
-	color: var(--color-text);
-	background: var(--color-bg);
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-	min-height: 100vh;
-	display: flex;
-	flex-direction: column;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 a {
-	color: var(--color-primary);
-	text-decoration: none;
+  color: var(--color-primary);
+  text-decoration: none;
 }
 
 a:hover {
-	color: var(--color-primary-hover);
-	text-decoration: underline;
+  color: var(--color-primary-hover);
+  text-decoration: underline;
 }
 
-h1, h2, h3, h4, h5, h6 {
-	line-height: 1.2;
-	margin-bottom: 0.5em;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  line-height: 1.2;
+  margin-bottom: 0.5em;
 }
 
-h1 { font-size: 2rem; }
-h2 { font-size: 1.5rem; }
-h3 { font-size: 1.25rem; }
+h1 {
+  font-size: 2rem;
+}
+h2 {
+  font-size: 1.5rem;
+}
+h3 {
+  font-size: 1.25rem;
+}
 
 p {
-	margin-bottom: 1rem;
+  margin-bottom: 1rem;
 }
 
 code {
-	font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
-	background: var(--color-code-bg);
-	padding: 0.15em 0.4em;
-	border-radius: 0.25rem;
-	font-size: 0.9em;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  background: var(--color-code-bg);
+  padding: 0.15em 0.4em;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
 }
 
 .address-mono {
-	font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
-	background: var(--color-code-bg);
-	padding: 0.5rem 0.75rem;
-	border-radius: var(--radius);
-	font-size: 0.85rem;
-	word-break: break-all;
-	display: inline-block;
-	max-width: 100%;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  background: var(--color-code-bg);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  word-break: break-all;
+  display: inline-block;
+  max-width: 100%;
 }
 
 .card {
-	background: var(--color-surface);
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius);
-	padding: 1.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
 }
 
 .btn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	padding: 0.5rem 1.25rem;
-	border-radius: var(--radius);
-	font-size: 0.95rem;
-	font-weight: 500;
-	cursor: pointer;
-	border: none;
-	transition: background 0.15s, color 0.15s;
-	text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  text-decoration: none;
 }
 
 .btn-primary {
-	background: var(--color-primary);
-	color: #ffffff;
+  background: var(--color-primary);
+  color: #ffffff;
 }
 
 .btn-primary:hover {
-	background: var(--color-primary-hover);
-	color: #ffffff;
-	text-decoration: none;
+  background: var(--color-primary-hover);
+  color: #ffffff;
+  text-decoration: none;
 }
 
 .btn-accent {
-	background: var(--color-accent);
-	color: #ffffff;
+  background: var(--color-accent);
+  color: #ffffff;
 }
 
 .btn-accent:hover {
-	background: var(--color-accent-hover);
-	color: #ffffff;
-	text-decoration: none;
+  background: var(--color-accent-hover);
+  color: #ffffff;
+  text-decoration: none;
 }
 
 .btn-outline {
-	background: transparent;
-	border: 1px solid var(--color-border);
-	color: var(--color-text);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
 }
 
 .btn-outline:hover {
-	background: var(--color-code-bg);
-	text-decoration: none;
+  background: var(--color-code-bg);
+  text-decoration: none;
 }
 
 .section {
-	margin-bottom: 2rem;
+  margin-bottom: 2rem;
 }
 
 .warning-box {
-	background: #fef3c7;
-	border: 1px solid var(--color-warning);
-	border-radius: var(--radius);
-	padding: 1rem;
-	margin-bottom: 1rem;
+  background: #fef3c7;
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
 }
 
 .warning-box p {
-	margin-bottom: 0.25rem;
+  margin-bottom: 0.25rem;
 }
 
 .warning-box p:last-child {
-	margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 .muted {
-	color: var(--color-text-muted);
+  color: var(--color-text-muted);
 }
 
 .metric-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-	gap: 1rem;
-	margin-bottom: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .metric-card {
-	background: var(--color-surface);
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius);
-	padding: 1rem;
-	text-align: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  text-align: center;
 }
 
 .metric-card .metric-value {
-	font-size: 1.75rem;
-	font-weight: 700;
-	color: var(--color-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-primary);
 }
 
 .metric-card .metric-label {
-	font-size: 0.85rem;
-	color: var(--color-text-muted);
-	margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-top: 0.25rem;
 }

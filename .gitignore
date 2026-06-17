@@ -5,3 +5,14 @@ build/
 .dev.vars*
 .env*
 !.env.example
+
+# Build artifacts
+*.tsbuildinfo
+dist/
+*.d.ts.map
+packages/*/vitest.config.js
+packages/*/vitest.config.d.ts
+packages/*/vitest.config.d.ts.map
+vitest.shared.js
+vitest.shared.d.ts
+vitest.shared.d.ts.map
