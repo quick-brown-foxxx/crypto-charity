@@ -1,62 +1,112 @@
 import { Hono } from 'hono';
+import {
+  createVaultDb,
+  getTotals,
+  getDonations,
+  getDisbursements,
+  getHead,
+} from '@open-care/vault-db';
+import type {
+  VaultDb,
+  Totals,
+  DonationView,
+  DisbursementView,
+  PaginatedResult,
+} from '@open-care/vault-db';
+import type { LedgerEvent } from '@open-care/vault-core';
 
-type Bindings = {
+interface Env {
   vault_db: D1Database;
-};
+  SOLANA_CLUSTER: string;
+  USDC_MINT: string;
+  TREASURY_WALLET_ADDRESS: string;
+  VAULT_USDC_ATA: string;
+  ANCHOR_WALLET_ADDRESS: string;
+  SITE_URL: string;
+}
 
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<{ Bindings: Env }>();
 
-// Public read API — no auth required.
+function getDb(env: Env): VaultDb {
+  return createVaultDb(env.vault_db);
+}
 
-// The real implementation will include `anchor_wallet_low_sol` in the
-// health response, read from the cached
-// `anchor_runs.last_anchor_wallet_sol_lamports` value written by
-// vault-anchor-cron. The read Worker has no RPC binding.
+// Prove query helper imports resolve (real impl calls these with a VaultDb instance)
+void getTotals;
+void getDonations;
+void getDisbursements;
+void getHead;
+
+// GET /api/health — liveness check with subsystem status.
+// Real impl (Epic 3): includes anchor_wallet_low_sol from cached
+// anchor_runs.last_anchor_wallet_sol_lamports (written by vault-anchor-cron).
 app.get('/api/health', (c) => {
-  return c.json({ status: 'ok' }, 200);
-});
-
-// The real handler must sum `donations.usdc_amount_minor` and
-// `disbursements.usdc_amount_minor` from vault_db. The mock returns
-// zeroes.
-app.get('/api/totals', (c) => {
+  void getDb(c.env);
   return c.json(
     {
-      total_donations_usdc_minor: '0',
-      total_disbursements_usdc_minor: '0',
+      status: 'ok',
+      checks: {
+        database: 'ok',
+        anchor_wallet_low_sol: false,
+      },
     },
     200,
   );
 });
 
-// The real handler must query the donations table with pagination
-// (cursor, limit). The mock returns an empty list.
+// GET /api/totals — aggregate donation and disbursement totals.
+// Real impl (Epic 3): sums from vault_db via getTotals().
+app.get('/api/totals', (c) => {
+  void getDb(c.env);
+  const stub: Totals = {
+    total_donations_usdc_minor: '0',
+    total_disbursements_usdc_minor: '0',
+    donation_count: 0,
+    disbursement_count: 0,
+  };
+  return c.json(stub, 200);
+});
+
+// GET /api/donations — paginated donation list.
+// Real impl (Epic 3): queries via getDonations() with cursor/limit from query params.
 app.get('/api/donations', (c) => {
-  return c.json({ donations: [] }, 200);
+  void getDb(c.env);
+  const stub: PaginatedResult<DonationView> = { items: [], nextCursor: null };
+  return c.json(stub, 200);
 });
 
-// The real handler must query the disbursements table with pagination.
-// This is the public list endpoint — the write endpoint lives on
-// vault-api-write. The mock returns an empty list.
+// GET /api/disbursements — paginated public disbursement list.
+// Real impl (Epic 3): queries via getDisbursements() with cursor/limit.
 app.get('/api/disbursements', (c) => {
-  return c.json({ disbursements: [] }, 200);
+  void getDb(c.env);
+  const stub: PaginatedResult<DisbursementView> = { items: [], nextCursor: null };
+  return c.json(stub, 200);
 });
 
-// The real handler must query the ledger_events table with pagination.
-// The mock returns an empty list.
+// GET /api/ledger-events — paginated raw ledger events.
+// Real impl (Epic 3): queries ledger_events with pagination.
 app.get('/api/ledger-events', (c) => {
-  return c.json({ events: [] }, 200);
+  void getDb(c.env);
+  const stub: { items: LedgerEvent[]; next_after_sequence_no: number | null } = {
+    items: [],
+    next_after_sequence_no: null,
+  };
+  return c.json(stub, 200);
 });
 
-// The real handler must look up a donation by signature or id and
-// return the verification chain (donation → disbursement → on-chain
-// anchor). The mock returns an empty chain.
+// GET /api/verify — donation verification chain lookup.
+// Real impl (Epic 3): looks up donation by signature/id, returns
+// verification chain (donation → disbursement → on-chain anchor).
 app.get('/api/verify', (c) => {
-  return c.json({ chain: [] }, 200);
-});
-
-app.all('*', (c) => {
-  return c.notFound();
+  void getDb(c.env);
+  return c.json(
+    {
+      head_sequence_no: null,
+      head_hash: null,
+      chain_valid: null,
+    },
+    200,
+  );
 });
 
 export default app;

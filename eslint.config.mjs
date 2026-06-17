@@ -69,6 +69,13 @@ export default defineConfig([
       'import-x/resolver-next': [
         createTypeScriptImportResolver({
           alwaysTryTypes: true,
+          project: [
+            './tsconfig.eslint.json',
+            './apps/*/tsconfig.json',
+            './apps/*/.svelte-kit/tsconfig.json',
+            './apps/*/test/tsconfig.json',
+            './packages/*/tsconfig.json',
+          ],
         }),
       ],
     },

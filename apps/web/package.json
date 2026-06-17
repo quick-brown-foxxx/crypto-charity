@@ -10,7 +10,11 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
-    "@sveltejs/adapter-cloudflare": "^5"
+    "@sveltejs/adapter-cloudflare": "^5",
+    "bits-ui": "^1",
+    "clsx": "^2",
+    "tailwind-merge": "^3",
+    "valibot": "^1"
   },
   "devDependencies": {
     "@sveltejs/kit": "^2",

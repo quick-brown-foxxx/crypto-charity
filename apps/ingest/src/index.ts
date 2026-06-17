@@ -1,49 +1,40 @@
 import { Hono } from 'hono';
+import { createVaultDb } from '@open-care/vault-db';
+import type { VaultDb } from '@open-care/vault-db';
+import type { DonationPayload } from '@open-care/vault-core';
 
-type Bindings = {
+interface Env {
   vault_db: D1Database;
   HELIUS_WEBHOOK_AUTH_HEADER: string;
-  HELIUS_RPC_URL?: string; // Used by the real implementation when fetching finalized txs.
-};
+  HELIUS_RPC_URL: string;
+  SOLANA_CLUSTER: string;
+  USDC_MINT: string;
+  TREASURY_WALLET_ADDRESS: string;
+  VAULT_USDC_ATA: string;
+  ANCHOR_WALLET_ADDRESS: string;
+  SITE_URL: string;
+}
 
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<{ Bindings: Env }>();
 
-app.post('/webhook/helius', async (c) => {
-  const expected = c.env.HELIUS_WEBHOOK_AUTH_HEADER; // token only, no "Bearer " prefix
-  const provided = c.req.header('Authorization');
+function getDb(env: Env): VaultDb {
+  return createVaultDb(env.vault_db);
+}
 
-  // Extract bearer token from "Bearer <token>" header value.
-  // The secret stores just the token — the "Bearer " prefix belongs
-  // to the HTTP Authorization scheme, not to the stored secret.
-  const providedToken = provided?.startsWith('Bearer ') ? provided.slice(7) : provided;
-
-  if (!providedToken || providedToken !== expected) {
-    // Real implementation MUST use a constant-time comparison here
-    // (e.g., crypto.subtle.timingSafeEqual over the byte arrays).
-    // The MVP mock uses `!==` for brevity; this is documented in
-    // docs/specs/04-api.md §"Helius auth". The mock returns the
-    // standard error envelope from §"Standard error response".
-    return c.json(
-      {
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'Invalid webhook auth.',
-        },
-      },
-      401,
-    );
-  }
-
-  // The real handler must parse the request body (an array of webhook
-  // entries) and count distinct signatures: `accepted` is the count of
-  // new rows inserted into helius_inbox, `duplicates` is the count of
-  // signatures already present. The mock returns constants; the real
-  // implementation must not.
-  return c.json({ accepted: 1, duplicates: 0 }, 200);
+// POST /webhook/helius — receives Helius transaction webhooks.
+// Real impl (Epic 1): validates Authorization header with constant-time comparison,
+// parses webhook entries, deduplicates by tx_signature, inserts into helius_inbox.
+app.post('/webhook/helius', (c) => {
+  void getDb(c.env);
+  // Prove DonationPayload import resolves (real impl uses this type for parsed entries)
+  const _stubPayload = null as DonationPayload | null;
+  void _stubPayload;
+  return c.json({ accepted: 0, duplicates: 0 }, 200);
 });
 
-app.all('*', (c) => {
-  return c.notFound();
+// GET /health — liveness check.
+app.get('/health', (c) => {
+  return c.json({ status: 'ok' }, 200);
 });
 
 export default app;

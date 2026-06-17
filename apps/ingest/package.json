@@ -7,6 +7,8 @@
     "dev": "wrangler dev"
   },
   "dependencies": {
+    "@open-care/vault-core": "workspace:*",
+    "@open-care/vault-db": "workspace:*",
     "hono": "^4"
   },
   "devDependencies": {
