@@ -32,6 +32,14 @@ describe('GET /api/health', () => {
     expect(json.checks).toHaveProperty('helius_inbox_backlog_ok');
   });
 
+  it('includes contact_url field', async () => {
+    const response = await SELF.fetch('https://example.com/api/health');
+    const json = await response.json();
+    expect(json).toHaveProperty('contact_url');
+    // CONTACT_URL is set in wrangler.jsonc vars, so it should be the configured value
+    expect(json.contact_url).toBe('https://t.me/your-contact-channel');
+  });
+
   it('returns degraded when anchor is stale (no anchor exists)', async () => {
     const response = await SELF.fetch('https://example.com/api/health');
     const json = await response.json();

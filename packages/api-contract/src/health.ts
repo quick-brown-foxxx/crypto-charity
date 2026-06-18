@@ -11,4 +11,5 @@ export interface HealthResponse {
   version: string;
   response_time_ms: number;
   checks: HealthChecks;
+  contact_url: string | null;
 }

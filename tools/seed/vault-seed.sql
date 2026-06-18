@@ -3,43 +3,43 @@
 -- All event hashes are pre-computed to form a valid hash chain.
 
 -- Wallets
-INSERT INTO wallets (role, cluster, address, usdc_mint, usdc_ata, label, active, created_at_utc) VALUES
+INSERT OR IGNORE INTO wallets (role, cluster, address, usdc_mint, usdc_ata, label, active, created_at_utc) VALUES
   ('treasury', 'devnet', '8ufYGMkmAWeaYaM4CnANrxLxpQoaESKTGFN1BcgU71tG', '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU', '52MK6GwPWLvjfZuXm3K9fy9PozZAgUAKridA7ycSQUtG', 'Treasury (devnet)', 1, '2026-06-14T00:00:00Z');
-INSERT INTO wallets (role, cluster, address, usdc_mint, usdc_ata, label, active, created_at_utc) VALUES
+INSERT OR IGNORE INTO wallets (role, cluster, address, usdc_mint, usdc_ata, label, active, created_at_utc) VALUES
   ('anchor', 'devnet', 'BhKtkM1oHADwo8ap5P6Lymj7b3iaspiAm37RA9KMn8YG', NULL, NULL, 'Anchor (devnet)', 1, '2026-06-14T00:00:00Z');
 
 -- Ledger events (valid hash chain)
 
 -- Event 1: donation_confirmed (seq=1)
-INSERT INTO ledger_events (event_type, payload_json, prev_hash, event_hash, created_at_utc) VALUES
+INSERT OR IGNORE INTO ledger_events (event_type, payload_json, prev_hash, event_hash, created_at_utc) VALUES
   ('donation_confirmed', '{"amount_usdc_minor":"100000000","block_time_utc":"2026-06-14T10:23:00Z","cluster":"devnet","inner_index":null,"instruction_index":3,"slot":123456789,"transaction_version":0,"treasury_wallet_address":"8ufYGMkmAWeaYaM4CnANrxLxpQoaESKTGFN1BcgU71tG","tx_signature":"5xAbC1234mockTestVectorDonationConfirmedExample","usdc_mint":"4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU","vault_usdc_ata":"52MK6GwPWLvjfZuXm3K9fy9PozZAgUAKridA7ycSQUtG"}', '0000000000000000000000000000000000000000000000000000000000000000', '9e1d7b16abad5573ade647c56931f483d50bc0d7740853e2b04240872e521fc5', '2026-06-14T10:23:01Z');
 
 -- Event 2: donation_confirmed (seq=2)
-INSERT INTO ledger_events (event_type, payload_json, prev_hash, event_hash, created_at_utc) VALUES
+INSERT OR IGNORE INTO ledger_events (event_type, payload_json, prev_hash, event_hash, created_at_utc) VALUES
   ('donation_confirmed', '{"amount_usdc_minor":"50000000","block_time_utc":"2026-06-14T11:00:00Z","cluster":"devnet","inner_index":null,"instruction_index":1,"slot":123456790,"transaction_version":0,"treasury_wallet_address":"8ufYGMkmAWeaYaM4CnANrxLxpQoaESKTGFN1BcgU71tG","tx_signature":"3mDcF5678seedDonationTwoDevnetExampleTx","usdc_mint":"4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU","vault_usdc_ata":"52MK6GwPWLvjfZuXm3K9fy9PozZAgUAKridA7ycSQUtG"}', '9e1d7b16abad5573ade647c56931f483d50bc0d7740853e2b04240872e521fc5', '904341159f72a143c1fcdb5db30df23edceff1f6b7e9a97d299c079484302afc', '2026-06-14T11:00:01Z');
 
 -- Event 3: donation_confirmed (seq=3)
-INSERT INTO ledger_events (event_type, payload_json, prev_hash, event_hash, created_at_utc) VALUES
+INSERT OR IGNORE INTO ledger_events (event_type, payload_json, prev_hash, event_hash, created_at_utc) VALUES
   ('donation_confirmed', '{"amount_usdc_minor":"25000000","block_time_utc":"2026-06-14T12:00:00Z","cluster":"devnet","inner_index":0,"instruction_index":2,"slot":123456791,"transaction_version":0,"treasury_wallet_address":"8ufYGMkmAWeaYaM4CnANrxLxpQoaESKTGFN1BcgU71tG","tx_signature":"9kGhJ9012seedDonationThreeDevnetExampleTx","usdc_mint":"4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU","vault_usdc_ata":"52MK6GwPWLvjfZuXm3K9fy9PozZAgUAKridA7ycSQUtG"}', '904341159f72a143c1fcdb5db30df23edceff1f6b7e9a97d299c079484302afc', 'd19c1963709279a182a916a57514121491806d7bcac40ed97698c4668e0a3d4a', '2026-06-14T12:00:01Z');
 
 -- Event 4: disbursement_recorded (seq=4)
-INSERT INTO ledger_events (event_type, payload_json, prev_hash, event_hash, created_at_utc) VALUES
+INSERT OR IGNORE INTO ledger_events (event_type, payload_json, prev_hash, event_hash, created_at_utc) VALUES
   ('disbursement_recorded', '{"amount_usdc_minor":"75000000","gift_card_count":3,"public_beneficiary_ref":"benpub_7G9Q2KX4N5P8R2T6","purchased_at_utc":"2026-06-15T09:00:00Z","receipt_ref":"RCPT-2026-001","recorded_at_utc":"2026-06-15T09:30:00Z","recorded_by":"operator","service":"Alter","service_note":"Q2 2026 mental health support program"}', 'd19c1963709279a182a916a57514121491806d7bcac40ed97698c4668e0a3d4a', 'c5f1a0743023904941d93b7a9fa2082e5fbd1fb78de75cdc6ddfb889e2890955', '2026-06-15T09:30:00Z');
 
 -- Event 5: disbursement_recorded (seq=5)
-INSERT INTO ledger_events (event_type, payload_json, prev_hash, event_hash, created_at_utc) VALUES
+INSERT OR IGNORE INTO ledger_events (event_type, payload_json, prev_hash, event_hash, created_at_utc) VALUES
   ('disbursement_recorded', '{"amount_usdc_minor":"30000000","gift_card_count":1,"public_beneficiary_ref":null,"purchased_at_utc":"2026-06-15T14:00:00Z","receipt_ref":"RCPT-2026-002","recorded_at_utc":"2026-06-15T14:15:00Z","recorded_by":"operator","service":"Yasno","service_note":null}', 'c5f1a0743023904941d93b7a9fa2082e5fbd1fb78de75cdc6ddfb889e2890955', 'e4668c024e347821dec1bd19c784aeeff2cf1be27639bc1e5ce76917f6187af5', '2026-06-15T14:15:00Z');
 
 -- Event 6: anchor_published (seq=6)
-INSERT INTO ledger_events (event_type, payload_json, prev_hash, event_hash, created_at_utc) VALUES
+INSERT OR IGNORE INTO ledger_events (event_type, payload_json, prev_hash, event_hash, created_at_utc) VALUES
   ('anchor_published', '{"anchor_date":"2026-06-15","anchor_wallet_address":"BhKtkM1oHADwo8ap5P6Lymj7b3iaspiAm37RA9KMn8YG","anchored_head_hash":"e4668c024e347821dec1bd19c784aeeff2cf1be27639bc1e5ce76917f6187af5","anchored_head_sequence_no":5,"cluster":"devnet","memo_text":"open-care.org anchor 2026-06-15 seq=5","published_at_utc":"2026-06-16T01:00:00Z","tx_signature":"7nOpQ3456seedAnchorDevnetExampleTx"}', 'e4668c024e347821dec1bd19c784aeeff2cf1be27639bc1e5ce76917f6187af5', '3d31f66af0480a6866dcd595579816562c65d0f2f5e57b090a4a1ab7fafd822b', '2026-06-16T01:00:00Z');
 
 -- Event 7: correction_recorded (seq=7)
-INSERT INTO ledger_events (event_type, payload_json, prev_hash, event_hash, created_at_utc) VALUES
+INSERT OR IGNORE INTO ledger_events (event_type, payload_json, prev_hash, event_hash, created_at_utc) VALUES
   ('correction_recorded', '{"corrects_sequence_no":4,"reason":"Receipt reference was incorrect; updated after vendor confirmation","recorded_at_utc":"2026-06-16T10:00:00Z","recorded_by":"operator","replacement_fields":{"receipt_ref":"RCPT-2026-001-CORRECTED"}}', '3d31f66af0480a6866dcd595579816562c65d0f2f5e57b090a4a1ab7fafd822b', '8c3c65aa367e922e32a70c718fa3c9c8131dfc48d4e883312ba89c1aef607813', '2026-06-16T10:00:00Z');
 
 -- Anchor runs
-INSERT INTO anchor_runs (anchor_date, anchored_head_sequence_no, anchored_head_hash, status, trigger_source, tx_signature, anchor_wallet_address, memo_text, attempt_count, last_error, locked_until_utc, last_anchor_wallet_sol_lamports, created_at_utc, updated_at_utc) VALUES
+INSERT OR IGNORE INTO anchor_runs (anchor_date, anchored_head_sequence_no, anchored_head_hash, status, trigger_source, tx_signature, anchor_wallet_address, memo_text, attempt_count, last_error, locked_until_utc, last_anchor_wallet_sol_lamports, created_at_utc, updated_at_utc) VALUES
   ('2026-06-15', 5, 'e4668c024e347821dec1bd19c784aeeff2cf1be27639bc1e5ce76917f6187af5', 'published', 'cron', '7nOpQ3456seedAnchorDevnetExampleTx', 'BhKtkM1oHADwo8ap5P6Lymj7b3iaspiAm37RA9KMn8YG', 'open-care.org anchor 2026-06-15 seq=5', 1, NULL, NULL, 5000000000, '2026-06-16T01:00:00Z', '2026-06-16T01:00:00Z');
 
 -- Seed data summary:

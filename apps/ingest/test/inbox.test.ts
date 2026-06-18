@@ -91,6 +91,9 @@ const SIG_DUP = 'txn33333333333333333333333333333333333333333333';
 const SIG_RPC_FAIL = 'txn44444444444444444444444444444444444444444444';
 const SIG_MAX_RETRY = 'txn55555555555555555555555555555555555555555555';
 const SIG_CHECK_DUP = 'txn66666666666666666666666666666666666666666666';
+const SIG_NULL_RESULT = 'txn77777777777777777777777777777777777777777777';
+const SIG_NETWORK_ERROR = 'txn88888888888888888888888888888888888888888888';
+const SIG_MALFORMED = 'txn99999999999999999999999999999999999999999999';
 
 // Shorter signatures for insertIntoInbox-only tests (no Zod validation there)
 const SIG_INSERT_1 = 'test-sig-001';
@@ -405,6 +408,109 @@ describe('inbox operations', () => {
         .from(vaultSchema.heliusInbox)
         .where(eq(vaultSchema.heliusInbox.signature, SIG_MAX_RETRY));
       expect(rows[0]?.status).toBe('failed');
+    });
+
+    it('handles null result as NOT_FINALIZED (stays received)', async () => {
+      await insertIntoInbox(db, [
+        {
+          signature: SIG_NULL_RESULT,
+          source: 'webhook',
+          rawPayloadJson: JSON.stringify({ signature: SIG_NULL_RESULT }),
+          receivedAtUtc: utcNow(),
+        },
+      ]);
+
+      // Mock fetch returns a valid JSON-RPC envelope with result: null.
+      // fetchTransaction treats null result as NOT_FINALIZED (retryable).
+      const mockFetch = createMockFetch({
+        jsonrpc: '2.0',
+        result: null,
+        id: 1,
+      });
+      const result = await processInbox(db, env as Env, mockFetch);
+
+      // NOT_FINALIZED is retryable — entry stays received, not failed
+      expect(result.failed).toBe(0);
+      expect(result.processed).toBe(0);
+      expect(result.ignored).toBe(0);
+
+      const rows = await db
+        .select()
+        .from(vaultSchema.heliusInbox)
+        .where(eq(vaultSchema.heliusInbox.signature, SIG_NULL_RESULT));
+      expect(rows[0]?.status).toBe('received');
+      expect(rows[0]?.attempt_count).toBeGreaterThan(0);
+      expect(rows[0]?.last_error).toBeTruthy();
+    });
+
+    it('handles network error gracefully (stays received)', async () => {
+      await insertIntoInbox(db, [
+        {
+          signature: SIG_NETWORK_ERROR,
+          source: 'webhook',
+          rawPayloadJson: JSON.stringify({ signature: SIG_NETWORK_ERROR }),
+          receivedAtUtc: utcNow(),
+        },
+      ]);
+
+      // Mock fetch that rejects with a network error.
+      // fetchTransaction catches this and returns NETWORK_ERROR (retryable).
+      const mockFetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+        void input;
+        void init;
+        return Promise.reject(new Error('Network failure'));
+      };
+      const result = await processInbox(db, env as Env, mockFetch);
+
+      // NETWORK_ERROR is retryable — entry stays received, not failed
+      expect(result.failed).toBe(0);
+      expect(result.processed).toBe(0);
+      expect(result.ignored).toBe(0);
+
+      const rows = await db
+        .select()
+        .from(vaultSchema.heliusInbox)
+        .where(eq(vaultSchema.heliusInbox.signature, SIG_NETWORK_ERROR));
+      expect(rows[0]?.status).toBe('received');
+      expect(rows[0]?.attempt_count).toBeGreaterThan(0);
+      expect(rows[0]?.last_error).toBeTruthy();
+    });
+
+    it('handles malformed JSON response as PARSE_ERROR (marks failed)', async () => {
+      await insertIntoInbox(db, [
+        {
+          signature: SIG_MALFORMED,
+          source: 'webhook',
+          rawPayloadJson: JSON.stringify({ signature: SIG_MALFORMED }),
+          receivedAtUtc: utcNow(),
+        },
+      ]);
+
+      // Mock fetch returns non-JSON content.
+      // fetchTransaction catches JSON parse failure → PARSE_ERROR (non-retryable).
+      const mockFetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+        void input;
+        void init;
+        return Promise.resolve(
+          new Response('not json', {
+            status: 200,
+            headers: { 'Content-Type': 'text/plain' },
+          }),
+        );
+      };
+      const result = await processInbox(db, env as Env, mockFetch);
+
+      // PARSE_ERROR is non-retryable — entry is marked failed
+      expect(result.failed).toBe(1);
+      expect(result.processed).toBe(0);
+      expect(result.ignored).toBe(0);
+
+      const rows = await db
+        .select()
+        .from(vaultSchema.heliusInbox)
+        .where(eq(vaultSchema.heliusInbox.signature, SIG_MALFORMED));
+      expect(rows[0]?.status).toBe('failed');
+      expect(rows[0]?.reason).toBeTruthy();
     });
   });
 

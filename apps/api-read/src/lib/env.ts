@@ -14,4 +14,5 @@ export interface Env {
   ANCHOR_WALLET_ADDRESS: string;
   SITE_URL: string;
   DEPLOY_VERSION?: string;
+  CONTACT_URL?: string;
 }

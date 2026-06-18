@@ -75,6 +75,7 @@ describe('Backend response shapes match contract types', () => {
         ingest_recent_or_empty: true,
         helius_inbox_backlog_ok: true,
       },
+      contact_url: null as string | null,
     };
     expectTypeOf(backendShape).toMatchTypeOf<HealthResponse>();
   });
@@ -91,6 +92,7 @@ describe('Backend response shapes match contract types', () => {
         ingest_recent_or_empty: false,
         helius_inbox_backlog_ok: true,
       },
+      contact_url: 'https://t.me/support' as string | null,
     };
     expectTypeOf(backendShape).toMatchTypeOf<HealthResponse>();
   });

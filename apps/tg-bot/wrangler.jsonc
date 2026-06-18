@@ -11,14 +11,7 @@
       "migrations_dir": "migrations",
     },
   ],
-  "vars": {
-    "SOLANA_CLUSTER": "devnet",
-    "USDC_MINT": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
-    "TREASURY_WALLET_ADDRESS": "8ufYGMkmAWeaYaM4CnANrxLxpQoaESKTGFN1BcgU71tG",
-    "VAULT_USDC_ATA": "52MK6GwPWLvjfZuXm3K9fy9PozZAgUAKridA7ycSQUtG",
-    "ANCHOR_WALLET_ADDRESS": "BhKtkM1oHADwo8ap5P6Lymj7b3iaspiAm37RA9KMn8YG",
-    "SITE_URL": "https://staging.open-care.org",
-  },
+  "vars": {},
   // Secrets are managed via `wrangler secret put`, not declared here.
   // The set of required secrets is documented in
   // docs/ops/secrets-inventory.md. The MVP deploy script verifies

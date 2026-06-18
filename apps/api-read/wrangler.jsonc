@@ -17,6 +17,8 @@
     "VAULT_USDC_ATA": "52MK6GwPWLvjfZuXm3K9fy9PozZAgUAKridA7ycSQUtG",
     "ANCHOR_WALLET_ADDRESS": "BhKtkM1oHADwo8ap5P6Lymj7b3iaspiAm37RA9KMn8YG",
     "SITE_URL": "https://staging.open-care.org",
+    "DEPLOY_VERSION": "0.1.0-dev",
+    "CONTACT_URL": "https://t.me/your-contact-channel",
   },
   "routes": [
     {

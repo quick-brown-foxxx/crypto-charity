@@ -125,6 +125,7 @@ app.get('/api/health', async (c) => {
       ingest_recent_or_empty: ingestRecentOrEmpty,
       helius_inbox_backlog_ok: heliusInboxBacklogOk,
     },
+    contact_url: c.env.CONTACT_URL ?? null,
   };
   return c.json(body, 200);
 });

@@ -23,6 +23,7 @@ export const HealthResponseSchema = v.object({
   version: v.string(),
   response_time_ms: v.number(),
   checks: HealthChecksSchema,
+  contact_url: v.nullable(v.string()),
 });
 
 export type HealthResponse = v.InferOutput<typeof HealthResponseSchema>;
