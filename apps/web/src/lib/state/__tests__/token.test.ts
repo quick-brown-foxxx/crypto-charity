@@ -1,11 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  setToken,
-  clearToken,
-  hasToken,
-  getToken,
-  authHeader,
-} from '../token.svelte.js';
+import { setToken, clearToken, hasToken, getToken, authHeader } from '../token.svelte.js';
 
 /**
  * Token state unit tests.

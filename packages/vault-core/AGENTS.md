@@ -15,12 +15,12 @@ dependency. `vault-db` and `bot-crypto` depend on it, not the reverse.
 
 Four ledger event types, each with a TypeScript interface and a strict Zod schema:
 
-| Event type | Payload | Purpose |
-| --- | --- | --- |
-| `donation_confirmed` | `DonationPayload` | Confirmed USDC donation on Solana (tx signature, slot, block time, amount, ATA, cluster) |
+| Event type              | Payload               | Purpose                                                                                                 |
+| ----------------------- | --------------------- | ------------------------------------------------------------------------------------------------------- |
+| `donation_confirmed`    | `DonationPayload`     | Confirmed USDC donation on Solana (tx signature, slot, block time, amount, ATA, cluster)                |
 | `disbursement_recorded` | `DisbursementPayload` | Gift-card disbursement recorded by operator (amount, card count, service, receipt ref, beneficiary ref) |
-| `anchor_published` | `AnchorPayload` | Solana anchor tx published (anchor date, anchored head seq/hash, tx signature, memo) |
-| `correction_recorded` | `CorrectionPayload` | Correction to a previous event (replacement fields: `receipt_ref` and/or `service_note`) |
+| `anchor_published`      | `AnchorPayload`       | Solana anchor tx published (anchor date, anchored head seq/hash, tx signature, memo)                    |
+| `correction_recorded`   | `CorrectionPayload`   | Correction to a previous event (replacement fields: `receipt_ref` and/or `service_note`)                |
 
 `LedgerEventBase` extends a payload with `sequence_no`, `event_type`, `prev_hash`,
 `created_at_utc`. `LedgerEvent` adds `event_hash`.
@@ -74,17 +74,17 @@ the monorepo.
 
 ### Consumed by
 
-| Consumer | What it uses |
-| --- | --- |
-| `@open-care/vault-db` | Types (`LedgerEvent`, `EventPayload`, etc.), `computeEventHash`, `ZERO_HASH`, `canonicalJson`, `PayloadSchemas`, `ok`/`err`, `parseLedgerEvent`, `DonationPayloadSchema`, `DisbursementPayloadSchema` |
-| `@open-care/bot-crypto` | `Result`, `ok`, `err` |
-| `apps/ingest` | Types (`DonationPayload`, `Cluster`, `Result`), logging, `ok`/`err` |
-| `apps/api-write` | Types, Zod schemas, `generateBeneficiaryRef`, logging |
-| `apps/api-read` | `canonicalJson` (tests), types |
-| `apps/anchor-cron` | Types, `buildAnchorMemo`, `parseAnchorMemo`, `ok`/`err`, logging |
-| `apps/tg-bot` | `isValidHandle`, `isValidBeneficiaryRef`, `Result`/`ok`/`err`, logging |
-| `apps/operator` | Logging |
-| `tools/seed` | Types, fixtures |
+| Consumer                | What it uses                                                                                                                                                                                          |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@open-care/vault-db`   | Types (`LedgerEvent`, `EventPayload`, etc.), `computeEventHash`, `ZERO_HASH`, `canonicalJson`, `PayloadSchemas`, `ok`/`err`, `parseLedgerEvent`, `DonationPayloadSchema`, `DisbursementPayloadSchema` |
+| `@open-care/bot-crypto` | `Result`, `ok`, `err`                                                                                                                                                                                 |
+| `apps/ingest`           | Types (`DonationPayload`, `Cluster`, `Result`), logging, `ok`/`err`                                                                                                                                   |
+| `apps/api-write`        | Types, Zod schemas, `generateBeneficiaryRef`, logging                                                                                                                                                 |
+| `apps/api-read`         | `canonicalJson` (tests), types                                                                                                                                                                        |
+| `apps/anchor-cron`      | Types, `buildAnchorMemo`, `parseAnchorMemo`, `ok`/`err`, logging                                                                                                                                      |
+| `apps/tg-bot`           | `isValidHandle`, `isValidBeneficiaryRef`, `Result`/`ok`/`err`, logging                                                                                                                                |
+| `apps/operator`         | Logging                                                                                                                                                                                               |
+| `tools/seed`            | Types, fixtures                                                                                                                                                                                       |
 
 ### Depends on
 

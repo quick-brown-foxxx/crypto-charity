@@ -42,98 +42,103 @@ test.describe('Admin pages', () => {
     // Mock ALL requests to staging.open-care.org to avoid CORS issues.
     // The operator module fetches from https://staging.open-care.org, so
     // we use a hostname predicate for reliable route matching.
-    await page.route((url) => url.hostname === 'staging.open-care.org', async (route) => {
-      const url = route.request().url();
+    await page.route(
+      (url) => url.hostname === 'staging.open-care.org',
+      async (route) => {
+        const url = route.request().url();
 
-      if (url.includes('/tg/internal/pending-requests')) {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ items: [], next_cursor: null }),
-        });
-      } else if (url.includes('/api/health')) {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'ok',
-            version: '1.0.0',
-            response_time_ms: 42,
-            checks: {
-              db_reachable: true,
+        if (url.includes('/tg/internal/pending-requests')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ items: [], next_cursor: null }),
+          });
+        } else if (url.includes('/api/health')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              status: 'ok',
+              version: '1.0.0',
+              response_time_ms: 42,
+              checks: {
+                db_reachable: true,
+                anchor_stale: false,
+                anchor_wallet_low_sol: false,
+                ingest_recent_or_empty: true,
+                helius_inbox_backlog_ok: true,
+              },
+              contact_url: null,
+            }),
+          });
+        } else if (url.includes('/api/totals')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              total_in_usdc_minor: '1000000',
+              total_out_usdc_minor: '500000',
+              balance_usdc_minor: '500000',
+              donations_count: 10,
+              disbursements_count: 5,
+              anchor: {
+                anchored_head_hash: 'a'.repeat(64),
+                published_at_utc: '2025-01-15T12:00:00Z',
+                tx_signature: '2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
+                anchor_wallet_address: '2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
+                solscan_url:
+                  'https://solscan.io/tx/2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
+              },
               anchor_stale: false,
               anchor_wallet_low_sol: false,
-              ingest_recent_or_empty: true,
-              helius_inbox_backlog_ok: true,
-            },
-            contact_url: null,
-          }),
-        });
-      } else if (url.includes('/api/totals')) {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            total_in_usdc_minor: '1000000',
-            total_out_usdc_minor: '500000',
-            balance_usdc_minor: '500000',
-            donations_count: 10,
-            disbursements_count: 5,
-            anchor: {
-              anchored_head_hash: 'a'.repeat(64),
-              published_at_utc: '2025-01-15T12:00:00Z',
-              tx_signature: '2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
-              anchor_wallet_address: '2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
-              solscan_url: 'https://solscan.io/tx/2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
-            },
-            anchor_stale: false,
-            anchor_wallet_low_sol: false,
-          }),
-        });
-      } else if (url.includes('/api/verify')) {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            head_sequence_no: 5,
-            head_hash: 'a'.repeat(64),
-            latest_anchor: {
-              anchor_date: '2025-01-15',
-              anchored_head_sequence_no: 5,
-              anchored_head_hash: 'a'.repeat(64),
-              tx_signature: '2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
-              anchor_wallet_address: '2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
-              memo_text: 'ccv-anchor:' + 'a'.repeat(64),
-              published_at_utc: '2025-01-15T12:00:00Z',
-              solscan_url: 'https://solscan.io/tx/2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
-            },
-            previous_anchors: [],
-            instructions: { typescript: '// verification code' },
-            anchor_stale: false,
-          }),
-        });
-      } else if (url.includes('/api/ledger-events')) {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            items: [
-              {
-                sequence_no: 1,
-                event_type: 'donation_confirmed',
-                payload_json: '{"amount_usdc_minor":"100000"}',
-                prev_hash: '0'.repeat(64),
-                event_hash: 'b'.repeat(64),
-                created_at_utc: '2025-01-15T12:00:00Z',
+            }),
+          });
+        } else if (url.includes('/api/verify')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              head_sequence_no: 5,
+              head_hash: 'a'.repeat(64),
+              latest_anchor: {
+                anchor_date: '2025-01-15',
+                anchored_head_sequence_no: 5,
+                anchored_head_hash: 'a'.repeat(64),
+                tx_signature: '2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
+                anchor_wallet_address: '2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
+                memo_text: 'ccv-anchor:' + 'a'.repeat(64),
+                published_at_utc: '2025-01-15T12:00:00Z',
+                solscan_url:
+                  'https://solscan.io/tx/2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
               },
-            ],
-            next_after_sequence_no: null,
-          }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
+              previous_anchors: [],
+              instructions: { typescript: '// verification code' },
+              anchor_stale: false,
+            }),
+          });
+        } else if (url.includes('/api/ledger-events')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              items: [
+                {
+                  sequence_no: 1,
+                  event_type: 'donation_confirmed',
+                  payload_json: '{"amount_usdc_minor":"100000"}',
+                  prev_hash: '0'.repeat(64),
+                  event_hash: 'b'.repeat(64),
+                  created_at_utc: '2025-01-15T12:00:00Z',
+                },
+              ],
+              next_after_sequence_no: null,
+            }),
+          });
+        } else {
+          await route.continue();
+        }
+      },
+    );
 
     await page.goto('/admin');
 
@@ -152,30 +157,33 @@ test.describe('Admin pages', () => {
   test('/admin with invalid token shows error and keeps token gate visible', async ({ page }) => {
     // Mock the pending-requests endpoint to return 401.
     // Handle both OPTIONS preflight and GET requests with CORS headers.
-    await page.route('https://staging.open-care.org/tg/internal/pending-requests', async (route) => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        await route.fulfill({
-          status: 204,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-          },
-        });
-      } else {
-        await route.fulfill({
-          status: 401,
-          contentType: 'application/json',
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-          },
-          body: JSON.stringify({
-            error: { status: 401, code: 'UNAUTHORIZED', message: 'Неверный токен' },
-          }),
-        });
-      }
-    });
+    await page.route(
+      'https://staging.open-care.org/tg/internal/pending-requests',
+      async (route) => {
+        const request = route.request();
+        if (request.method() === 'OPTIONS') {
+          await route.fulfill({
+            status: 204,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            },
+          });
+        } else {
+          await route.fulfill({
+            status: 401,
+            contentType: 'application/json',
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+            },
+            body: JSON.stringify({
+              error: { status: 401, code: 'UNAUTHORIZED', message: 'Неверный токен' },
+            }),
+          });
+        }
+      },
+    );
 
     await page.goto('/admin');
 

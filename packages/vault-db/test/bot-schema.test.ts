@@ -28,34 +28,38 @@ describe('bot-db schema', () => {
 
   describe('handles table', () => {
     it('has expected columns', () => {
-      expect(handlesColumns.sort()).toEqual([
-        'first_seen_utc',
-        'handle',
-        'is_active',
-        'last_seen_utc',
-        'opaque_id',
-        'telegram_chat_id_enc',
-        'telegram_chat_key_version',
-        'telegram_user_ref',
-      ].sort());
+      expect(handlesColumns.sort()).toEqual(
+        [
+          'first_seen_utc',
+          'handle',
+          'is_active',
+          'last_seen_utc',
+          'opaque_id',
+          'telegram_chat_id_enc',
+          'telegram_chat_key_version',
+          'telegram_user_ref',
+        ].sort(),
+      );
     });
   });
 
   describe('conversations table', () => {
     it('has expected columns', () => {
-      expect(conversationsColumns.sort()).toEqual([
-        'created_at_utc',
-        'delivery_code_hash',
-        'delivery_code_last4',
-        'encrypted_code_expires_at_utc',
-        'encrypted_code_ttl_blob',
-        'id',
-        'kind',
-        'opaque_id',
-        'public_beneficiary_ref',
-        'status',
-        'updated_at_utc',
-      ].sort());
+      expect(conversationsColumns.sort()).toEqual(
+        [
+          'created_at_utc',
+          'delivery_code_hash',
+          'delivery_code_last4',
+          'encrypted_code_expires_at_utc',
+          'encrypted_code_ttl_blob',
+          'id',
+          'kind',
+          'opaque_id',
+          'public_beneficiary_ref',
+          'status',
+          'updated_at_utc',
+        ].sort(),
+      );
     });
   });
 

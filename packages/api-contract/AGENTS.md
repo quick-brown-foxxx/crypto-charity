@@ -26,18 +26,18 @@ and frontend Valibot schemas as the shared compile-time truth.
 
 ### Type modules (one file per domain)
 
-| Module              | Exports                                                                                          | Corresponding endpoint                  |
-| ------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------- |
-| `src/common.ts`       | `AnchorInfo` (full anchor info shared by totals and verify)                                        | —                                       |
-| `src/totals.ts`       | `TotalsAnchor`, `TotalsResponse`                                                                   | `GET /api/totals`                         |
-| `src/donations.ts`    | `DonationItem`, `DonationsResponse`                                                                 | `GET /api/donations`                      |
-| `src/disbursements.ts`| `DisbursementItem`, `DisbursementsResponse`                                                        | `GET /api/disbursements`                  |
-| `src/ledger-events.ts`| `LedgerEventItem`, `LedgerEventsResponse`                                                          | `GET /api/ledger-events`                  |
-| `src/verify.ts`       | `VerifyResponse` (reuses `AnchorInfo` from common)                                                   | `GET /api/verify`                         |
-| `src/health.ts`       | `HealthChecks`, `HealthResponse`                                                                    | `GET /api/health`                         |
-| `src/error.ts`        | `ApiErrorResponse` (standardized error shape matching vault-core `ErrorResponseBody`)                | All error responses                     |
-| `src/operator.ts`     | `DisbursementWriteResponse`, `CorrectionWriteResponse`, `AnchorManualResponse` (discriminated union), `PendingRequestItem`, `PendingRequestsResponse`, `SendCodeResponse` | Operator-authenticated endpoints        |
-| `src/requests.ts`     | `DisbursementRequestBody`, `CorrectionRequestBody`, `SendCodeRequestBody`                           | POST request bodies                     |
+| Module                 | Exports                                                                                                                                                                   | Corresponding endpoint           |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `src/common.ts`        | `AnchorInfo` (full anchor info shared by totals and verify)                                                                                                               | —                                |
+| `src/totals.ts`        | `TotalsAnchor`, `TotalsResponse`                                                                                                                                          | `GET /api/totals`                |
+| `src/donations.ts`     | `DonationItem`, `DonationsResponse`                                                                                                                                       | `GET /api/donations`             |
+| `src/disbursements.ts` | `DisbursementItem`, `DisbursementsResponse`                                                                                                                               | `GET /api/disbursements`         |
+| `src/ledger-events.ts` | `LedgerEventItem`, `LedgerEventsResponse`                                                                                                                                 | `GET /api/ledger-events`         |
+| `src/verify.ts`        | `VerifyResponse` (reuses `AnchorInfo` from common)                                                                                                                        | `GET /api/verify`                |
+| `src/health.ts`        | `HealthChecks`, `HealthResponse`                                                                                                                                          | `GET /api/health`                |
+| `src/error.ts`         | `ApiErrorResponse` (standardized error shape matching vault-core `ErrorResponseBody`)                                                                                     | All error responses              |
+| `src/operator.ts`      | `DisbursementWriteResponse`, `CorrectionWriteResponse`, `AnchorManualResponse` (discriminated union), `PendingRequestItem`, `PendingRequestsResponse`, `SendCodeResponse` | Operator-authenticated endpoints |
+| `src/requests.ts`      | `DisbursementRequestBody`, `CorrectionRequestBody`, `SendCodeRequestBody`                                                                                                 | POST request bodies              |
 
 ### Barrel export (`src/index.ts`)
 
@@ -46,6 +46,7 @@ Re-exports all types using `export type { ... }` — pure type-only exports.
 ### Compliance tests (`test/compliance.test.ts`)
 
 Vitest tests using `expectTypeOf` to verify:
+
 - Backend response shapes are assignable to contract types
 - Frontend Valibot-inferred types are assignable to contract types
 
@@ -53,14 +54,14 @@ Vitest tests using `expectTypeOf` to verify:
 
 ### Consumed by
 
-| Consumer              | What it uses                                                                 |
-| --------------------- | ---------------------------------------------------------------------------- |
-| `apps/api-read`         | `TotalsResponse`, `TotalsAnchor`, `DonationsResponse`, `DisbursementsResponse`, `LedgerEventsResponse`, `VerifyResponse`, `HealthResponse`, `ApiErrorResponse` |
-| `apps/api-write`        | `DisbursementWriteResponse`, `CorrectionWriteResponse`, `DisbursementRequestBody`, `CorrectionRequestBody`, `ApiErrorResponse` |
-| `apps/anchor-cron`      | `AnchorManualResponse`, `ApiErrorResponse`                                    |
-| `apps/tg-bot`           | `PendingRequestsResponse`, `PendingRequestItem`, `SendCodeResponse`, `SendCodeRequestBody`, `ApiErrorResponse` |
-| `apps/operator`         | All operator response types (via service bindings)                           |
-| `apps/web` (frontend)   | All public response types for Valibot schema type verification               |
+| Consumer              | What it uses                                                                                                                                                   |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/api-read`       | `TotalsResponse`, `TotalsAnchor`, `DonationsResponse`, `DisbursementsResponse`, `LedgerEventsResponse`, `VerifyResponse`, `HealthResponse`, `ApiErrorResponse` |
+| `apps/api-write`      | `DisbursementWriteResponse`, `CorrectionWriteResponse`, `DisbursementRequestBody`, `CorrectionRequestBody`, `ApiErrorResponse`                                 |
+| `apps/anchor-cron`    | `AnchorManualResponse`, `ApiErrorResponse`                                                                                                                     |
+| `apps/tg-bot`         | `PendingRequestsResponse`, `PendingRequestItem`, `SendCodeResponse`, `SendCodeRequestBody`, `ApiErrorResponse`                                                 |
+| `apps/operator`       | All operator response types (via service bindings)                                                                                                             |
+| `apps/web` (frontend) | All public response types for Valibot schema type verification                                                                                                 |
 
 ### Depends on
 

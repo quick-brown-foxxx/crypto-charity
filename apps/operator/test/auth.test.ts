@@ -16,7 +16,9 @@ describe('Auth middleware', () => {
       body: '{}',
     });
     expect(response.status).toBe(401);
-    const json = await response.json<{ error: { code: string; message: string; request_id?: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id?: string };
+    }>();
     expect(json.error.code).toBe('UNAUTHORIZED');
     expect(json.error.message).toContain('Missing');
     expect(json.error.request_id).toBeDefined();
@@ -30,7 +32,9 @@ describe('Auth middleware', () => {
       body: '{}',
     });
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id?: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id?: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.message).toContain('Bearer');
     expect(json.error.request_id).toBeDefined();
@@ -44,7 +48,9 @@ describe('Auth middleware', () => {
       body: '{}',
     });
     expect(response.status).toBe(401);
-    const json = await response.json<{ error: { code: string; message: string; request_id?: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id?: string };
+    }>();
     expect(json.error.code).toBe('UNAUTHORIZED');
     expect(json.error.message).toContain('Invalid');
     expect(json.error.request_id).toBeDefined();
@@ -60,7 +66,9 @@ describe('Auth middleware', () => {
       body: '{}',
     });
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id?: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id?: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');

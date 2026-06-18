@@ -21,9 +21,7 @@ const FORBIDDEN_CODE_KEYS = ['code', 'gift_card_code', 'card_code'];
 /**
  * Collect all JSON-stringified log lines from an array of console spies.
  */
-function collectLogLines(
-  spies: ReturnType<typeof vi.spyOn>[],
-): string[] {
+function collectLogLines(spies: ReturnType<typeof vi.spyOn>[]): string[] {
   const lines: string[] = [];
   for (const spy of spies) {
     for (const call of spy.mock.calls) {
@@ -47,10 +45,7 @@ function parseLogLines(lines: string[]): Record<string, unknown>[] {
 }
 
 /** Check whether any top-level key in the object is in the forbidden set. */
-function hasForbiddenKey(
-  obj: Record<string, unknown>,
-  forbiddenKeys: string[],
-): boolean {
+function hasForbiddenKey(obj: Record<string, unknown>, forbiddenKeys: string[]): boolean {
   return Object.keys(obj).some((k) => forbiddenKeys.includes(k));
 }
 
@@ -71,9 +66,7 @@ function deepContainsForbidden(
   }
 
   if (Array.isArray(value)) {
-    return value.some((item) =>
-      deepContainsForbidden(item, forbiddenKeys, forbiddenSubstrings),
-    );
+    return value.some((item) => deepContainsForbidden(item, forbiddenKeys, forbiddenSubstrings));
   }
 
   if (value !== null && typeof value === 'object') {
@@ -120,13 +113,10 @@ describe('Operator log redaction', () => {
 
   describe('GET /tg/internal/pending-requests', () => {
     it('logs contain no plaintext Telegram identifiers', async () => {
-      await exports.default.fetch(
-        'https://example.com/tg/internal/pending-requests',
-        {
-          method: 'GET',
-          headers: authHeader(),
-        },
-      );
+      await exports.default.fetch('https://example.com/tg/internal/pending-requests', {
+        method: 'GET',
+        headers: authHeader(),
+      });
 
       const logLines = collectLogLines([infoSpy, warnSpy, errorSpy]);
       const parsed = parseLogLines(logLines);
@@ -134,49 +124,37 @@ describe('Operator log redaction', () => {
       // The operator logs "Operator auth succeeded" and "Service forward succeeded"
       // Neither should contain Telegram identifiers
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, [])).toBe(false);
       }
     });
 
     it('logs contain no plaintext identifiers on auth failure', async () => {
       // Request without auth header — triggers auth failure logging
-      await exports.default.fetch(
-        'https://example.com/tg/internal/pending-requests',
-        {
-          method: 'GET',
-          // No Authorization header
-        },
-      );
+      await exports.default.fetch('https://example.com/tg/internal/pending-requests', {
+        method: 'GET',
+        // No Authorization header
+      });
 
       const logLines = collectLogLines([infoSpy, warnSpy, errorSpy]);
       const parsed = parseLogLines(logLines);
 
       // Auth failure logs should not contain Telegram identifiers
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, [])).toBe(false);
       }
     });
 
     it('logs contain no plaintext identifiers on invalid token', async () => {
-      await exports.default.fetch(
-        'https://example.com/tg/internal/pending-requests',
-        {
-          method: 'GET',
-          headers: { Authorization: 'Bearer wrong-token' },
-        },
-      );
+      await exports.default.fetch('https://example.com/tg/internal/pending-requests', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer wrong-token' },
+      });
 
       const logLines = collectLogLines([infoSpy, warnSpy, errorSpy]);
       const parsed = parseLogLines(logLines);
 
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, [])).toBe(false);
       }
     });
   });
@@ -187,29 +165,24 @@ describe('Operator log redaction', () => {
     it('logs contain no plaintext gift card codes', async () => {
       const giftCode = 'GIFT-OP-REDACT-1234';
 
-      await exports.default.fetch(
-        'https://example.com/tg/internal/send-code',
-        {
-          method: 'POST',
-          headers: {
-            ...authHeader(),
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            beneficiary_ref: 'benpub_TEST1234567890',
-            code: giftCode,
-          }),
+      await exports.default.fetch('https://example.com/tg/internal/send-code', {
+        method: 'POST',
+        headers: {
+          ...authHeader(),
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify({
+          beneficiary_ref: 'benpub_TEST1234567890',
+          code: giftCode,
+        }),
+      });
 
       const logLines = collectLogLines([infoSpy, warnSpy, errorSpy]);
       const parsed = parseLogLines(logLines);
 
       // No forbidden code keys at any level
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_CODE_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_CODE_KEYS, [])).toBe(false);
       }
 
       // No raw log line contains the plaintext gift code
@@ -218,28 +191,23 @@ describe('Operator log redaction', () => {
     });
 
     it('logs contain no plaintext identifiers', async () => {
-      await exports.default.fetch(
-        'https://example.com/tg/internal/send-code',
-        {
-          method: 'POST',
-          headers: {
-            ...authHeader(),
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            beneficiary_ref: 'benpub_TEST1234567890',
-            code: 'GIFT-OP-5678',
-          }),
+      await exports.default.fetch('https://example.com/tg/internal/send-code', {
+        method: 'POST',
+        headers: {
+          ...authHeader(),
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify({
+          beneficiary_ref: 'benpub_TEST1234567890',
+          code: 'GIFT-OP-5678',
+        }),
+      });
 
       const logLines = collectLogLines([infoSpy, warnSpy, errorSpy]);
       const parsed = parseLogLines(logLines);
 
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, [])).toBe(false);
       }
     });
 
@@ -247,25 +215,20 @@ describe('Operator log redaction', () => {
       const giftCode = 'GIFT-OP-AUTHFAIL-9999';
 
       // Request without auth header
-      await exports.default.fetch(
-        'https://example.com/tg/internal/send-code',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            beneficiary_ref: 'benpub_TEST1234567890',
-            code: giftCode,
-          }),
-        },
-      );
+      await exports.default.fetch('https://example.com/tg/internal/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          beneficiary_ref: 'benpub_TEST1234567890',
+          code: giftCode,
+        }),
+      });
 
       const logLines = collectLogLines([infoSpy, warnSpy, errorSpy]);
       const parsed = parseLogLines(logLines);
 
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_CODE_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_CODE_KEYS, [])).toBe(false);
       }
 
       const allLogText = logLines.join('\n');

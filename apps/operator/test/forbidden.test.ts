@@ -11,7 +11,9 @@ describe('403 FORBIDDEN', () => {
   it('returns 403 from the dedicated /api/forbidden test route', async () => {
     const response = await exports.default.fetch('https://example.com/api/forbidden');
     expect(response.status).toBe(403);
-    const json = await response.json<{ error: { code: string; message: string; request_id?: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id?: string };
+    }>();
     expect(json.error.code).toBe('FORBIDDEN');
     expect(json.error.message).toContain('denied');
     expect(json.error.request_id).toBeDefined();

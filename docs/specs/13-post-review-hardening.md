@@ -107,11 +107,11 @@ analysis). P0 ingest error shape bug is a direct consequence.
 
 Three critical code defects were found:
 
-| Priority | Issue | Impact |
-|----------|-------|--------|
-| **P0** | Ingest error shape non-compliant — returns flat string instead of `{error: {code, message}}` | Frontend silently swallows ingest errors; violates [`04-api.md`](04-api.md) §"Standard error response" |
-| **P1** | `constantTimeEqual` duplicated 3x with inconsistent implementations (operator, ingest, tg-bot) | Security-critical primitive has divergent behavior; a bug in one copy may not be caught |
-| **P2** | `errorResponse` builder duplicated 5x (197 lines) with inconsistent contracts across all 6 apps | Different Workers return different error shapes; some omit `request_id` |
+| Priority | Issue                                                                                           | Impact                                                                                                 |
+| -------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **P0**   | Ingest error shape non-compliant — returns flat string instead of `{error: {code, message}}`    | Frontend silently swallows ingest errors; violates [`04-api.md`](04-api.md) §"Standard error response" |
+| **P1**   | `constantTimeEqual` duplicated 3x with inconsistent implementations (operator, ingest, tg-bot)  | Security-critical primitive has divergent behavior; a bug in one copy may not be caught                |
+| **P2**   | `errorResponse` builder duplicated 5x (197 lines) with inconsistent contracts across all 6 apps | Different Workers return different error shapes; some omit `request_id`                                |
 
 ### What must be done
 
@@ -278,12 +278,12 @@ Testing layers 5–8 from [`08-testing-strategy.md`](08-testing-strategy.md)
 §"Test levels" exist only as documented aspirations. Zero test scripts
 exist for any of them:
 
-| Level | Description | Status |
-|-------|-------------|--------|
-| 5 | Local-validator blockchain | No localnet scripts, no Solana test infra |
-| 6 | Devnet live smoke | Env vars configured but zero test scripts |
-| 7 | Helius webhook contract | Only mocked at Level 2; no real webhook tests |
-| 8 | Telegram E2E (Telethon) | Only session generator exists; zero pytest files |
+| Level | Description                | Status                                           |
+| ----- | -------------------------- | ------------------------------------------------ |
+| 5     | Local-validator blockchain | No localnet scripts, no Solana test infra        |
+| 6     | Devnet live smoke          | Env vars configured but zero test scripts        |
+| 7     | Helius webhook contract    | Only mocked at Level 2; no real webhook tests    |
+| 8     | Telegram E2E (Telethon)    | Only session generator exists; zero pytest files |
 
 ### What must be done
 
@@ -394,14 +394,14 @@ Review Axis 2, "Testing Layer Completeness."
 
 Six lower-priority code quality issues were identified:
 
-| Priority | Issue | Location |
-|----------|-------|----------|
-| P3 | Helius webhook payloads not Zod-validated | `apps/ingest/src/routes/webhook.ts` |
-| P4 | Solana RPC responses use `as` casts without runtime validation | `apps/ingest/src/lib/solana-rpc.ts` |
-| P5 | Missing `request_id` in error responses (4 of 6 Workers) | api-read, operator, anchor-cron, tg-bot |
-| P6 | `apps/web` missing `noUncheckedIndexedAccess`, `noUnusedLocals` | `apps/web/tsconfig.json` |
-| P7 | `utcNow`/`nowIso` duplicated 6x | 4 apps |
-| P8 | 8 audit vulnerabilities in transitive dev deps | `pnpm-lock.yaml` |
+| Priority | Issue                                                           | Location                                |
+| -------- | --------------------------------------------------------------- | --------------------------------------- |
+| P3       | Helius webhook payloads not Zod-validated                       | `apps/ingest/src/routes/webhook.ts`     |
+| P4       | Solana RPC responses use `as` casts without runtime validation  | `apps/ingest/src/lib/solana-rpc.ts`     |
+| P5       | Missing `request_id` in error responses (4 of 6 Workers)        | api-read, operator, anchor-cron, tg-bot |
+| P6       | `apps/web` missing `noUncheckedIndexedAccess`, `noUnusedLocals` | `apps/web/tsconfig.json`                |
+| P7       | `utcNow`/`nowIso` duplicated 6x                                 | 4 apps                                  |
+| P8       | 8 audit vulnerabilities in transitive dev deps                  | `pnpm-lock.yaml`                        |
 
 Note: P5 (`request_id`) is addressed in Area 2, Slice 2.3. It is listed
 here for completeness but its implementation belongs to the error
@@ -547,14 +547,14 @@ Review Axis 4, "Minor Issues."
 
 ## Cross-reference
 
-| Area | Related specs | Related invariants |
-|------|---------------|-------------------|
-| Shared API Contract Types | [`04-api.md`](04-api.md), [`10-frontend-architecture.md`](10-frontend-architecture.md) | I-8 |
-| Error Handling Standardization | [`04-api.md`](04-api.md) §"Standard error response" | — |
-| Test Gap Closure | [`08-testing-strategy.md`](08-testing-strategy.md) §"BDD scenarios" | I-4, I-7, I-9, I-10 |
-| Testing Layer Build-Out | [`08-testing-strategy.md`](08-testing-strategy.md) §"Test levels", §"Blockchain test tiers" | I-4, I-5, I-7, I-9, I-10 |
-| Code Quality Hardening | [`01-architecture.md`](01-architecture.md), [`08-testing-strategy.md`](08-testing-strategy.md) | I-10 |
-| Environment Polish | [`05-hosting-and-deploy.md`](05-hosting-and-deploy.md) | — |
+| Area                           | Related specs                                                                                  | Related invariants       |
+| ------------------------------ | ---------------------------------------------------------------------------------------------- | ------------------------ |
+| Shared API Contract Types      | [`04-api.md`](04-api.md), [`10-frontend-architecture.md`](10-frontend-architecture.md)         | I-8                      |
+| Error Handling Standardization | [`04-api.md`](04-api.md) §"Standard error response"                                            | —                        |
+| Test Gap Closure               | [`08-testing-strategy.md`](08-testing-strategy.md) §"BDD scenarios"                            | I-4, I-7, I-9, I-10      |
+| Testing Layer Build-Out        | [`08-testing-strategy.md`](08-testing-strategy.md) §"Test levels", §"Blockchain test tiers"    | I-4, I-5, I-7, I-9, I-10 |
+| Code Quality Hardening         | [`01-architecture.md`](01-architecture.md), [`08-testing-strategy.md`](08-testing-strategy.md) | I-10                     |
+| Environment Polish             | [`05-hosting-and-deploy.md`](05-hosting-and-deploy.md)                                         | —                        |
 
 ## What this spec does not change
 
@@ -567,11 +567,11 @@ Review Axis 4, "Minor Issues."
 
 ## Risk assessment
 
-| Area | Risk | Mitigation |
-|------|------|------------|
-| Shared API Contract Types | Low — pure type package, no runtime impact | Incremental migration; keep existing types until migrated |
-| Error Handling Standardization | Medium — changes error shapes visible to frontend | Fix P0 first; coordinate frontend update; test both sides |
-| Test Gap Closure | Low — additive only, no production code changes | New tests only; existing tests must not regress |
-| Testing Layer Build-Out | Medium-High — new infrastructure (local validator, Telethon) | Gate behind env flags; keep out of PR CI; document setup |
-| Code Quality Hardening | Low-Medium — Zod validation may reject previously accepted payloads | Add schemas incrementally; test with real payload fixtures |
-| Environment Polish | Low — config-only changes | Each slice is independent and reversible |
+| Area                           | Risk                                                                | Mitigation                                                 |
+| ------------------------------ | ------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Shared API Contract Types      | Low — pure type package, no runtime impact                          | Incremental migration; keep existing types until migrated  |
+| Error Handling Standardization | Medium — changes error shapes visible to frontend                   | Fix P0 first; coordinate frontend update; test both sides  |
+| Test Gap Closure               | Low — additive only, no production code changes                     | New tests only; existing tests must not regress            |
+| Testing Layer Build-Out        | Medium-High — new infrastructure (local validator, Telethon)        | Gate behind env flags; keep out of PR CI; document setup   |
+| Code Quality Hardening         | Low-Medium — Zod validation may reject previously accepted payloads | Add schemas incrementally; test with real payload fixtures |
+| Environment Polish             | Low — config-only changes                                           | Each slice is independent and reversible                   |

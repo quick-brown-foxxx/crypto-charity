@@ -1,6 +1,10 @@
-import { Result, ok, err,
+import {
+  Result,
+  ok,
+  err,
   SolanaGetTransactionResponseSchema,
-  SolanaGetSignaturesForAddressResponseSchema } from '@open-care/vault-core';
+  SolanaGetSignaturesForAddressResponseSchema,
+} from '@open-care/vault-core';
 import type { SolanaGetTransactionResult, SolanaParsedInstruction } from '@open-care/vault-core';
 import type { Env } from './env.js';
 
@@ -25,8 +29,6 @@ export interface TransferMatch {
   instructionIndex: number; // position in top-level instructions
   innerIndex: number | null; // position within inner instructions, null if top-level
 }
-
-
 
 // ---------------------------------------------------------------------------
 // Constants

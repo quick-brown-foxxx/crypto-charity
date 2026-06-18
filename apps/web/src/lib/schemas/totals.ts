@@ -49,4 +49,3 @@ export const TotalsResponseSchema = v.object({
 });
 
 export type TotalsResponse = v.InferOutput<typeof TotalsResponseSchema>;
-

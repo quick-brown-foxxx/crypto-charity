@@ -54,7 +54,9 @@ describe('429 RATE_LIMITED', () => {
       body: JSON.stringify({ amount_usdc_minor: '50000000' }),
     });
     expect(response.status).toBe(429);
-    const json = await response.json<{ error: { code: string; message: string; request_id?: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id?: string };
+    }>();
     expect(json.error.code).toBe('RATE_LIMITED');
     expect(json.error.message).toContain('Too many requests');
     expect(json.error.request_id).toBeDefined();

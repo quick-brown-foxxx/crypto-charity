@@ -3,7 +3,11 @@ import type { AnchorInfo } from './common.js';
 /** Subset of AnchorInfo returned in GET /api/totals */
 export type TotalsAnchor = Pick<
   AnchorInfo,
-  'anchored_head_hash' | 'published_at_utc' | 'tx_signature' | 'anchor_wallet_address' | 'solscan_url'
+  | 'anchored_head_hash'
+  | 'published_at_utc'
+  | 'tx_signature'
+  | 'anchor_wallet_address'
+  | 'solscan_url'
 >;
 
 export interface TotalsResponse {

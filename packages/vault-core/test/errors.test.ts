@@ -15,7 +15,7 @@ import {
 describe('errorResponse', () => {
   it('produces correct shape with code, message, and status', async () => {
     const res = errorResponse('TEST_CODE', 'Test message', 418);
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(res.status).toBe(418);
     expect(body.error.code).toBe('TEST_CODE');
@@ -26,14 +26,14 @@ describe('errorResponse', () => {
 
   it('includes request_id when passed', async () => {
     const res = errorResponse('TEST_CODE', 'Test message', 400, 'req-abc-123');
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.request_id).toBe('req-abc-123');
   });
 
   it('does NOT include request_id when undefined', async () => {
     const res = errorResponse('TEST_CODE', 'Test message', 400, undefined);
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.request_id).toBeUndefined();
     // Ensure the key is not present at all
@@ -42,7 +42,7 @@ describe('errorResponse', () => {
 
   it('does NOT include request_id when omitted (3-arg call)', async () => {
     const res = errorResponse('TEST_CODE', 'Test message', 400);
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.request_id).toBeUndefined();
     expect('request_id' in body.error).toBe(false);
@@ -51,14 +51,14 @@ describe('errorResponse', () => {
   it('includes details when passed', async () => {
     const details = { field_errors: { name: ['Required'] } };
     const res = errorResponse('TEST_CODE', 'Test message', 400, undefined, details);
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.details).toEqual(details);
   });
 
   it('does NOT include details when not passed', async () => {
     const res = errorResponse('TEST_CODE', 'Test message', 400);
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.details).toBeUndefined();
     expect('details' in body.error).toBe(false);
@@ -67,7 +67,7 @@ describe('errorResponse', () => {
   it('includes both request_id and details when both passed', async () => {
     const details = { extra: 'info' };
     const res = errorResponse('TEST_CODE', 'Test message', 400, 'req-xyz', details);
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.request_id).toBe('req-xyz');
     expect(body.error.details).toEqual(details);
@@ -86,7 +86,7 @@ describe('errorResponse', () => {
 describe('badRequestResponse', () => {
   it('has code BAD_REQUEST and status 400', async () => {
     const res = badRequestResponse('Missing field');
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(res.status).toBe(400);
     expect(body.error.code).toBe('BAD_REQUEST');
@@ -95,14 +95,14 @@ describe('badRequestResponse', () => {
 
   it('includes request_id when passed', async () => {
     const res = badRequestResponse('Missing field', 'req-001');
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.request_id).toBe('req-001');
   });
 
   it('omits request_id when not passed', async () => {
     const res = badRequestResponse('Missing field');
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.request_id).toBeUndefined();
   });
@@ -115,7 +115,7 @@ describe('badRequestResponse', () => {
 describe('internalErrorResponse', () => {
   it('has code INTERNAL_ERROR and status 500', async () => {
     const res = internalErrorResponse('Something broke');
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(res.status).toBe(500);
     expect(body.error.code).toBe('INTERNAL_ERROR');
@@ -124,7 +124,7 @@ describe('internalErrorResponse', () => {
 
   it('includes request_id when passed', async () => {
     const res = internalErrorResponse('Something broke', 'req-err-500');
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.request_id).toBe('req-err-500');
   });
@@ -137,7 +137,7 @@ describe('internalErrorResponse', () => {
 describe('unauthorizedResponse', () => {
   it('has default message "Unauthorized" when no message passed', async () => {
     const res = unauthorizedResponse();
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(res.status).toBe(401);
     expect(body.error.code).toBe('UNAUTHORIZED');
@@ -146,7 +146,7 @@ describe('unauthorizedResponse', () => {
 
   it('uses custom message when passed', async () => {
     const res = unauthorizedResponse('Invalid token');
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(res.status).toBe(401);
     expect(body.error.code).toBe('UNAUTHORIZED');
@@ -155,14 +155,14 @@ describe('unauthorizedResponse', () => {
 
   it('includes request_id when passed', async () => {
     const res = unauthorizedResponse('Invalid token', 'req-auth-1');
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.request_id).toBe('req-auth-1');
   });
 
   it('omits request_id when not passed', async () => {
     const res = unauthorizedResponse();
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.request_id).toBeUndefined();
   });
@@ -175,7 +175,7 @@ describe('unauthorizedResponse', () => {
 describe('unavailableResponse', () => {
   it('has code UNAVAILABLE and status 503', async () => {
     const res = unavailableResponse('Service down for maintenance');
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(res.status).toBe(503);
     expect(body.error.code).toBe('UNAVAILABLE');
@@ -184,7 +184,7 @@ describe('unavailableResponse', () => {
 
   it('includes request_id when passed', async () => {
     const res = unavailableResponse('Service down', 'req-503');
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.request_id).toBe('req-503');
   });
@@ -197,7 +197,7 @@ describe('unavailableResponse', () => {
 describe('conflictErrorResponse', () => {
   it('uses custom code and status 409', async () => {
     const res = conflictErrorResponse('DUPLICATE_TX', 'Transaction already processed');
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(res.status).toBe(409);
     expect(body.error.code).toBe('DUPLICATE_TX');
@@ -206,7 +206,7 @@ describe('conflictErrorResponse', () => {
 
   it('includes request_id when passed', async () => {
     const res = conflictErrorResponse('DUPLICATE_TX', 'Already exists', 'req-conflict');
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.request_id).toBe('req-conflict');
   });
@@ -220,7 +220,7 @@ describe('validationErrorResponse', () => {
   it('has code VALIDATION_ERROR and status 422', async () => {
     const zodError = { issues: [{ path: ['name'], message: 'Required' }] };
     const res = validationErrorResponse(zodError);
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(res.status).toBe(422);
     expect(body.error.code).toBe('VALIDATION_ERROR');
@@ -236,7 +236,7 @@ describe('validationErrorResponse', () => {
       ],
     };
     const res = validationErrorResponse(zodError);
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.details).toEqual({
       field_errors: {
@@ -255,7 +255,7 @@ describe('validationErrorResponse', () => {
       ],
     };
     const res = validationErrorResponse(zodError);
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.details).toEqual({
       field_errors: {
@@ -267,12 +267,10 @@ describe('validationErrorResponse', () => {
 
   it('handles empty path (uses "root")', async () => {
     const zodError = {
-      issues: [
-        { path: [], message: 'Object must have at least one field' },
-      ],
+      issues: [{ path: [], message: 'Object must have at least one field' }],
     };
     const res = validationErrorResponse(zodError);
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.details).toEqual({
       field_errors: {
@@ -289,7 +287,7 @@ describe('validationErrorResponse', () => {
       ],
     };
     const res = validationErrorResponse(zodError);
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.details).toEqual({
       field_errors: {
@@ -302,7 +300,7 @@ describe('validationErrorResponse', () => {
   it('includes request_id when passed', async () => {
     const zodError = { issues: [{ path: ['name'], message: 'Required' }] };
     const res = validationErrorResponse(zodError, 'req-val-1');
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.request_id).toBe('req-val-1');
   });
@@ -310,7 +308,7 @@ describe('validationErrorResponse', () => {
   it('omits request_id when not passed', async () => {
     const zodError = { issues: [{ path: ['name'], message: 'Required' }] };
     const res = validationErrorResponse(zodError);
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.request_id).toBeUndefined();
   });
@@ -324,7 +322,7 @@ describe('validationErrorResponse', () => {
       ],
     };
     const res = validationErrorResponse(zodError);
-    const body = (await res.json());
+    const body = await res.json();
 
     expect(body.error.details).toEqual({
       field_errors: {

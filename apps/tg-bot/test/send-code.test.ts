@@ -305,7 +305,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(404);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('HANDLE_NOT_FOUND');
     expect(json.error.message).toContain('non-existent-opaque-id');
     expect(json.error.request_id).toBeDefined();
@@ -343,7 +345,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response2.status).toBe(403);
-    const json = await response2.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response2.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('CONVERSATION_NOT_OWNED');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -371,7 +375,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(409);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('ALREADY_DELIVERED');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -394,7 +400,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(503);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('TELEGRAM_DELIVERY_FAILED');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -420,7 +428,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -435,7 +445,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -449,7 +461,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -464,7 +478,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -478,7 +494,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -493,7 +511,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -508,7 +528,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -523,7 +545,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -538,7 +562,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -554,7 +580,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -570,7 +598,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -585,7 +615,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');
@@ -600,7 +632,9 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+    const json = await response.json<{
+      error: { code: string; message: string; request_id: string };
+    }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.request_id).toBeDefined();
     expect(typeof json.error.request_id).toBe('string');

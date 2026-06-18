@@ -49,7 +49,9 @@ describe('POST /webhook/helius', () => {
     it('returns 401 when Authorization header is missing', async () => {
       const response = await postWebhook([], undefined);
       expect(response.status).toBe(401);
-      const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+      const json = await response.json<{
+        error: { code: string; message: string; request_id: string };
+      }>();
       expect(json.error.code).toBe('UNAUTHORIZED');
       expect(json.error.message).toBe('Missing Authorization header');
       expect(json.error.request_id).toBeDefined();
@@ -70,7 +72,9 @@ describe('POST /webhook/helius', () => {
       const response = await SELF.fetch(request);
       await waitOnExecutionContext(ctx);
       expect(response.status).toBe(401);
-      const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+      const json = await response.json<{
+        error: { code: string; message: string; request_id: string };
+      }>();
       expect(json.error.code).toBe('UNAUTHORIZED');
       expect(json.error.message).toBe('Authorization header must use Bearer scheme');
       expect(json.error.request_id).toBeDefined();
@@ -81,7 +85,9 @@ describe('POST /webhook/helius', () => {
     it('returns 401 for invalid Bearer token', async () => {
       const response = await postWebhook([], 'wrong-token');
       expect(response.status).toBe(401);
-      const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+      const json = await response.json<{
+        error: { code: string; message: string; request_id: string };
+      }>();
       expect(json.error.code).toBe('UNAUTHORIZED');
       expect(json.error.message).toBe('Invalid authorization token');
       expect(json.error.request_id).toBeDefined();
@@ -119,7 +125,9 @@ describe('POST /webhook/helius', () => {
       const response = await SELF.fetch(request);
       await waitOnExecutionContext(ctx);
       expect(response.status).toBe(400);
-      const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+      const json = await response.json<{
+        error: { code: string; message: string; request_id: string };
+      }>();
       expect(json.error.code).toBe('BAD_REQUEST');
       expect(json.error.message).toBe('Invalid JSON body');
       expect(json.error.request_id).toBeDefined();
@@ -130,7 +138,9 @@ describe('POST /webhook/helius', () => {
     it('returns 400 when body is not an array', async () => {
       const response = await postWebhook({ not: 'an array' }, VALID_AUTH_TOKEN);
       expect(response.status).toBe(400);
-      const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+      const json = await response.json<{
+        error: { code: string; message: string; request_id: string };
+      }>();
       expect(json.error.code).toBe('BAD_REQUEST');
       expect(json.error.message).toMatch(/^Invalid webhook payload:/);
       expect(json.error.request_id).toBeDefined();
@@ -141,7 +151,9 @@ describe('POST /webhook/helius', () => {
     it('returns 400 when array element has no signature', async () => {
       const response = await postWebhook([{ slot: 123 }], VALID_AUTH_TOKEN);
       expect(response.status).toBe(400);
-      const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+      const json = await response.json<{
+        error: { code: string; message: string; request_id: string };
+      }>();
       expect(json.error.code).toBe('BAD_REQUEST');
       expect(json.error.message).toMatch(/^Invalid webhook payload:.*signature/);
       expect(json.error.request_id).toBeDefined();
@@ -152,7 +164,9 @@ describe('POST /webhook/helius', () => {
     it('returns 400 when array element has non-string signature', async () => {
       const response = await postWebhook([{ signature: 12345 }], VALID_AUTH_TOKEN);
       expect(response.status).toBe(400);
-      const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+      const json = await response.json<{
+        error: { code: string; message: string; request_id: string };
+      }>();
       expect(json.error.code).toBe('BAD_REQUEST');
       expect(json.error.message).toMatch(/^Invalid webhook payload:.*signature/);
       expect(json.error.request_id).toBeDefined();
@@ -163,7 +177,9 @@ describe('POST /webhook/helius', () => {
     it('returns 400 when array element is null', async () => {
       const response = await postWebhook([null], VALID_AUTH_TOKEN);
       expect(response.status).toBe(400);
-      const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
+      const json = await response.json<{
+        error: { code: string; message: string; request_id: string };
+      }>();
       expect(json.error.code).toBe('BAD_REQUEST');
       expect(json.error.message).toMatch(/^Invalid webhook payload:/);
       expect(json.error.request_id).toBeDefined();
@@ -326,7 +342,7 @@ describe('POST /webhook/helius', () => {
     it('returns standard { error: { code, message, request_id } } shape for 401', async () => {
       const response = await postWebhook([], undefined);
       expect(response.status).toBe(401);
-      const json = (await response.json());
+      const json = await response.json();
       // Top-level shape
       expect(json).toHaveProperty('error');
       expect(typeof json.error).toBe('object');
@@ -346,7 +362,7 @@ describe('POST /webhook/helius', () => {
     it('returns standard { error: { code, message, request_id } } shape for 400', async () => {
       const response = await postWebhook({ not: 'an array' }, VALID_AUTH_TOKEN);
       expect(response.status).toBe(400);
-      const json = (await response.json());
+      const json = await response.json();
       expect(json).toHaveProperty('error');
       expect(typeof json.error).toBe('object');
       expect(json.error).not.toBeNull();

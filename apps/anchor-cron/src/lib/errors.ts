@@ -1,4 +1,1 @@
-export {
-  conflictErrorResponse,
-  unavailableResponse,
-} from '@open-care/vault-core';
+export { conflictErrorResponse, unavailableResponse } from '@open-care/vault-core';

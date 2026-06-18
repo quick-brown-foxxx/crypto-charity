@@ -38,6 +38,7 @@ ensuring the ciphertext is tied to a specific opaque identifier and key version.
 - `decryptChatId(key, envelope, opaqueId)` — decrypts a chat ID from an envelope. First parses, then uses `crypto.subtle.decrypt` with the same AAD construction. Returns `Result<string, DecryptError>`.
 
 Error types:
+
 - `ParseError` — `invalid_format`, `invalid_key_version`, `invalid_base64url`
 - `DecryptError` — `parse_error` (wraps ParseError), `decrypt_failed`
 
@@ -54,13 +55,13 @@ Uses `btoa`/`atob` with binary string conversion — no `Buffer` dependency.
 
 Only `apps/tg-bot` consumes this package:
 
-| tg-bot file | Imports used |
-| --- | --- |
-| `src/lib/crypto-setup.ts` | `importHmacKey`, `importAesGcmKey` — key initialization at Worker startup |
-| `src/commands/start.ts` | `deriveTelegramUserRef`, `encryptChatId` — register new user |
-| `src/commands/card.ts` | `deriveTelegramUserRef` — look up user |
-| `src/commands/whoami.ts` | `deriveTelegramUserRef` — identify current user |
-| `src/lib/code-delivery.ts` | `decryptChatId`, `encryptChatId` — send verification codes |
+| tg-bot file                | Imports used                                                              |
+| -------------------------- | ------------------------------------------------------------------------- |
+| `src/lib/crypto-setup.ts`  | `importHmacKey`, `importAesGcmKey` — key initialization at Worker startup |
+| `src/commands/start.ts`    | `deriveTelegramUserRef`, `encryptChatId` — register new user              |
+| `src/commands/card.ts`     | `deriveTelegramUserRef` — look up user                                    |
+| `src/commands/whoami.ts`   | `deriveTelegramUserRef` — identify current user                           |
+| `src/lib/code-delivery.ts` | `decryptChatId`, `encryptChatId` — send verification codes                |
 
 ### Depends on
 

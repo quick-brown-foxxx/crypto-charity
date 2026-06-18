@@ -1,7 +1,13 @@
 import { Hono } from 'hono';
 import { createVaultDb, appendLedgerEvent } from '@open-care/vault-db';
 import type { VaultDb } from '@open-care/vault-db';
-import { generateBeneficiaryRef, logInfo, logError, generateRequestId, utcNow } from '@open-care/vault-core';
+import {
+  generateBeneficiaryRef,
+  logInfo,
+  logError,
+  generateRequestId,
+  utcNow,
+} from '@open-care/vault-core';
 import type { DisbursementPayload, LedgerEvent } from '@open-care/vault-core';
 import type { Env } from '../lib/env.js';
 import {

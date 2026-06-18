@@ -63,9 +63,12 @@ export function validationErrorResponse(
   const fieldErrors: Record<string, string[]> = {};
   for (const issue of zodError.issues) {
     const firstPath = issue.path[0];
-    const key = firstPath !== undefined
-      ? typeof firstPath === 'number' ? String(firstPath) : firstPath
-      : 'root';
+    const key =
+      firstPath !== undefined
+        ? typeof firstPath === 'number'
+          ? String(firstPath)
+          : firstPath
+        : 'root';
     (fieldErrors[key] ??= []).push(issue.message);
   }
   return errorResponse('VALIDATION_ERROR', 'Request body validation failed', 422, requestId, {

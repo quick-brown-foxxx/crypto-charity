@@ -1,4 +1,1 @@
-export {
-  internalErrorResponse,
-  unavailableResponse,
-} from '@open-care/vault-core';
+export { internalErrorResponse, unavailableResponse } from '@open-care/vault-core';

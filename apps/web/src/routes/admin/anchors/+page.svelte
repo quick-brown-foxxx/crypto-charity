@@ -79,7 +79,9 @@
       <span class="text-muted">#{verify.data.head_sequence_no}</span>
     </div>
   {:else if verify.data}
-    <div class="standalone-card"><p class="text-muted">Реестр пуст. HEAD появится после первой записи.</p></div>
+    <div class="standalone-card">
+      <p class="text-muted">Реестр пуст. HEAD появится после первой записи.</p>
+    </div>
   {/if}
 
   <!-- Pre-anchor-head explanation -->

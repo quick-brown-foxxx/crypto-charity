@@ -88,7 +88,9 @@
   {:else if !event}
     <div class="standalone-card">
       <h1>Событие не найдено</h1>
-      <p>Событие с хешем <HashDisplay hash={eventHash ?? ''} full={true} /> не найдено в реестре.</p>
+      <p>
+        Событие с хешем <HashDisplay hash={eventHash ?? ''} full={true} /> не найдено в реестре.
+      </p>
     </div>
   {:else}
     <h1>Событие #{event.sequence_no}</h1>

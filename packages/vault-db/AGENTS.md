@@ -16,18 +16,18 @@ JSON, and validation.
 
 **vault-db** (4 tables):
 
-| Table | Purpose | Key columns |
-| --- | --- | --- |
-| `ledger_events` | Append-only hash-chained donor ledger | `sequence_no` (PK), `event_type`, `payload_json`, `prev_hash`, `event_hash` (UNIQUE), `created_at_utc` |
-| `wallets` | Wallet metadata (no secret keys) | `role` (treasury/anchor), `cluster`, `address` (UNIQUE), `usdc_mint`, `usdc_ata` |
-| `anchor_runs` | Mutable runner state for anchor attempts | `anchor_date`, `anchored_head_sequence_no`, `anchored_head_hash`, `status` (pending/sending/published/failed), `locked_until_utc`, `last_anchor_wallet_sol_lamports` |
-| `helius_inbox` | Durable inbox for ACK-fast webhook handling | `(signature, source)` composite PK, `status` (received/processing/processed/ignored/failed/duplicate) |
+| Table           | Purpose                                     | Key columns                                                                                                                                                          |
+| --------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ledger_events` | Append-only hash-chained donor ledger       | `sequence_no` (PK), `event_type`, `payload_json`, `prev_hash`, `event_hash` (UNIQUE), `created_at_utc`                                                               |
+| `wallets`       | Wallet metadata (no secret keys)            | `role` (treasury/anchor), `cluster`, `address` (UNIQUE), `usdc_mint`, `usdc_ata`                                                                                     |
+| `anchor_runs`   | Mutable runner state for anchor attempts    | `anchor_date`, `anchored_head_sequence_no`, `anchored_head_hash`, `status` (pending/sending/published/failed), `locked_until_utc`, `last_anchor_wallet_sol_lamports` |
+| `helius_inbox`  | Durable inbox for ACK-fast webhook handling | `(signature, source)` composite PK, `status` (received/processing/processed/ignored/failed/duplicate)                                                                |
 
 **bot-db** (2 tables):
 
-| Table | Purpose | Key columns |
-| --- | --- | --- |
-| `handles` | Telegram user handles | `opaque_id` (PK), `handle` (UNIQUE), `telegram_user_ref` (UNIQUE, HMAC-SHA256), `telegram_chat_id_enc` (AES-GCM), `telegram_chat_key_version` |
+| Table           | Purpose                                   | Key columns                                                                                                                                                                                                            |
+| --------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `handles`       | Telegram user handles                     | `opaque_id` (PK), `handle` (UNIQUE), `telegram_user_ref` (UNIQUE, HMAC-SHA256), `telegram_chat_id_enc` (AES-GCM), `telegram_chat_key_version`                                                                          |
 | `conversations` | Gift-card delivery code request lifecycle | `opaque_id` (FK→handles), `kind` (card_request/operator_reply/system), `status` (pending/in_flight/delivered/failed), `public_beneficiary_ref`, `delivery_code_hash`, `delivery_code_last4`, `encrypted_code_ttl_blob` |
 
 ### Client factories (`src/client/`)
@@ -38,16 +38,16 @@ JSON, and validation.
 
 ### Query helpers (`src/helpers/`)
 
-| Helper | Purpose |
-| --- | --- |
-| `appendLedgerEvent` | Hash-chained append with Zod validation, canonical JSON, hash computation, retry on collision (3 attempts). Returns `Result<LedgerEvent, LedgerAppendError>`. |
-| `getHead` | Latest ledger event (highest `sequence_no`) or null |
-| `getEventsPaginated` | Cursor-based paginated ledger events (parsed, typed) |
-| `getRawEventsPaginated` | Cursor-based paginated ledger events (raw `payload_json` string, byte-for-byte — used for bivalent correction API) |
-| `getTotals` | Aggregate donation/disbursement sums and counts via SQLite JSON functions |
-| `getDonations` | Paginated flattened donation views for public API |
-| `getDisbursements` | Paginated flattened disbursement views for public API |
-| `getLatestAnchor` | Latest published anchor run (by highest `anchored_head_sequence_no`) |
+| Helper                  | Purpose                                                                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `appendLedgerEvent`     | Hash-chained append with Zod validation, canonical JSON, hash computation, retry on collision (3 attempts). Returns `Result<LedgerEvent, LedgerAppendError>`. |
+| `getHead`               | Latest ledger event (highest `sequence_no`) or null                                                                                                           |
+| `getEventsPaginated`    | Cursor-based paginated ledger events (parsed, typed)                                                                                                          |
+| `getRawEventsPaginated` | Cursor-based paginated ledger events (raw `payload_json` string, byte-for-byte — used for bivalent correction API)                                            |
+| `getTotals`             | Aggregate donation/disbursement sums and counts via SQLite JSON functions                                                                                     |
+| `getDonations`          | Paginated flattened donation views for public API                                                                                                             |
+| `getDisbursements`      | Paginated flattened disbursement views for public API                                                                                                         |
+| `getLatestAnchor`       | Latest published anchor run (by highest `anchored_head_sequence_no`)                                                                                          |
 
 ### Types (`src/helpers/types.ts`)
 
@@ -64,13 +64,13 @@ Public API types: `AppendLedgerEventInput`, `LedgerAppendError`, `PaginationOpti
 
 ### Consumed by
 
-| App | Database | How it uses vault-db |
-| --- | --- | --- |
-| `apps/ingest` | `vault-db` | Writes donation events to `ledger_events` and `helius_inbox` via webhook ingestion |
-| `apps/api-read` | `vault-db` | Reads public API data: totals, donations, disbursements, ledger events, verify, health |
-| `apps/api-write` | `vault-db` | Writes disbursement and correction events to `ledger_events` |
-| `apps/anchor-cron` | `vault-db` | Writes anchor events to `ledger_events`, manages `anchor_runs` state |
-| `apps/tg-bot` | `bot-db` | Reads/writes `handles` and `conversations` for Telegram user registration and gift-card delivery |
+| App                | Database   | How it uses vault-db                                                                             |
+| ------------------ | ---------- | ------------------------------------------------------------------------------------------------ |
+| `apps/ingest`      | `vault-db` | Writes donation events to `ledger_events` and `helius_inbox` via webhook ingestion               |
+| `apps/api-read`    | `vault-db` | Reads public API data: totals, donations, disbursements, ledger events, verify, health           |
+| `apps/api-write`   | `vault-db` | Writes disbursement and correction events to `ledger_events`                                     |
+| `apps/anchor-cron` | `vault-db` | Writes anchor events to `ledger_events`, manages `anchor_runs` state                             |
+| `apps/tg-bot`      | `bot-db`   | Reads/writes `handles` and `conversations` for Telegram user registration and gift-card delivery |
 
 Note: `apps/operator` does **not** directly depend on `vault-db` — it has no D1
 binding and reaches the database indirectly through service bindings to

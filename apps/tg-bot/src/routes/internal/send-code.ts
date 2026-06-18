@@ -64,10 +64,7 @@ export async function sendCodeHandler(
   // Validate opaque_id
   const opaqueId = obj.opaque_id;
   if (typeof opaqueId !== 'string' || opaqueId.length === 0) {
-    return badRequestResponse(
-      'opaque_id is required and must be a non-empty string',
-      requestId,
-    );
+    return badRequestResponse('opaque_id is required and must be a non-empty string', requestId);
   }
 
   // Validate code
@@ -94,10 +91,7 @@ export async function sendCodeHandler(
   let beneficiaryRef: string | null = null;
   if (publicBeneficiaryRef !== undefined && publicBeneficiaryRef !== null) {
     if (typeof publicBeneficiaryRef !== 'string') {
-      return badRequestResponse(
-        'public_beneficiary_ref must be a string or null',
-        requestId,
-      );
+      return badRequestResponse('public_beneficiary_ref must be a string or null', requestId);
     }
     if (!isValidBeneficiaryRef(publicBeneficiaryRef)) {
       return badRequestResponse(

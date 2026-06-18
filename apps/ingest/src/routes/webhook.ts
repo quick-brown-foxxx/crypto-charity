@@ -4,7 +4,12 @@ import { authMiddleware } from '../lib/auth.js';
 import { badRequestResponse } from '../lib/errors.js';
 import { insertIntoInbox, processInbox } from '../lib/inbox.js';
 import { createVaultDb } from '@open-care/vault-db';
-import { logInfo, generateRequestId, HeliusWebhookEnvelopeSchema, utcNow } from '@open-care/vault-core';
+import {
+  logInfo,
+  generateRequestId,
+  HeliusWebhookEnvelopeSchema,
+  utcNow,
+} from '@open-care/vault-core';
 
 const webhookRoute = new Hono<HonoEnv>();
 

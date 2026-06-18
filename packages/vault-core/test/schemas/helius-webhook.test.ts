@@ -36,7 +36,11 @@ describe('HeliusWebhookEventSchema', () => {
     instructions: [
       {
         programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
-        accounts: ['Sender111111111111111111111111111111111', 'Vault11111111111111111111111111111111111', 'Owner1111111111111111111111111111111111'],
+        accounts: [
+          'Sender111111111111111111111111111111111',
+          'Vault11111111111111111111111111111111111',
+          'Owner1111111111111111111111111111111111',
+        ],
         data: 'base64data',
       },
     ],

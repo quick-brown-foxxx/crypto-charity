@@ -13,44 +13,47 @@ operator.
 
 ## Routes
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| POST | `/api/disbursements` | Record a gift-card disbursement. Validates body, generates `benpub_` ref if omitted, appends `disbursement_recorded` to ledger. |
-| POST | `/api/corrections` | Record a correction to a previous event. Validates body, enforces replacement field whitelist (`receipt_ref`, `service_note` only), appends `correction_recorded`. |
-| GET | `/health` | Liveness check. |
+| Method | Path                 | Purpose                                                                                                                                                            |
+| ------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| POST   | `/api/disbursements` | Record a gift-card disbursement. Validates body, generates `benpub_` ref if omitted, appends `disbursement_recorded` to ledger.                                    |
+| POST   | `/api/corrections`   | Record a correction to a previous event. Validates body, enforces replacement field whitelist (`receipt_ref`, `service_note` only), appends `correction_recorded`. |
+| GET    | `/health`            | Liveness check.                                                                                                                                                    |
 
 All routes are internal-only (no public route in `wrangler.jsonc`).
 
 ## Bindings
 
-| Binding | Type | Purpose |
-| --- | --- | --- |
-| `vault_db` | D1 (`vault-db`) | Shared vault database — append-only writes to `ledger_events` |
-| `SOLANA_CLUSTER`, `USDC_MINT`, `TREASURY_WALLET_ADDRESS`, `VAULT_USDC_ATA`, `ANCHOR_WALLET_ADDRESS`, `SITE_URL` | Vars | Public config values |
+| Binding                                                                                                         | Type            | Purpose                                                       |
+| --------------------------------------------------------------------------------------------------------------- | --------------- | ------------------------------------------------------------- |
+| `vault_db`                                                                                                      | D1 (`vault-db`) | Shared vault database — append-only writes to `ledger_events` |
+| `SOLANA_CLUSTER`, `USDC_MINT`, `TREASURY_WALLET_ADDRESS`, `VAULT_USDC_ATA`, `ANCHOR_WALLET_ADDRESS`, `SITE_URL` | Vars            | Public config values                                          |
 
 **No secrets.** `OPERATOR_TOKEN` lives exclusively in `vault-operator`.
 
 ## Key source files
 
-| File | Role |
-| --- | --- |
-| `src/index.ts` | Hono app factory, mounts routes. No auth middleware. |
-| `src/routes/disbursements.ts` | Disbursement handler: Zod validation, beneficiary ref generation, ledger append |
-| `src/routes/corrections.ts` | Correction handler: Zod validation, head boundary check, whitelist enforcement, ledger append |
-| `src/lib/schema.ts` | Zod schemas: `DisbursementRequestSchema` (with `service`/`service_note` cross-field rules), `CorrectionRequestSchema` (`.strict()`) |
-| `src/lib/errors.ts` | Standardized error responses: 400, 422 (with field errors), 500 |
+| File                          | Role                                                                                                                                |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `src/index.ts`                | Hono app factory, mounts routes. No auth middleware.                                                                                |
+| `src/routes/disbursements.ts` | Disbursement handler: Zod validation, beneficiary ref generation, ledger append                                                     |
+| `src/routes/corrections.ts`   | Correction handler: Zod validation, head boundary check, whitelist enforcement, ledger append                                       |
+| `src/lib/schema.ts`           | Zod schemas: `DisbursementRequestSchema` (with `service`/`service_note` cross-field rules), `CorrectionRequestSchema` (`.strict()`) |
+| `src/lib/errors.ts`           | Standardized error responses: 400, 422 (with field errors), 500                                                                     |
 
 ## Connections
 
 ### Depends on
+
 - `@open-care/vault-core` — `generateBeneficiaryRef`, `isValidTimestamp`, `isTimestampInPast`, `ReplacementFieldsSchema`, types (`DisbursementPayload`, `CorrectionPayload`, `LedgerEvent`), logging
 - `@open-care/vault-db` — `createVaultDb`, `appendLedgerEvent`, `getHead`
 
 ### Connected to
+
 - **`vault-operator`** — receives forwarded requests via service binding (operator validates token, strips `Authorization` header, forwards raw request)
 - **`vault-db`** (shared D1) — writes events read by `api-read`, `anchor-cron`
 
 ### Not connected to
+
 - `tg-bot`, `bot-db` — no bot interaction. The `next_action: "send_code_to_beneficiary_via_bot"` field in disbursement response is a semantic hint for the caller, not an RPC call.
 
 ## Key invariants

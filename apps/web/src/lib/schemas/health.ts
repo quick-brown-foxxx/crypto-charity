@@ -27,4 +27,3 @@ export const HealthResponseSchema = v.object({
 });
 
 export type HealthResponse = v.InferOutput<typeof HealthResponseSchema>;
-

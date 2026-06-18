@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { createVaultDb } from '@open-care/vault-db';
-import { logInfo, logWarn, logError, generateRequestId  } from '@open-care/vault-core';
+import { logInfo, logWarn, logError, generateRequestId } from '@open-care/vault-core';
 import type { Env } from '../lib/env';
 import { runAnchor } from '../lib/anchor-pipeline';
 import { conflictErrorResponse, unavailableResponse } from '../lib/errors';

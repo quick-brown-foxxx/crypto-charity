@@ -14,21 +14,21 @@ directory are the current technical design.
 
 ## How to read this spec
 
-| #   | File                                                         | One-line description                                                          |
-| --- | ------------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| 00  | [`00-overview.md`](00-overview.md)                           | What the MVP delivers, who it serves, and what is deferred.                   |
-| 01  | [`01-architecture.md`](01-architecture.md)                   | Components, data flow, trust boundaries, and wallet split.                    |
-| 02  | [`02-invariants.md`](02-invariants.md)                       | The rules that must not break.                                                |
-| 03  | [`03-data-model.md`](03-data-model.md)                       | D1 schemas, canonical ledger events, hash-chain mechanics.                    |
-| 04  | [`04-api.md`](04-api.md)                                     | Public, operator, webhook, and bot HTTP contracts.                            |
-| 05  | [`05-hosting-and-deploy.md`](05-hosting-and-deploy.md)       | Cloudflare topology, secrets, CI/CD, and environments.                        |
-| 06  | [`06-security-model.md`](06-security-model.md)               | Threat model, privacy rules, logging, and key custody.                        |
-| 07  | [`07-observability-and-ops.md`](07-observability-and-ops.md) | Monitoring, alerts, failure modes, and runbook pointers.                      |
-| 08  | [`08-testing-strategy.md`](08-testing-strategy.md)           | Behavior proof, blockchain test tiers, and CI policy.                         |
-| 09  | [`09-decisions.md`](09-decisions.md)                         | Current decisions, explicit deferrals, and open questions.                    |
-| 10  | [`10-frontend-architecture.md`](10-frontend-architecture.md) | SvelteKit frontend stack, layers, validation, state, privacy, and gates.      |
-| 11  | [`11-public-frontend-ux.md`](11-public-frontend-ux.md)       | Public landing, donate, ledger, verify, FAQ/about/contact UX requirements.    |
-| 12  | [`12-operator-frontend-ux.md`](12-operator-frontend-ux.md)   | `/admin` operator UX, token handling, disbursement, anchors, and bot handoff. |
+| #   | File                                                         | One-line description                                                                                                         |
+| --- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| 00  | [`00-overview.md`](00-overview.md)                           | What the MVP delivers, who it serves, and what is deferred.                                                                  |
+| 01  | [`01-architecture.md`](01-architecture.md)                   | Components, data flow, trust boundaries, and wallet split.                                                                   |
+| 02  | [`02-invariants.md`](02-invariants.md)                       | The rules that must not break.                                                                                               |
+| 03  | [`03-data-model.md`](03-data-model.md)                       | D1 schemas, canonical ledger events, hash-chain mechanics.                                                                   |
+| 04  | [`04-api.md`](04-api.md)                                     | Public, operator, webhook, and bot HTTP contracts.                                                                           |
+| 05  | [`05-hosting-and-deploy.md`](05-hosting-and-deploy.md)       | Cloudflare topology, secrets, CI/CD, and environments.                                                                       |
+| 06  | [`06-security-model.md`](06-security-model.md)               | Threat model, privacy rules, logging, and key custody.                                                                       |
+| 07  | [`07-observability-and-ops.md`](07-observability-and-ops.md) | Monitoring, alerts, failure modes, and runbook pointers.                                                                     |
+| 08  | [`08-testing-strategy.md`](08-testing-strategy.md)           | Behavior proof, blockchain test tiers, and CI policy.                                                                        |
+| 09  | [`09-decisions.md`](09-decisions.md)                         | Current decisions, explicit deferrals, and open questions.                                                                   |
+| 10  | [`10-frontend-architecture.md`](10-frontend-architecture.md) | SvelteKit frontend stack, layers, validation, state, privacy, and gates.                                                     |
+| 11  | [`11-public-frontend-ux.md`](11-public-frontend-ux.md)       | Public landing, donate, ledger, verify, FAQ/about/contact UX requirements.                                                   |
+| 12  | [`12-operator-frontend-ux.md`](12-operator-frontend-ux.md)   | `/admin` operator UX, token handling, disbursement, anchors, and bot handoff.                                                |
 | 13  | [`13-post-review-hardening.md`](13-post-review-hardening.md) | Post-MVP-review hardening: error standardization, shared types, test gaps, testing layers, code quality, environment polish. |
 
 ## Current design summary

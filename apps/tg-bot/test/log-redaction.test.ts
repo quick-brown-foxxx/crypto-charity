@@ -41,9 +41,7 @@ const FORBIDDEN_CODE_KEYS = ['code', 'gift_card_code', 'card_code'];
  * Collect all JSON-stringified log lines from an array of console spies.
  * Each spy call is `console.level(jsonString)`.
  */
-function collectLogLines(
-  spies: ReturnType<typeof vi.spyOn>[],
-): string[] {
+function collectLogLines(spies: ReturnType<typeof vi.spyOn>[]): string[] {
   const lines: string[] = [];
   for (const spy of spies) {
     for (const call of spy.mock.calls) {
@@ -67,10 +65,7 @@ function parseLogLines(lines: string[]): Record<string, unknown>[] {
 }
 
 /** Check whether any top-level key in the object is in the forbidden set. */
-function hasForbiddenKey(
-  obj: Record<string, unknown>,
-  forbiddenKeys: string[],
-): boolean {
+function hasForbiddenKey(obj: Record<string, unknown>, forbiddenKeys: string[]): boolean {
   return Object.keys(obj).some((k) => forbiddenKeys.includes(k));
 }
 
@@ -92,9 +87,7 @@ function deepContainsForbidden(
   }
 
   if (Array.isArray(value)) {
-    return value.some((item) =>
-      deepContainsForbidden(item, forbiddenKeys, forbiddenSubstrings),
-    );
+    return value.some((item) => deepContainsForbidden(item, forbiddenKeys, forbiddenSubstrings));
   }
 
   if (value !== null && typeof value === 'object') {
@@ -119,26 +112,16 @@ const originalFetch = globalThis.fetch;
 function setupTelegramMock(): void {
   globalThis.fetch = vi
     .fn()
-    .mockImplementation(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url =
-          typeof input === 'string'
-            ? input
-            : input instanceof URL
-              ? input.href
-              : input.url;
-        if (url.includes('api.telegram.org')) {
-          return new Response(
-            JSON.stringify({ ok: true, result: { message_id: 1 } }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' },
-            },
-          );
-        }
-        return originalFetch(input, init);
-      },
-    ) as typeof globalThis.fetch;
+    .mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (url.includes('api.telegram.org')) {
+        return new Response(JSON.stringify({ ok: true, result: { message_id: 1 } }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return originalFetch(input, init);
+    }) as typeof globalThis.fetch;
 }
 
 // ---------------------------------------------------------------------------
@@ -152,10 +135,7 @@ function webhookHeaders(): Record<string, string> {
   };
 }
 
-async function registerUser(
-  userId: number,
-  handle: string,
-): Promise<string> {
+async function registerUser(userId: number, handle: string): Promise<string> {
   await SELF.fetch('https://example.com/tg/webhook', {
     method: 'POST',
     headers: webhookHeaders(),
@@ -262,9 +242,7 @@ describe('Log redaction', () => {
 
       // No forbidden keys at any level in any parsed log entry
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, [])).toBe(false);
       }
 
       // No raw log line contains the plaintext user ID value
@@ -314,9 +292,7 @@ describe('Log redaction', () => {
       const parsed = parseLogLines(logLines);
 
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, [])).toBe(false);
       }
 
       const allLogText = logLines.join('\n');
@@ -366,9 +342,7 @@ describe('Log redaction', () => {
       const parsed = parseLogLines(logLines);
 
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, [])).toBe(false);
       }
 
       const allLogText = logLines.join('\n');
@@ -410,9 +384,7 @@ describe('Log redaction', () => {
       const parsed = parseLogLines(logLines);
 
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, [])).toBe(false);
       }
 
       const allLogText = logLines.join('\n');
@@ -441,9 +413,7 @@ describe('Log redaction', () => {
       const parsed = parseLogLines(logLines);
 
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, [])).toBe(false);
       }
 
       const allLogText = logLines.join('\n');
@@ -480,9 +450,7 @@ describe('Log redaction', () => {
 
       // No forbidden code keys at any level
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_CODE_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_CODE_KEYS, [])).toBe(false);
       }
 
       // No raw log line contains the plaintext gift code
@@ -527,9 +495,7 @@ describe('Log redaction', () => {
       const parsed = parseLogLines(logLines);
 
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_CODE_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_CODE_KEYS, [])).toBe(false);
       }
 
       const allLogText = logLines.join('\n');
@@ -573,9 +539,7 @@ describe('Log redaction', () => {
 
       // No Telegram identifier keys in error logs
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, [])).toBe(false);
       }
 
       // No plaintext user ID in raw log text
@@ -599,12 +563,8 @@ describe('Log redaction', () => {
       const parsed = parseLogLines(logLines);
 
       for (const entry of parsed) {
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, []),
-        ).toBe(false);
-        expect(
-          deepContainsForbidden(entry, FORBIDDEN_CODE_KEYS, []),
-        ).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_TELEGRAM_KEYS, [])).toBe(false);
+        expect(deepContainsForbidden(entry, FORBIDDEN_CODE_KEYS, [])).toBe(false);
       }
 
       const allLogText = logLines.join('\n');

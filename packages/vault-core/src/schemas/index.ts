@@ -1,11 +1,5 @@
-export {
-  HeliusWebhookEventSchema,
-  HeliusWebhookEnvelopeSchema,
-} from './helius-webhook.js';
-export type {
-  HeliusWebhookEvent,
-  HeliusWebhookEnvelope,
-} from './helius-webhook.js';
+export { HeliusWebhookEventSchema, HeliusWebhookEnvelopeSchema } from './helius-webhook.js';
+export type { HeliusWebhookEvent, HeliusWebhookEnvelope } from './helius-webhook.js';
 
 export {
   SolanaGetTransactionResponseSchema,
