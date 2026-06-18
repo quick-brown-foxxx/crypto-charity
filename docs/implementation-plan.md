@@ -285,33 +285,91 @@ See [[./ui-prototypes/]] for UI plans, docs and prototypes.
 **Epic 6: ✅ Complete (2026-06-18)**
 
 **All 6 epics complete. All Workers + frontend deployed to staging.**
-**Verification epic complete (2026-06-18):** CI honest (all 5 gates exit 0), Analysis pass (3 critical, 9 important, 14 minor), VTF #1 (routing fix + docs + version), VTF #2 (10 new tests, 593 total).
+**Verification epic complete (2026-06-18):** CI honest (all 5 gates exit 0), Analysis pass, VTF #1 + #2, 593 tests.
 
-**Post-MVP backlog (from Analysis findings):**
+---
 
-Critical:
+## Epic 7: Frontend Testing & Hardening
 
-- Frontend test infrastructure (Playwright + Vitest for apps/web) — zero tests currently
+**Goal:** Frontend has automated test coverage (Playwright browser + Vitest component). Security hardening (CSP). SSR data loading (+page.ts). Visual verification against prototype.
+
+### Slice 7.1: Playwright Browser Tests
+
+- Smoke tests for all 12 public + admin routes (page renders, key content present)
+- `/faq` content-presence test (required "honest limits" phrases)
+- `/about` content-presence test (manual conversion loop, wallet split)
+- `/admin` auth gate test (token required, rejected without, cleared on reload)
+- Donate page: QR code renders, copy button works, warnings visible
+- Ledger page: filter tabs work, pagination loads more
+- Verify page: head hash displayed, anchor info present, instructions visible
+- Responsive: mobile viewport tests for landing and ledger
+
+### Slice 7.2: Vitest Component Tests
+
+- Timeline components: TimelineEvent, TimelineRail, TimelineCard (render with props, event type colors)
+- Admin components: TokenGate (token validation, idle timeout), AdminNav (active tab)
+- UI primitives: Button (variants, sizes, disabled), Card, Badge, Input, Select
+- Public components: HashDisplay, SolscanLink, CopyButton, QrCode, FilterTabs, Pagination
+
+### Slice 7.3: Frontend Hardening
+
+- Content-Security-Policy header (via `svelte.config.js` or `_headers` file)
+- `+page.ts` load functions for SSR data loading (totals, ledger events, verify)
+- Version injection at build time (replace hardcoded `0.1.0-dev`)
+- `prefers-reduced-motion` support in CSS
+- Browser-based visual verification against `docs/ui-prototypes/landing.html`
+
+---
+
+## Epic 8: Backend Completeness
+
+**Goal:** Remaining invariant coverage, missing endpoint, error code tests, cross-implementation verification, production readiness.
+
+### Slice 8.1: `correction_recorded` Write Endpoint (I-11)
+
+- `POST /api/corrections` in `vault-api-write` (or new route via operator)
+- Zod validation with whitelist enforcement (`replacement_fields` only `receipt_ref` + `service_note`)
+- Hash-chained ledger append
+- Bivalent read API: `/api/ledger-events` returns original `payload_json` byte-for-byte
+- Integration tests: valid correction, whitelist rejection, non-whitelist rejection, bivalent round-trip
+
+### Slice 8.2: Test Coverage Gaps
+
+- Error code coverage: 403 (FORBIDDEN), 429 (RATE_LIMITED), 503 (UNAVAILABLE)
 - `correction_recorded` integration tests through ledger append path
-
-Important:
-
-- Browser-based visual verification (button/metric CSS rendering)
-- Timeline component tests (TimelineEvent, TimelineRail, TimelineCard)
-- Frontend admin tests (TokenGate, AdminNav, disbursement form, anchor panel, bot handoff)
-- Error code coverage for 403, 429, 503
-- Cross-implementation verification test (Python/Rust producing same event_hash)
-- Version injection at build time (currently hardcoded 0.1.0-dev)
-
-Minor:
-
+- Cross-implementation verification test (Python or Rust producing same `event_hash` from normative test vector)
 - Bivalent API test (payload_json byte-for-byte after correction)
 - Migration directory asymmetry documentation
-- `correction_recorded` write endpoint (I-11)
-- +page.ts load functions (SSR data loading)
-- Content-Security-Policy
-- Design phase (replace disposable frontend layers)
-- Production environment (mainnet launch)
+
+### Slice 8.3: Production Readiness
+
+- Production environment setup (mainnet secrets, domain, wallets)
+- Deploy workflow for production (`--env production`)
+- Mainnet smoke test (gated behind `ALLOW_MAINNET_SMOKE` flag)
+- Staging smoke test automation (devnet E2E: donation → ingest → ledger → verify)
+
+---
+
+## Execution Order
+
+**Epic 0: ✅ Complete (2026-06-17)**
+**Epic 1: ✅ Complete (2026-06-17)**
+**Epic 2: ✅ Complete (2026-06-17)**
+**Epic 3: ✅ Complete (2026-06-17)**
+**Epic 4: ✅ Complete (2026-06-17)**
+**Epic 5: ✅ Complete (2026-06-17)**
+**Epic 6: ✅ Complete (2026-06-18)**
+**Verification: ✅ Complete (2026-06-18)**
+
+**Next — Epics 7 and 8 can run in parallel:**
+
+- Epic 7 (frontend) — needs Playwright setup, no backend changes
+- Epic 8 (backend) — needs write endpoint + test additions, no frontend changes
+
+**Final polish:**
+
+- Design phase (replace disposable frontend layers with production design)
+- Mainnet launch (after production secrets and domain setup)
 
 ---
 
