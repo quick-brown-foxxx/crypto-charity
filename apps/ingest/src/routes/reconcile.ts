@@ -3,6 +3,7 @@ import type { HonoEnv } from '../lib/env.js';
 import { createVaultDb } from '@open-care/vault-db';
 import { reconcileMissedSignatures } from '../lib/reconciliation.js';
 import { processInbox } from '../lib/inbox.js';
+import { internalErrorResponse } from '../lib/errors.js';
 
 const reconcileRoute = new Hono<HonoEnv>();
 
@@ -12,7 +13,7 @@ reconcileRoute.post('/', async (c) => {
   const result = await reconcileMissedSignatures(db, c.env);
 
   if (!result.ok) {
-    return c.json({ error: result.error.message }, 500);
+    return internalErrorResponse(result.error.message);
   }
 
   // After reconciliation, process any new inbox rows

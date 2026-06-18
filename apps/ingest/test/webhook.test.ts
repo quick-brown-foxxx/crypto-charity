@@ -49,8 +49,9 @@ describe('POST /webhook/helius', () => {
     it('returns 401 when Authorization header is missing', async () => {
       const response = await postWebhook([], undefined);
       expect(response.status).toBe(401);
-      const json = await response.json<{ error: string }>();
-      expect(json.error).toBe('missing_authorization_header');
+      const json = await response.json<{ error: { code: string; message: string } }>();
+      expect(json.error.code).toBe('UNAUTHORIZED');
+      expect(json.error.message).toBe('Missing Authorization header');
     });
 
     it('returns 401 when Authorization header does not use Bearer scheme', async () => {
@@ -66,15 +67,17 @@ describe('POST /webhook/helius', () => {
       const response = await SELF.fetch(request);
       await waitOnExecutionContext(ctx);
       expect(response.status).toBe(401);
-      const json = await response.json<{ error: string }>();
-      expect(json.error).toBe('unauthorized');
+      const json = await response.json<{ error: { code: string; message: string } }>();
+      expect(json.error.code).toBe('UNAUTHORIZED');
+      expect(json.error.message).toBe('Authorization header must use Bearer scheme');
     });
 
     it('returns 401 for invalid Bearer token', async () => {
       const response = await postWebhook([], 'wrong-token');
       expect(response.status).toBe(401);
-      const json = await response.json<{ error: string }>();
-      expect(json.error).toBe('unauthorized');
+      const json = await response.json<{ error: { code: string; message: string } }>();
+      expect(json.error.code).toBe('UNAUTHORIZED');
+      expect(json.error.message).toBe('Invalid authorization token');
     });
 
     it('returns 200 for valid Authorization token with empty body', async () => {
@@ -107,36 +110,41 @@ describe('POST /webhook/helius', () => {
       const response = await SELF.fetch(request);
       await waitOnExecutionContext(ctx);
       expect(response.status).toBe(400);
-      const json = await response.json<{ error: string }>();
-      expect(json.error).toBe('Invalid JSON body');
+      const json = await response.json<{ error: { code: string; message: string } }>();
+      expect(json.error.code).toBe('BAD_REQUEST');
+      expect(json.error.message).toBe('Invalid JSON body');
     });
 
     it('returns 400 when body is not an array', async () => {
       const response = await postWebhook({ not: 'an array' }, VALID_AUTH_TOKEN);
       expect(response.status).toBe(400);
-      const json = await response.json<{ error: string }>();
-      expect(json.error).toBe('Body must be a JSON array of webhook events');
+      const json = await response.json<{ error: { code: string; message: string } }>();
+      expect(json.error.code).toBe('BAD_REQUEST');
+      expect(json.error.message).toBe('Body must be a JSON array of webhook events');
     });
 
     it('returns 400 when array element has no signature', async () => {
       const response = await postWebhook([{ slot: 123 }], VALID_AUTH_TOKEN);
       expect(response.status).toBe(400);
-      const json = await response.json<{ error: string }>();
-      expect(json.error).toBe('Each webhook event must have a string "signature" field');
+      const json = await response.json<{ error: { code: string; message: string } }>();
+      expect(json.error.code).toBe('BAD_REQUEST');
+      expect(json.error.message).toBe('Each webhook event must have a string "signature" field');
     });
 
     it('returns 400 when array element has non-string signature', async () => {
       const response = await postWebhook([{ signature: 12345 }], VALID_AUTH_TOKEN);
       expect(response.status).toBe(400);
-      const json = await response.json<{ error: string }>();
-      expect(json.error).toBe('Each webhook event must have a string "signature" field');
+      const json = await response.json<{ error: { code: string; message: string } }>();
+      expect(json.error.code).toBe('BAD_REQUEST');
+      expect(json.error.message).toBe('Each webhook event must have a string "signature" field');
     });
 
     it('returns 400 when array element is null', async () => {
       const response = await postWebhook([null], VALID_AUTH_TOKEN);
       expect(response.status).toBe(400);
-      const json = await response.json<{ error: string }>();
-      expect(json.error).toBe('Each webhook event must have a string "signature" field');
+      const json = await response.json<{ error: { code: string; message: string } }>();
+      expect(json.error.code).toBe('BAD_REQUEST');
+      expect(json.error.message).toBe('Each webhook event must have a string "signature" field');
     });
   });
 
@@ -283,6 +291,44 @@ describe('POST /webhook/helius', () => {
       }>();
       expect(json.accepted).toBe(1);
       expect(json.duplicates).toBe(1);
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Error shape compliance
+  // -----------------------------------------------------------------------
+
+  describe('error shape compliance', () => {
+    it('returns standard { error: { code, message } } shape for 401', async () => {
+      const response = await postWebhook([], undefined);
+      expect(response.status).toBe(401);
+      const json = (await response.json());
+      // Top-level shape
+      expect(json).toHaveProperty('error');
+      expect(typeof json.error).toBe('object');
+      expect(json.error).not.toBeNull();
+      const err = json.error as Record<string, unknown>;
+      expect(err).toHaveProperty('code');
+      expect(err).toHaveProperty('message');
+      expect(typeof err.code).toBe('string');
+      expect(typeof err.message).toBe('string');
+      // No flat string error
+      expect(typeof json.error).not.toBe('string');
+    });
+
+    it('returns standard { error: { code, message } } shape for 400', async () => {
+      const response = await postWebhook({ not: 'an array' }, VALID_AUTH_TOKEN);
+      expect(response.status).toBe(400);
+      const json = (await response.json());
+      expect(json).toHaveProperty('error');
+      expect(typeof json.error).toBe('object');
+      expect(json.error).not.toBeNull();
+      const err = json.error as Record<string, unknown>;
+      expect(err).toHaveProperty('code');
+      expect(err).toHaveProperty('message');
+      expect(typeof err.code).toBe('string');
+      expect(typeof err.message).toBe('string');
+      expect(typeof json.error).not.toBe('string');
     });
   });
 });

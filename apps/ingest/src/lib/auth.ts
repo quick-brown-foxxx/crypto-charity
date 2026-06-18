@@ -1,5 +1,6 @@
 import { createMiddleware } from 'hono/factory';
 import type { Env } from './env.js';
+import { errorResponse } from './errors.js';
 
 /**
  * Constant-time string comparison.
@@ -47,17 +48,17 @@ export const authMiddleware = createMiddleware<{ Bindings: Env }>(async (c, next
   const authHeader = c.req.header('Authorization');
 
   if (!authHeader) {
-    return c.json({ error: 'missing_authorization_header' }, 401);
+    return errorResponse('UNAUTHORIZED', 'Missing Authorization header', 401);
   }
 
   if (!authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'unauthorized' }, 401);
+    return errorResponse('UNAUTHORIZED', 'Authorization header must use Bearer scheme', 401);
   }
 
   const token = authHeader.slice(7); // remove "Bearer " prefix
 
   if (!constantTimeEqual(token, c.env.HELIUS_WEBHOOK_AUTH_HEADER)) {
-    return c.json({ error: 'unauthorized' }, 401);
+    return errorResponse('UNAUTHORIZED', 'Invalid authorization token', 401);
   }
 
   await next();
