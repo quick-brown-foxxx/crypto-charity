@@ -1,10 +1,8 @@
 # Development Guide
 
-**Status:** Preparation complete; implementation phase begins.  
-**Date:** 2026-06-16
-
-Quick-start patterns for working on this project. Read `docs/ops/secrets-inventory.md`
-first for what's already deployed.
+Quick-start patterns for working on this project. For architecture and system
+shape, see `AGENTS.md`. For deployed secrets and readiness, see
+`docs/ops/secrets-inventory.md`.
 
 ## Mental model
 
@@ -20,15 +18,14 @@ This is a Cloudflare Workers monorepo, not a classic long-running server.
 
 ## Local dev
 
-```bash
-# One-time
-cp .env.example .dev.vars
-# Edit .dev.vars — use generated fake keys, never real staging secrets.
+- Copy `.env.example` → `.dev.vars` (gitignored). `wrangler dev` reads `.dev.vars`, not `.env`.
+- Use fake/generated keys locally; never put staging/prod secrets in `.dev.vars`.
+- Per-app dev server:
 
-# Start a Worker
-cd apps/<name>
-pnpm dev                    # wrangler dev → http://localhost:8787
-```
+  ```bash
+  cd apps/<name>
+  pnpm dev          # wrangler dev → http://localhost:8787
+  ```
 
 What happens:
 
@@ -48,59 +45,54 @@ pnpm exec wrangler d1 migrations apply vault-db --local
 pnpm exec wrangler d1 migrations apply bot-db --local
 ```
 
-### Migration directory location
-
-D1 migration directories live inside specific app directories rather than a
-neutral shared location. This is intentional:
-
-| Database   | Migration directory       | Owner app      |
-| ---------- | ------------------------- | -------------- |
-| `vault-db` | `apps/ingest/migrations/` | `vault-ingest` |
-| `bot-db`   | `apps/tg-bot/migrations/` | `tg-bot`       |
-
-**Why this asymmetry exists:**
-
-- Cloudflare D1 migrations are **per-database**, not per-Worker. A single
-  `wrangler d1 migrations apply vault-db` command applies all pending
-  migrations to the `vault-db` database, regardless of which Worker directory
-  the command is run from.
-- `vault-db` is shared across multiple Workers (`vault-ingest`, `vault-api-read`,
-  `vault-api-write`, `vault-anchor-cron`). The migrations could live in any of
-  these apps, but they must live in exactly one.
-- `vault-ingest` was chosen as the designated "owner" app for `vault-db`
-  migrations because it is the first Worker that writes to the database
-  (ingesting donations from the Helius webhook).
-- `bot-db` migrations live in `apps/tg-bot/migrations/` following the same
-  pattern — `tg-bot` is the sole owner of `bot-db`.
-- Test configurations reference the migration directory explicitly:
-  `apps/api-read/vitest.config.ts` imports migrations from
-  `../../apps/ingest/migrations` via `readD1Migrations()`.
-- The deploy script (`pnpm run deploy`) applies migrations from the
-  canonical locations before deploying Workers.
-
-**Do not move migration directories** without updating all references
-(vitest configs, deploy scripts, CI, and this documentation).
-
-## Staging
-
-Staging is `staging.open-care.org`. It uses the same Cloudflare infra as
-production will — only secrets and domain differ.
-
-### Deploy a Worker
+## Quality gates (run before commit/PR)
 
 ```bash
-cd apps/<name>
-pnpm exec wrangler deploy
-# ~12 seconds. Route goes live at staging.open-care.org/<path>.
+pnpm run final-check   # format:check → lint → typecheck → test → build
 ```
 
-### Deploy the frontend
+This runs the exact same sequence as CI. All 5 gates must exit 0.
+
+Individual gates:
 
 ```bash
-cd apps/web
-pnpm build
-pnpm exec wrangler pages deploy .svelte-kit/cloudflare --project-name open-care-web
+pnpm run format:check   # prettier --check .
+pnpm run lint           # eslint .
+pnpm run check          # tsc -b
+pnpm run test           # vitest run
+pnpm run build          # tsc -b + SvelteKit build
 ```
+
+## Secrets and config
+
+- Access secrets in code via Hono bindings (`c.env.SECRET_NAME`), **not** `process.env`.
+- Deployed secrets are set with `wrangler secret put` per Worker. See `docs/ops/secrets-inventory.md`.
+- The **treasury private key is never in Workers, CI, repo, or logs** — operator custody only.
+- Public config values (e.g. `USDC_MINT`, treasury/anchor addresses) live in `.env.example` / `wrangler.jsonc` vars, not secrets.
+
+## Deploy
+
+- All-in-one staging deploy:
+
+  ```bash
+  pnpm run deploy       # migrations → 6 Workers → frontend Pages
+  ```
+
+- Per-app deploy from inside the app directory:
+
+  ```bash
+  cd apps/<name>
+  pnpm exec wrangler deploy
+  ```
+
+- Frontend only:
+
+  ```bash
+  pnpm run deploy:frontend
+  ```
+
+- Staging is the default environment. No `--env production` setup exists yet.
+- Live logs: `pnpm exec wrangler tail <worker-name>`.
 
 ### Apply D1 migrations (staging)
 
@@ -109,20 +101,18 @@ pnpm exec wrangler d1 migrations apply vault-db
 pnpm exec wrangler d1 migrations apply bot-db
 ```
 
-### View live logs
-
-```bash
-pnpm exec wrangler tail <worker-name>
-# Streams requests, status codes, duration, console.log.
-# Secrets are auto-redacted by Cloudflare.
-```
-
 ### Verify
 
 ```bash
 curl https://staging.open-care.org/api/health
 curl -X POST https://staging.open-care.org/webhook/helius \
   -H "Authorization: Bearer <HELIUS_WEBHOOK_AUTH_HEADER>" -d '{}'
+```
+
+## Seed data (local dev)
+
+```bash
+pnpm run seed   # applies migrations + seed data for both D1 databases
 ```
 
 ## The dev loop
@@ -135,41 +125,6 @@ write code → wrangler dev (local test) → vitest (unit/integration)
 
 Each deploy cycle is ~15 seconds. There is no Docker build, no container
 orchestration, no SSH.
-
-## Key constraints
-
-- **Stateless.** No in-memory caches between requests. Use D1 for persistence.
-- **CPU limit.** 30s per request (free plan). Long work goes in `ctx.waitUntil()`.
-- **D1 latency.** Reads can be 5–50ms depending on edge location. Public endpoints
-  should use 60s cache TTLs (per spec `04-api.md`).
-- **Secrets.** Accessed via `c.env.SECRET_NAME` (Hono bindings), not `process.env`.
-- **No treasury key.** The treasury private key is never in Workers, CI, or repo.
-
-## What's already set up
-
-See `docs/ops/secrets-inventory.md` for the full readiness status. Summary:
-
-- All Worker secrets pushed to Cloudflare (OPERATOR_TOKEN on vault-operator pending; see secrets inventory).
-- `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` in GitHub Actions.
-- Helius and Telegram webhooks configured → draft Workers responding at staging.
-- Devnet wallets funded (treasury + anchor; donor pending rate limit).
-- `staging.open-care.org` DNS live.
-- Solana CLI (`solana`, `solana-test-validator`) installed.
-
-## What the AI creates (implementation phase)
-
-All Worker `src/` code and the frontend are draft/mock and will be **overwritten**
-(not extended) with real implementations. Preserve infra-level configs
-(`wrangler.jsonc`, `package.json` names/dependencies, `tsconfig.json` options)
-only when they match the specs; overwrite everything else.
-
-- `.github/workflows/` (PR CI + deploy).
-- D1 seed data scripts; Drizzle ORM schemas and migration tooling.
-- `packages/vault-core/`, `packages/vault-db/`, `packages/bot-crypto/` source code (currently empty scaffolds).
-- Full SvelteKit frontend in `apps/web/` (rebuilt from scratch; current draft is disposable).
-- Real Worker implementations for ingest, tg-bot, api-read, api-write, anchor-cron, operator (overwriting drafts).
-- ESLint, Prettier, Vitest, Playwright configs.
-- Route configuration for `vault-api-read` and `vault-operator` on staging domain.
 
 ## Future local infra extension
 
