@@ -1,7 +1,7 @@
 # 06 — Security Model
 
-**Status:** Draft
-**Date:** 2026-06-14
+**Status:** Implemented
+**Date:** 2026-06-18
 **Scope:** MVP threats, accepted limits, and operational security rules.
 
 ## Threats we defend against

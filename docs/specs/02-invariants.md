@@ -1,7 +1,7 @@
 # 02 — Invariants
 
-**Status:** Draft
-**Date:** 2026-06-14
+**Status:** Implemented
+**Date:** 2026-06-18
 **Scope:** MVP trust rules.
 
 ## Why this doc exists
@@ -345,4 +345,4 @@ recomputes the chain must see the same values the chain committed.
 | I-8       | public schemas                                                                                                  | public response contract tests                                                                   |
 | I-9       | public export and scripts                                                                                       | TypeScript verify script tests                                                                   |
 | I-10      | `helius_inbox.(signature, source)` uniqueness, durable inbox, finality filters                                  | webhook/reconciliation contract tests, two-source scenario                                       |
-| I-11      | Zod refinement on `replacement_fields` whitelist; bivalent public API. **Write endpoint deferred to post-MVP.** | rejection test, byte-for-byte round-trip test (schema enforcement exists; API surface deferred)  |
+| I-11      | Zod refinement on `replacement_fields` whitelist; bivalent public API. **Write endpoint implemented (Epic 8).** | rejection test, byte-for-byte round-trip test, cross-implementation verification |

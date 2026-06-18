@@ -1,7 +1,7 @@
 # 11 — Public Frontend UX
 
-**Status:** Draft
-**Date:** 2026-06-14
+**Status:** Implemented
+**Date:** 2026-06-18
 **Scope:** MVP public donor-facing routes, UX states, copy direction, accessibility, and public redaction rules.
 
 ## How to read this
@@ -27,7 +27,7 @@ hash chain, and report problems. Frontend architecture is in
 | ----------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `/`                     | Warm public landing and recent history preview.          | `/api/totals`, recent donations/disbursements/anchors.                                                         |
 | `/donate`               | Donation instructions and warnings.                      | Public config: treasury address, vault ATA, USDC mint, cluster.                                                |
-| `/donate/[donationRef]` | Optional status page for a public transaction signature. | Public ledger/search by signature when available.                                                              |
+| `/donate/[donationRef]` | Deferred: not implemented in MVP. Status guidance lives on `/donate`. | Public ledger/search by signature when available.                                                              |
 | `/ledger`               | Full public ledger browser.                              | `/api/ledger-events`, `/api/donations`, `/api/disbursements`.                                                  |
 | `/ledger/[eventHash]`   | Single event detail.                                     | Ledger export/detail derived from public endpoint.                                                             |
 | `/verify`               | Canonical proof/export page.                             | `/api/verify`, `/api/ledger-events`.                                                                           |

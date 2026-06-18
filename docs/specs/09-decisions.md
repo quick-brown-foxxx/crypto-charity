@@ -1,7 +1,7 @@
 # 09 — Decisions
 
-**Status:** Draft
-**Date:** 2026-06-14
+**Status:** Implemented
+**Date:** 2026-06-18
 **Scope:** Current decisions, explicit deferrals, and open questions.
 
 ## Current decisions
@@ -232,7 +232,7 @@
 ### Public project name is "Open Care" (not "Crypto Charity Vault" or "Открытый фонд помощи")
 
 - **Where:** the `/about` and `/faq` SvelteKit pages (prerendered
-  static), `01-architecture.md`, `docs/concepts/2026-06-14-crypto-charity-vault.md`.
+  static), `01-architecture.md`.
   Note: there are no `/api/about` or `/api/faq` JSON endpoints; the
   copy is committed to the SvelteKit source and rendered at build
   time.
@@ -297,13 +297,14 @@
   chain fields, and timestamps are immutable; mistakes on those
   fields are corrected by appending a new event (a reversal or a
   re-recorded `disbursement_recorded`), not by a
-  `correction_recorded`. The public read API returns the original
-  event payload (matching the chain) verbatim; a future
-  `?include=corrections` query parameter may return the correction
-  chain in append order. The read API MUST NOT silently substitute
-  corrected values for original values, because that would make a
-  donor's offline verifier disagree with the JSON returned by the
-  site.
+  `correction_recorded`. The `POST /api/corrections` endpoint is
+  implemented (Epic 8) with Zod whitelist enforcement. The public
+  read API returns the original event payload (matching the chain)
+  verbatim; a `?include=corrections` query parameter returns the
+  correction chain in append order. The read API MUST NOT silently
+  substitute corrected values for original values, because that
+  would make a donor's offline verifier disagree with the JSON
+  returned by the site.
 - **Reasoning:** the previous spec allowed `replacement_fields` as
   a free-form object, which a malicious or careless operator could
   use to silently change `amount_usdc_minor` or `gift_card_count`.

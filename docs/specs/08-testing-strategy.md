@@ -1,7 +1,7 @@
 # 08 — Testing Strategy
 
-**Status:** Draft
-**Date:** 2026-06-14
+**Status:** Implemented
+**Date:** 2026-06-18
 **Scope:** MVP behavior proof, blockchain test tiers, and CI policy.
 
 ## Testing philosophy

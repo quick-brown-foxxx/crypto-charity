@@ -1,7 +1,7 @@
 # 05 — Hosting and Deployment
 
-**Status:** Draft
-**Date:** 2026-06-14
+**Status:** Implemented
+**Date:** 2026-06-18
 **Scope:** MVP infrastructure, secrets, CI/CD, and environments.
 
 ## Hosting decisions

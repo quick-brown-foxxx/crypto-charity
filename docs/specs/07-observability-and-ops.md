@@ -1,7 +1,7 @@
 # 07 — Observability and Ops
 
-**Status:** Draft
-**Date:** 2026-06-14
+**Status:** Implemented
+**Date:** 2026-06-18
 **Scope:** MVP monitoring, alerts, failure modes, and recovery pointers.
 
 ## Monitoring stack

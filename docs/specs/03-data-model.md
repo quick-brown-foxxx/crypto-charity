@@ -1,7 +1,7 @@
 # 03 — Data Model
 
-**Status:** Draft
-**Date:** 2026-06-14
+**Status:** Implemented
+**Date:** 2026-06-18
 **Scope:** MVP D1 schemas, canonical ledger events, and hash-chain mechanics.
 
 ## How to read this

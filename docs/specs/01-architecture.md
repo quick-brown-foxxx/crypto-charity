@@ -1,7 +1,7 @@
 # 01 — Architecture
 
-**Status:** Draft
-**Date:** 2026-06-14
+**Status:** Implemented
+**Date:** 2026-06-18
 **Scope:** MVP system shape, data flow, and trust boundaries.
 
 ## How to read this
@@ -100,7 +100,7 @@ in [`02-invariants.md`](02-invariants.md).
   No secrets.
 - **`apps/operator`** — **the sole holder of `OPERATOR_TOKEN`**. Auths every
   operator request, then routes to the right Worker via Cloudflare
-  service bindings: `/api/disbursements` to `vault-api-write`,
+  service bindings: `/api/disbursements` and `/api/corrections` to `vault-api-write`,
   `/api/anchor/manual` to `vault-anchor-cron`,
   `/tg/internal/pending-requests` and `/tg/internal/send-code` to `tg-bot`.
   One trust boundary, one secret, one Worker.

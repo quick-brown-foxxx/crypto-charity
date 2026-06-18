@@ -1,10 +1,10 @@
 # Secrets Inventory
 
 **Status:** Environment Ready  
-**Date:** 2026-06-16  
+**Date:** 2026-06-18  
 **Purpose:** Canonical list of every secret, env var, and public config value the project needs. AI agents read this to know what exists, where it lives, and who owns it.
 
-## Environment Readiness Status (2026-06-16)
+## Environment Readiness Status (2026-06-18)
 
 This section is the single source of truth for what is deployed, configured, and
 ready vs what still needs human action. AI coding agents should read this first.
@@ -43,12 +43,12 @@ No `--env production` secrets exist yet.
 
 ### Webhooks: Configured and Responding
 
-| Webhook  | URL                                                 | Auth mechanism                         | Status         |
-| -------- | --------------------------------------------------- | -------------------------------------- | -------------- |
-| Helius   | `POST https://staging.open-care.org/webhook/helius` | `Authorization: Bearer <token>` header | ✅ Live (mock) |
-| Telegram | `POST https://staging.open-care.org/tg/webhook`     | `X-Telegram-Bot-Api-Secret-Token`      | ✅ Live (mock) |
+| Webhook  | URL                                                 | Auth mechanism                         | Status    |
+| -------- | --------------------------------------------------- | -------------------------------------- | --------- |
+| Helius   | `POST https://staging.open-care.org/webhook/helius` | `Authorization: Bearer <token>` header | ✅ Live   |
+| Telegram | `POST https://staging.open-care.org/tg/webhook`     | `X-Telegram-Bot-Api-Secret-Token`      | ✅ Live   |
 
-Both endpoints are served by minimal mock Workers that validate auth and return 200. These will be replaced with full implementations by the coding agent.
+Both endpoints are served by real Worker implementations with full auth validation, durable inbox processing, and async transaction handling.
 
 ### DNS and Domains
 
@@ -63,33 +63,25 @@ Both endpoints are served by minimal mock Workers that validate auth and return 
 | -------- | ---------------------------------------------- | ---------- | ------------------ |
 | Treasury | `8ufYGMkmAWeaYaM4CnANrxLxpQoaESKTGFN1BcgU71tG` | ✅ Yes     | Receives test USDC |
 | Anchor   | `BhKtkM1oHADwo8ap5P6Lymj7b3iaspiAm37RA9KMn8YG` | ✅ Yes     | Signs Memo anchors |
-| Donor    | `6dUAJZso3HThXQjReZKHWXNpMFYgZ8wbXu7GxXJ93hyL` | 🔲 Pending | Sends test USDC    |
+| Donor    | `6dUAJZso3HThXQjReZKHWXNpMFYgZ8wbXu7GxXJ93hyL` | ✅ Yes     | Sends test USDC    |
 
 Faucet alternatives when rate-limited: <https://www.devnetfaucet.org/>,
 <https://solfate.com/faucet>, <https://tools.solrocket.io/sol-faucet>.
 
 ### Deployed Workers
 
-| Worker              | Status             | Notes                                                                                     |
-| ------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
-| `vault-ingest`      | ✅ Deployed (mock) | Route: `staging.open-care.org/webhook/helius`                                             |
-| `tg-bot`            | ✅ Deployed (mock) | Route: `staging.open-care.org/tg/webhook`                                                 |
-| `vault-api-write`   | ✅ Deployed (mock) | No secrets needed (reached via service binding from `vault-operator`)                     |
-| `vault-anchor-cron` | ✅ Deployed (mock) | Has `ANCHOR_WALLET_SECRET` and `HELIUS_RPC_URL` secrets set                               |
-| `vault-api-read`    | ✅ Deployed (mock) | Public read API mock, no secrets needed                                                   |
-| `vault-operator`    | ✅ Deployed (real) | Service bindings to api-write, api-read, anchor-cron, tg-bot; `OPERATOR_TOKEN` secret set |
+| Worker              | Status          | Notes                                                                                     |
+| ------------------- | --------------- | ----------------------------------------------------------------------------------------- |
+| `vault-ingest`      | ✅ Deployed     | Route: `staging.open-care.org/webhook/helius`; cron `0 */6 * * *`                         |
+| `tg-bot`            | ✅ Deployed     | Route: `staging.open-care.org/tg/webhook`; 4 commands, HMAC+AES-GCM, redacted operator view |
+| `vault-api-write`   | ✅ Deployed     | No public route (reached via service binding from `vault-operator`); POST /api/disbursements + /api/corrections |
+| `vault-anchor-cron` | ✅ Deployed     | No public route (cron `0 1 * * *` + service binding); `ANCHOR_WALLET_SECRET` set          |
+| `vault-api-read`    | ✅ Deployed     | Route: `staging.open-care.org/api/*`; 6 public endpoints with 60s cache                   |
+| `vault-operator`    | ✅ Deployed     | Routes: `/api/disbursements`, `/api/corrections`, `/api/anchor/manual`, `/tg/internal/*`; service bindings to all 4 downstream Workers; `OPERATOR_TOKEN` sole holder; rate limiter (10 req/60s) |
 
-### What the AI Coding Agent Must Create
+### Implementation Status (2026-06-18)
 
-These are not environment blockers — they are implementation tasks:
-
-- `.github/workflows/pr-ci.yml` and `deploy.yml`
-- D1 seed data scripts (initial `wallets` rows)
-- Real Worker implementations replacing the mock Workers
-- `packages/vault-core/`, `packages/vault-db/`, `packages/bot-crypto/` source code
-- Full SvelteKit frontend in `apps/web/`
-- ESLint, Prettier, Vitest, Playwright configs
-- Route configuration for `vault-api-read` and `vault-operator` on staging domain
+All 8 epics complete. All Workers are real implementations (not mocks). All shared packages (`vault-core`, `vault-db`, `bot-crypto`) are fully implemented. Frontend has 12 routes with Playwright + Vitest tests. CI/CD pipelines (ci.yml, deploy.yml, deploy-prod.yml) are operational. 620 tests pass (42 files), CI green (all 5 gates exit 0).
 
 ### What the Human Must Still Do
 

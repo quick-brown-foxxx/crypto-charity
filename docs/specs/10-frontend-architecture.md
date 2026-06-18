@@ -1,7 +1,7 @@
 # 10 — Frontend Architecture
 
-**Status:** Draft
-**Date:** 2026-06-14
+**Status:** Implemented
+**Date:** 2026-06-18
 **Scope:** MVP SvelteKit frontend architecture, boundaries, validation, browser privacy, and verification gates.
 
 ## How to read this
@@ -149,14 +149,15 @@ backend-interaction layers survive unchanged.
 | ----------------------- | ---------------- | ---------------------------------------------------------------------------------------- |
 | `/`                     | Public           | Russian-first landing preview with totals, recent feed, and proof CTA.                   |
 | `/donate`               | Public           | Donation instructions, QR/copy affordances, and canonicality warnings.                   |
-| `/donate/[donationRef]` | Public, optional | Donation status by public transaction signature when wallet integration can capture one. |
+| `/donate/[donationRef]` | Public, deferred | Donation status by public transaction signature. Deferred: not implemented in MVP; status guidance lives on `/donate`. |
 | `/ledger`               | Public           | Complete public ledger/history browser.                                                  |
 | `/ledger/[eventHash]`   | Public           | Single public ledger event detail and hash-chain context.                                |
 | `/verify`               | Public           | Canonical proof/export/verification page.                                                |
 | `/about`                | Public           | Operator/project explanation and limits.                                                 |
 | `/faq`                  | Public           | Honest questions about proofs, custody, privacy, and receipts.                           |
 | `/contact`              | Public           | Report path for hash mismatch, privacy issue, or donor support.                          |
-| `/admin`                | Operator         | Canonical operator UI for disbursement recording, bot handoff, and manual anchors.       |
+| `/admin`                | Operator         | Canonical operator UI for disbursement recording, bot handoff, and manual anchors. |
+| `/admin/bot`            | Operator         | Gift-card code delivery handoff to the Telegram bot.                                |
 
 `/admin` is the canonical operator route because existing specs and runbooks use
 that path. Do not introduce `/operator` unless it redirects to `/admin` and the

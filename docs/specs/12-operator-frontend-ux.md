@@ -1,7 +1,7 @@
 # 12 — Operator Frontend UX
 
-**Status:** Draft
-**Date:** 2026-06-14
+**Status:** Implemented
+**Date:** 2026-06-18
 **Scope:** MVP `/admin` operator UX, token handling, disbursement recording, manual anchors, bot handoff, and privacy acceptance criteria.
 
 ## How to read this
@@ -28,7 +28,7 @@ the bot without expanding public or database exposure. Public UX is in
 | Auth gate         | Password-style token entry, explicit “not saved” copy, fail-closed invalid-token handling.                                                                                    |
 | Dashboard         | Health summary, latest head, latest anchor, low-SOL warning, recent operator-relevant events.                                                                                 |
 | Disbursement form | Record gift-card purchase into the public ledger.                                                                                                                             |
-| Delivery handoff  | Select a redacted pending request from `GET /tg/internal/pending-requests`, send gift-card code to the bot by `opaque_id` + `conversation_id`, and clear code after delivery. |
+| Delivery handoff  | Select a redacted pending request from `GET /tg/internal/pending-requests`, send gift-card code to the bot by `opaque_id` + `conversation_id`, and clear code after delivery. Served at `/admin/bot`. |
 | Anchor panel      | Trigger `/api/anchor/manual`, show published/already-published/error states.                                                                                                  |
 | Support links     | Link to `/ledger/[eventHash]`, `/verify`, runbooks, and contact/report path.                                                                                                  |
 

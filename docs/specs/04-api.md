@@ -1,7 +1,7 @@
 # 04 — API
 
-**Status:** Draft
-**Date:** 2026-06-14
+**Status:** Implemented
+**Date:** 2026-06-18
 **Scope:** MVP HTTP contracts.
 
 ## Conventions
@@ -106,6 +106,7 @@ Rules:
 | GET    | `/api/verify`                   | none                            | `vault-api-read`                                                       | Latest head, anchors, verification instructions |
 | GET    | `/api/health`                   | none                            | `vault-api-read`                                                       | Health probe                                    |
 | POST   | `/api/disbursements`            | `OPERATOR_TOKEN`                | `vault-operator` (forwards to `vault-api-write` via service binding)   | Record gift-card purchase                       |
+| POST   | `/api/corrections`              | `OPERATOR_TOKEN`                | `vault-operator` (forwards to `vault-api-write` via service binding)   | Record correction for a disbursement            |
 | POST   | `/api/anchor/manual`            | `OPERATOR_TOKEN`                | `vault-operator` (forwards to `vault-anchor-cron` via service binding) | Trigger anchor run                              |
 | POST   | `/webhook/helius`               | `Authorization: Bearer <token>` | `vault-ingest`                                                         | Receive Helius events                           |
 | POST   | `/tg/webhook`                   | Telegram secret token           | `tg-bot`                                                               | Receive Telegram updates                        |
@@ -260,7 +261,8 @@ Response 200:
   },
   "previous_anchors": [],
   "instructions": {
-    "typescript": "TODO: a TypeScript verifier script will be published with the first MVP release. Until then, donors can reproduce the chain by (1) GET /api/ledger-events, (2) for each event, recompute SHA-256 over the canonical JSON preimage documented in docs/specs/03-data-model.md, (3) compare the result to event_hash and to the Memo text on the Solana transaction linked from latest_anchor.solscan_url."
+    "typescript": "A TypeScript verifier script is available at tools/verify/. Donors can also reproduce the chain by (1) GET /api/ledger-events, (2) for each event, recompute SHA-256 over the canonical JSON preimage documented in docs/specs/03-data-model.md, (3) compare the result to event_hash and to the Memo text on the Solana transaction linked from latest_anchor.solscan_url. A Python cross-implementation verifier (tools/verify/test_vector.py) confirms the normative test vector hash fda2610f...",
+    "python": "A Python verifier using rfc8785 canonicalization is available at tools/verify/test_vector.py. It confirms the normative test vector hash fda2610fb171efe75bf16a821f8b87764801bab1e2f4e69bdd98ccb53bf1df41."
   },
   "anchor_stale": false
 }
@@ -479,6 +481,54 @@ failed attempt. The operator UI must NOT show a fake
 `anchor_published` event on this path (see
 [`12-operator-frontend-ux.md`](12-operator-frontend-ux.md) §"Manual
 anchor flow").
+
+### `POST /api/corrections`
+
+Record a correction for an existing `disbursement_recorded` event. Corrections
+are new append-only events (I-1); they do not modify the original event.
+
+Request:
+
+```json
+{
+  "corrects_sequence_no": 42,
+  "reason": "receipt reference typo",
+  "replacement_fields": {
+    "receipt_ref": "ALTER-2026-06-14-A1B2C4"
+  }
+}
+```
+
+Validation:
+
+- `corrects_sequence_no`: must be an existing `disbursement_recorded` event
+  with `sequence_no < current head`.
+- `reason`: required, 1..256 characters.
+- `replacement_fields`: closed whitelist — only `receipt_ref` and
+  `service_note` are accepted. Any other key (including `amount_usdc_minor`,
+  `gift_card_count`, `service`, `purchased_at_utc`, `recorded_at_utc`,
+  `tx_signature`, `slot`, `block_time_utc`, `anchor_wallet_address`, etc.)
+  is rejected with `422 VALIDATION_ERROR`. The whitelist enforces invariant
+  I-11: amounts, counts, chain fields, and timestamps are immutable; an
+  operator mistake on those fields is corrected by appending a reversal or
+  new event, not by a `correction_recorded`.
+
+Response 200:
+
+```json
+{
+  "sequence_no": 91,
+  "event_hash": "...64hex",
+  "head_hash": "...64hex",
+  "corrects_sequence_no": 42
+}
+```
+
+The public read API is **bivalent**: `/api/ledger-events` and
+`/api/disbursements` return the original event payload as it was hashed.
+A separate `?include=corrections` query parameter returns the correction
+chain in append order. The read API MUST NOT silently substitute corrected
+values for original values.
 
 ## `POST /webhook/helius`
 

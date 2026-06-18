@@ -1,7 +1,7 @@
 # 00 — Overview
 
-**Status:** Draft
-**Date:** 2026-06-14
+**Status:** Implemented
+**Date:** 2026-06-18
 **Scope:** MVP (Phase 1). Phase 2 is a product roadmap term, not part of this build.
 
 ## What this is

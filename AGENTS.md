@@ -1,6 +1,6 @@
 # OpenCode Agent Notes
 
-**Status:** All 6 epics implemented, verified, and deployed to staging. 593 tests pass, CI green (all 5 gates exit 0). Frontend rebuilt to match `docs/ui-prototypes/landing.html`. See `docs/implementation-plan.md` for current backlog.
+**Status:** All 8 epics implemented, verified, and deployed to staging. 620 tests pass, CI green (all 5 gates exit 0). Frontend rebuilt to match `docs/ui-prototypes/landing.html`. See `docs/implementation-plan.md` for current backlog.
 
 ## Project shape
 

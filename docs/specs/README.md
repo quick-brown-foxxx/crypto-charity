@@ -1,15 +1,13 @@
 # MVP Technical Spec
 
-**Status:** Draft
-**Date:** 2026-06-14
+**Status:** Implemented
+**Date:** 2026-06-18
 **Scope:** MVP (Phase 1). Phase 2 is explicitly out of scope unless named as a product roadmap item.
 
-This spec turns the product direction in
-[`../initial-note.md`](../initial-note.md) and
-[`../concepts/2026-06-14-crypto-charity-vault.md`](../concepts/2026-06-14-crypto-charity-vault.md)
-into an implementation-ready design.
+This spec turns the product direction into an implementation-ready design.
+All 8 epics are complete, 620 tests pass, CI green, all Workers + frontend deployed to staging.
 
-The concept docs preserve the product intent: Solana + USDC donations,
+The concept docs preserved the product intent: Solana + USDC donations,
 a donor-verifiable ledger, manual conversion into therapy gift cards,
 and a privacy-bounded Telegram beneficiary channel. The files in this
 directory are the current technical design.
@@ -54,6 +52,6 @@ directory are the current technical design.
 | Telegram bot beneficiary channel                                     | `01-architecture.md`, `03-data-model.md`, `04-api.md`, `05-hosting-and-deploy.md`, `06-security-model.md`, `08-testing-strategy.md`, `09-decisions.md`                                                                                                                       |
 | Frontend stack and browser boundaries                                | `10-frontend-architecture.md`, `11-public-frontend-ux.md`, `12-operator-frontend-ux.md`                                                                                                                                                                                      |
 | Privacy and honest limits                                            | `06-security-model.md`, `07-observability-and-ops.md`, `11-public-frontend-ux.md`, `12-operator-frontend-ux.md`                                                                                                                                                              |
-| Brand and project name                                               | `09-decisions.md` §"Public project name", `04-api.md` (the FAQ/about pages are static, not API endpoints; the brand string lives in the SvelteKit source), `01-architecture.md`, `docs/concepts/2026-06-14-crypto-charity-vault.md`                                          |
+| Brand and project name                                               | `09-decisions.md` §"Public project name", `04-api.md` (the FAQ/about pages are static, not API endpoints; the brand string lives in the SvelteKit source), `01-architecture.md`                                          |
 | Hash chain canonicalization, correction policy, anchor lock+recovery | `02-invariants.md` §I-3, §I-4, §I-11, `03-data-model.md` §"Normative test vector" and §"anchor_runs", `04-api.md` §"POST /api/anchor/manual", `08-testing-strategy.md` §"Hash chain canonicalization (RFC 8785)", "Anchor recovery from a crash", "Correction policy (I-11)" |
 | Blockchain verification and test tiers                               | `08-testing-strategy.md`, `11-public-frontend-ux.md`                                                                                                                                                                                                                         |
