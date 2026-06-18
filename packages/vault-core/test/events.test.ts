@@ -548,6 +548,33 @@ describe('CorrectionPayloadSchema', () => {
       );
       expect(result.success).toBe(false);
     });
+
+    it('rejects replacement_fields containing amount_usdc_minor (immutable per I-11)', () => {
+      const result = CorrectionPayloadSchema.safeParse(
+        makeCorrectionPayload({
+          replacement_fields: { amount_usdc_minor: '50000000' },
+        }),
+      );
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects replacement_fields containing gift_card_count (immutable per I-11)', () => {
+      const result = CorrectionPayloadSchema.safeParse(
+        makeCorrectionPayload({
+          replacement_fields: { gift_card_count: 10 },
+        }),
+      );
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects replacement_fields containing both amount_usdc_minor and gift_card_count', () => {
+      const result = CorrectionPayloadSchema.safeParse(
+        makeCorrectionPayload({
+          replacement_fields: { amount_usdc_minor: '50000000', gift_card_count: 10 },
+        }),
+      );
+      expect(result.success).toBe(false);
+    });
   });
 });
 

@@ -28,6 +28,15 @@ describe('GET /api/ledger-events', () => {
     expect(parsed).toHaveProperty('amount_usdc_minor');
   });
 
+  it('payload_json never contains donor_memo (I-6)', async () => {
+    const response = await SELF.fetch('https://example.com/api/ledger-events');
+    const json = await response.json();
+    for (const item of json.items) {
+      const parsed = JSON.parse(item.payload_json);
+      expect(parsed).not.toHaveProperty('donor_memo');
+    }
+  });
+
   it('supports limit query param', async () => {
     const response = await SELF.fetch('https://example.com/api/ledger-events?limit=1');
     expect(response.status).toBe(200);

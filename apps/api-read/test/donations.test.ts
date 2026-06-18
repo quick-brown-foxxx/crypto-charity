@@ -21,6 +21,16 @@ describe('GET /api/donations', () => {
     expect(donation).toHaveProperty('cluster');
     expect(donation.usdc_mint).toBeTruthy();
     expect(donation.vault_usdc_ata).toBeTruthy();
+    // I-6: donor_memo must never appear in public API responses
+    expect(donation).not.toHaveProperty('donor_memo');
+  });
+
+  it('never exposes donor_memo in any donation item', async () => {
+    const response = await SELF.fetch('https://example.com/api/donations');
+    const json = await response.json();
+    for (const item of json.items) {
+      expect(item).not.toHaveProperty('donor_memo');
+    }
   });
 
   it('supports limit query param', async () => {
