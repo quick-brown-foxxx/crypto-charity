@@ -12,6 +12,12 @@ export default defineConfig({
           OPERATOR_TOKEN: 'test-operator-token-abc123',
         },
         serviceBindings: {
+          VAULT_API_READ: () => {
+            return new Response(JSON.stringify({ items: [], next_cursor: null }), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          },
           VAULT_API_WRITE: async (request: Request) => {
             const body = await request
               .clone()

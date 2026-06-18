@@ -10,21 +10,24 @@ const app = new Hono<{ Bindings: Env }>();
 // CORS for all routes (must be first so error responses also get CORS headers)
 app.use('*', corsMiddleware);
 
-// Auth for all operator-authenticated routes (api/* and tg/*)
-// Health is excluded — it has no auth requirement.
-app.use('/api/*', authMiddleware);
+// Auth for tg/internal routes (all methods)
 app.use('/tg/*', authMiddleware);
 
 // Health (no auth)
 app.route('/health', healthRoute);
 
-// POST /api/disbursements → vault-api-write
-app.post('/api/disbursements', async (c) => {
+// POST /api/disbursements → vault-api-write (auth required)
+app.post('/api/disbursements', authMiddleware, async (c) => {
   return forwardToService(c.env.VAULT_API_WRITE, c.req.raw);
 });
 
-// POST /api/anchor/manual → vault-anchor-cron
-app.post('/api/anchor/manual', async (c) => {
+// GET /api/disbursements → vault-api-read (no auth — public read)
+app.get('/api/disbursements', async (c) => {
+  return forwardToService(c.env.VAULT_API_READ, c.req.raw);
+});
+
+// POST /api/anchor/manual → vault-anchor-cron (auth required)
+app.post('/api/anchor/manual', authMiddleware, async (c) => {
   return forwardToService(c.env.VAULT_ANCHOR_CRON, c.req.raw);
 });
 

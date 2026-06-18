@@ -11,23 +11,22 @@ ready vs what still needs human action. AI coding agents should read this first.
 
 ### Secrets: Pushed to Cloudflare Workers
 
-8 of 9 Worker secrets are set via `wrangler secret put` on the default
-(staging) environment. `OPERATOR_TOKEN` on `vault-operator` is the only
-one still pending — human must run `cd apps/operator && pnpm exec wrangler secret put OPERATOR_TOKEN`.
-`OPERATOR_TOKEN` must not exist on any Worker except `vault-operator`
-(see `01-architecture.md` §"Operator Worker trust model").
+All 9 Worker secrets are set via `wrangler secret put` on the default
+(staging) environment. `OPERATOR_TOKEN` is set on `vault-operator` (confirmed
+via `wrangler secret list`). `OPERATOR_TOKEN` must not exist on any Worker
+except `vault-operator` (see `01-architecture.md` §"Operator Worker trust model").
 No `--env production` secrets exist yet.
 
-| Secret                       | Workers                             | Status                      |
-| ---------------------------- | ----------------------------------- | --------------------------- |
-| `OPERATOR_TOKEN`             | `vault-operator` only               | ⚠️ `vault-operator` pending |
-| `HELIUS_RPC_URL`             | `vault-ingest`, `vault-anchor-cron` | ✅ Set                      |
-| `HELIUS_WEBHOOK_AUTH_HEADER` | `vault-ingest`                      | ✅ Set                      |
-| `ANCHOR_WALLET_SECRET`       | `vault-anchor-cron`                 | ✅ Set                      |
-| `TG_BOT_TOKEN`               | `tg-bot`                            | ✅ Set                      |
-| `TG_WEBHOOK_SECRET`          | `tg-bot`                            | ✅ Set                      |
-| `TG_ID_HMAC_KEY`             | `tg-bot`                            | ✅ Set                      |
-| `TG_CHAT_ENC_KEY`            | `tg-bot`                            | ✅ Set                      |
+| Secret                       | Workers                             | Status |
+| ---------------------------- | ----------------------------------- | ------ |
+| `OPERATOR_TOKEN`             | `vault-operator` only               | ✅ Set |
+| `HELIUS_RPC_URL`             | `vault-ingest`, `vault-anchor-cron` | ✅ Set |
+| `HELIUS_WEBHOOK_AUTH_HEADER` | `vault-ingest`                      | ✅ Set |
+| `ANCHOR_WALLET_SECRET`       | `vault-anchor-cron`                 | ✅ Set |
+| `TG_BOT_TOKEN`               | `tg-bot`                            | ✅ Set |
+| `TG_WEBHOOK_SECRET`          | `tg-bot`                            | ✅ Set |
+| `TG_ID_HMAC_KEY`             | `tg-bot`                            | ✅ Set |
+| `TG_CHAT_ENC_KEY`            | `tg-bot`                            | ✅ Set |
 
 ### CI/CD Secrets and Variables: Ready in GitHub Actions
 
@@ -71,14 +70,14 @@ Faucet alternatives when rate-limited: <https://www.devnetfaucet.org/>,
 
 ### Deployed Workers
 
-| Worker              | Status             | Notes                                                                               |
-| ------------------- | ------------------ | ----------------------------------------------------------------------------------- |
-| `vault-ingest`      | ✅ Deployed (mock) | Route: `staging.open-care.org/webhook/helius`                                       |
-| `tg-bot`            | ✅ Deployed (mock) | Route: `staging.open-care.org/tg/webhook`                                           |
-| `vault-api-write`   | ✅ Deployed (mock) | No secrets needed (reached via service binding from `vault-operator`)               |
-| `vault-anchor-cron` | ✅ Deployed (mock) | Has `ANCHOR_WALLET_SECRET` and `HELIUS_RPC_URL` secrets set                         |
-| `vault-api-read`    | ✅ Deployed (mock) | Public read API mock, no secrets needed                                             |
-| `vault-operator`    | ✅ Deployed (mock) | Service bindings to api-write, anchor-cron, tg-bot; `OPERATOR_TOKEN` secret pending |
+| Worker              | Status             | Notes                                                                                     |
+| ------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
+| `vault-ingest`      | ✅ Deployed (mock) | Route: `staging.open-care.org/webhook/helius`                                             |
+| `tg-bot`            | ✅ Deployed (mock) | Route: `staging.open-care.org/tg/webhook`                                                 |
+| `vault-api-write`   | ✅ Deployed (mock) | No secrets needed (reached via service binding from `vault-operator`)                     |
+| `vault-anchor-cron` | ✅ Deployed (mock) | Has `ANCHOR_WALLET_SECRET` and `HELIUS_RPC_URL` secrets set                               |
+| `vault-api-read`    | ✅ Deployed (mock) | Public read API mock, no secrets needed                                                   |
+| `vault-operator`    | ✅ Deployed (real) | Service bindings to api-write, api-read, anchor-cron, tg-bot; `OPERATOR_TOKEN` secret set |
 
 ### What the AI Coding Agent Must Create
 

@@ -108,7 +108,7 @@ app.get('/api/health', async (c) => {
     heliusInboxBacklogOk;
 
   const responseTimeMs = Date.now() - startTime;
-  const version = c.env.DEPLOY_VERSION ?? '0.0.0';
+  const version = c.env.DEPLOY_VERSION ?? '0.1.0-dev';
 
   withCache(c);
   return c.json(
