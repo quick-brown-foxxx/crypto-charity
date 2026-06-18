@@ -38,11 +38,11 @@ All Workers use Hono. Main export is the Hono app from `src/index.ts`.
 
 ## Shared packages
 
-| Package                 | Contents                                                                                             |
-| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| Package                 | Contents                                                                                                       |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `@open-care/vault-core` | RFC 8785 canonical JSON, 4 event schemas (Zod), hash chain, test vector, beneficiary ref, anchor memo, logging |
-| `@open-care/vault-db`   | Drizzle schemas (6 tables), ledger append helper, query helpers, client factories                   |
-| `@open-care/bot-crypto` | HMAC-SHA256 user ref derivation, AES-GCM chat ID encryption/decryption, base64url                   |
+| `@open-care/vault-db`   | Drizzle schemas (6 tables), ledger append helper, query helpers, client factories                              |
+| `@open-care/bot-crypto` | HMAC-SHA256 user ref derivation, AES-GCM chat ID encryption/decryption, base64url                              |
 
 ## Migration directory location
 
@@ -89,16 +89,16 @@ neutral shared location:
 
 ## Key decisions
 
-| Decision                | Choice                                                                         |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| Hash canonicalization   | RFC 8785 (JCS), normative test vector pinned                                   |
-| Solana SDK              | `@solana/web3.js` v1 (`^1.98.4`)                                               |
-| HTTP routing            | Hono                                                                           |
-| Validation              | Zod (backend), Valibot (frontend)                                              |
-| ORM                     | Drizzle with D1 driver                                                         |
-| Test runner             | Vitest                                                                         |
-| Browser tests           | Playwright                                                                     |
-| Telegram E2E            | Telethon + pytest (manual/nightly, not PR CI)                                  |
+| Decision              | Choice                                        |
+| --------------------- | --------------------------------------------- |
+| Hash canonicalization | RFC 8785 (JCS), normative test vector pinned  |
+| Solana SDK            | `@solana/web3.js` v1 (`^1.98.4`)              |
+| HTTP routing          | Hono                                          |
+| Validation            | Zod (backend), Valibot (frontend)             |
+| ORM                   | Drizzle with D1 driver                        |
+| Test runner           | Vitest                                        |
+| Browser tests         | Playwright                                    |
+| Telegram E2E          | Telethon + pytest (manual/nightly, not PR CI) |
 
 ## Future work
 
