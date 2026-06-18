@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { sql } from 'drizzle-orm';
 import { createVaultDb, getHead, getLatestAnchor } from '@open-care/vault-db';
+import { generateRequestId } from '@open-care/vault-core';
 import type { Env } from '../lib/env.js';
 import { withCache } from '../lib/cache.js';
 import { internalErrorResponse } from '../lib/errors.js';
@@ -72,6 +73,7 @@ function buildAnchorInfo(row: AnchorRunRow, cluster: string): AnchorInfo {
 // ---------------------------------------------------------------------------
 
 app.get('/api/verify', async (c) => {
+  const requestId = generateRequestId();
   const db = createVaultDb(c.env.vault_db);
   const cluster = c.env.SOLANA_CLUSTER;
 
@@ -86,7 +88,7 @@ app.get('/api/verify', async (c) => {
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown database error';
-    return internalErrorResponse(`Failed to fetch head: ${message}`);
+    return internalErrorResponse(`Failed to fetch head: ${message}`, requestId);
   }
 
   // --- Latest anchor ---

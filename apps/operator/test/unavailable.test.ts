@@ -5,9 +5,11 @@ describe('503 UNAVAILABLE', () => {
   it('returns 503 from the dedicated /api/unavailable test route', async () => {
     const response = await exports.default.fetch('https://example.com/api/unavailable');
     expect(response.status).toBe(503);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id?: string } }>();
     expect(json.error.code).toBe('UNAVAILABLE');
     expect(json.error.message).toContain('unavailable');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
   });
 
   it('returns 503 with CORS headers', async () => {
@@ -35,10 +37,12 @@ describe('503 UNAVAILABLE', () => {
     // - This test verifies the 503 response contract is correct
     const response = await exports.default.fetch('https://example.com/api/unavailable');
     expect(response.status).toBe(503);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id?: string } }>();
     expect(json.error.code).toBe('UNAVAILABLE');
     // Verify the error response shape matches what forwardToService produces
     expect(json.error).toHaveProperty('code');
     expect(json.error).toHaveProperty('message');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
   });
 });

@@ -130,6 +130,8 @@ describe('POST /api/corrections', () => {
 
     const json = await response.json();
     expect(json.error.code).toBe('VALIDATION_ERROR');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.details.field_errors).toHaveProperty('corrects_sequence_no');
   });
 
@@ -142,6 +144,8 @@ describe('POST /api/corrections', () => {
 
     const json = await response.json();
     expect(json.error.code).toBe('VALIDATION_ERROR');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.details.field_errors).toHaveProperty('corrects_sequence_no');
   });
 
@@ -162,6 +166,8 @@ describe('POST /api/corrections', () => {
 
     const json = await response.json();
     expect(json.error.code).toBe('VALIDATION_ERROR');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     // The Zod .strict() on ReplacementFieldsSchema catches unknown keys
     expect(json.error.details.field_errors).toHaveProperty('replacement_fields');
   });
@@ -183,6 +189,8 @@ describe('POST /api/corrections', () => {
 
     const json = await response.json();
     expect(json.error.code).toBe('VALIDATION_ERROR');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.details.field_errors).toHaveProperty('replacement_fields');
   });
 
@@ -203,6 +211,8 @@ describe('POST /api/corrections', () => {
 
     const json = await response.json();
     expect(json.error.code).toBe('VALIDATION_ERROR');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.details.field_errors).toHaveProperty('replacement_fields');
   });
 
@@ -219,6 +229,8 @@ describe('POST /api/corrections', () => {
 
     const json = await response.json();
     expect(json.error.code).toBe('VALIDATION_ERROR');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.details.field_errors).toHaveProperty('reason');
   });
 

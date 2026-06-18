@@ -1,6 +1,7 @@
 import type { Context, Next } from 'hono';
 import type { Env } from './env';
-import { logInfo, logWarn, constantTimeEqual } from '@open-care/vault-core';
+import { logInfo, logWarn, constantTimeEqual, generateRequestId } from '@open-care/vault-core';
+import { unauthorizedResponse, badRequestResponse } from './errors.js';
 
 /**
  * Hono middleware that validates the Authorization Bearer token against
@@ -19,25 +20,22 @@ export async function authMiddleware(
 
   if (!authHeader) {
     logWarn('Operator auth failed: missing Authorization header');
-    return c.json(
-      { error: { code: 'UNAUTHORIZED', message: 'Missing Authorization header.' } },
-      401,
-    );
+    const requestId = generateRequestId();
+    return unauthorizedResponse('Missing Authorization header.', requestId);
   }
 
   if (!authHeader.startsWith('Bearer ')) {
     logWarn('Operator auth failed: non-Bearer scheme');
-    return c.json(
-      { error: { code: 'BAD_REQUEST', message: 'Authorization header must use Bearer scheme.' } },
-      400,
-    );
+    const requestId = generateRequestId();
+    return badRequestResponse('Authorization header must use Bearer scheme.', requestId);
   }
 
   const token = authHeader.slice(7); // Remove "Bearer " prefix
 
   if (!constantTimeEqual(token, c.env.OPERATOR_TOKEN)) {
     logWarn('Operator auth failed: invalid token');
-    return c.json({ error: { code: 'UNAUTHORIZED', message: 'Invalid operator token.' } }, 401);
+    const requestId = generateRequestId();
+    return unauthorizedResponse('Invalid operator token.', requestId);
   }
 
   logInfo('Operator auth succeeded');

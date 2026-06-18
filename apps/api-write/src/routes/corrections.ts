@@ -1,11 +1,9 @@
 import { Hono } from 'hono';
-import type { ZodError } from 'zod';
 import { createVaultDb, appendLedgerEvent, getHead } from '@open-care/vault-db';
 import type { VaultDb } from '@open-care/vault-db';
-import { logInfo, logError } from '@open-care/vault-core';
+import { logInfo, logError, generateRequestId } from '@open-care/vault-core';
 import type { CorrectionPayload, LedgerEvent } from '@open-care/vault-core';
 import type { Env } from '../lib/env.js';
-import { generateRequestId } from '../lib/request-id.js';
 import {
   badRequestResponse,
   validationErrorResponse,
@@ -56,7 +54,7 @@ correctionsRoute.post('/api/corrections', async (c) => {
   // 2. Validate with Zod schema
   const parseResult = CorrectionRequestSchema.safeParse(rawBody);
   if (!parseResult.success) {
-    return validationErrorResponse(parseResult.error as ZodError, requestId);
+    return validationErrorResponse(parseResult.error, requestId);
   }
 
   const data: CorrectionRequest = parseResult.data;
@@ -71,12 +69,11 @@ correctionsRoute.post('/api/corrections', async (c) => {
       {
         issues: [
           {
-            code: 'custom' as const,
             message: 'Ledger is empty — no events to correct',
             path: ['corrects_sequence_no'],
           },
         ],
-      } as ZodError,
+      },
       requestId,
     );
   }
@@ -86,12 +83,11 @@ correctionsRoute.post('/api/corrections', async (c) => {
       {
         issues: [
           {
-            code: 'custom' as const,
             message: `corrects_sequence_no (${data.corrects_sequence_no}) must be less than current head (${head.sequence_no})`,
             path: ['corrects_sequence_no'],
           },
         ],
-      } as ZodError,
+      },
       requestId,
     );
   }
@@ -107,12 +103,11 @@ correctionsRoute.post('/api/corrections', async (c) => {
         {
           issues: [
             {
-              code: 'custom' as const,
               message: `Unknown replacement field: "${key}". Only receipt_ref and service_note are allowed.`,
               path: ['replacement_fields', key],
             },
           ],
-        } as ZodError,
+        },
         requestId,
       );
     }

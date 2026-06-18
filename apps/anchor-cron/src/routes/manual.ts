@@ -1,13 +1,14 @@
 import { Hono } from 'hono';
 import { createVaultDb } from '@open-care/vault-db';
-import { logInfo, logWarn, logError } from '@open-care/vault-core';
+import { logInfo, logWarn, logError, generateRequestId  } from '@open-care/vault-core';
 import type { Env } from '../lib/env';
 import { runAnchor } from '../lib/anchor-pipeline';
-import { conflictError, serviceUnavailableError } from '../lib/errors';
+import { conflictErrorResponse, unavailableResponse } from '../lib/errors';
 
 const manual = new Hono<{ Bindings: Env }>();
 
 manual.post('/api/anchor/manual', async (c) => {
+  const requestId = generateRequestId();
   const db = createVaultDb(c.env.vault_db);
   const result = await runAnchor(db, c.env, 'operator-manual');
 
@@ -58,14 +59,14 @@ manual.post('/api/anchor/manual', async (c) => {
 
     case 'conflict':
       logWarn('Manual anchor conflict', { trigger_source: 'operator-manual' });
-      return conflictError(result.error.message);
+      return conflictErrorResponse('ANCHOR_RUN_IN_PROGRESS', result.error.message, requestId);
 
     case 'failed':
       logError('Manual anchor failed', {
         error: result.error.message,
         trigger_source: 'operator-manual',
       });
-      return serviceUnavailableError(result.error.message);
+      return unavailableResponse(result.error.message, requestId);
   }
 });
 

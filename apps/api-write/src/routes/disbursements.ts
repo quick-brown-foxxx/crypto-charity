@@ -1,11 +1,9 @@
 import { Hono } from 'hono';
-import type { ZodError } from 'zod';
 import { createVaultDb, appendLedgerEvent } from '@open-care/vault-db';
 import type { VaultDb } from '@open-care/vault-db';
-import { generateBeneficiaryRef, logInfo, logError } from '@open-care/vault-core';
+import { generateBeneficiaryRef, logInfo, logError, generateRequestId } from '@open-care/vault-core';
 import type { DisbursementPayload, LedgerEvent } from '@open-care/vault-core';
 import type { Env } from '../lib/env.js';
-import { generateRequestId } from '../lib/request-id.js';
 import {
   badRequestResponse,
   validationErrorResponse,
@@ -66,7 +64,7 @@ disbursementsRoute.post('/api/disbursements', async (c) => {
   // 2. Validate with Zod schema
   const parseResult = DisbursementRequestSchema.safeParse(rawBody);
   if (!parseResult.success) {
-    return validationErrorResponse(parseResult.error as ZodError, requestId);
+    return validationErrorResponse(parseResult.error, requestId);
   }
 
   const data: DisbursementRequest = parseResult.data;

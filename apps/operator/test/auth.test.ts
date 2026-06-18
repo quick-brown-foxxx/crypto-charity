@@ -16,9 +16,11 @@ describe('Auth middleware', () => {
       body: '{}',
     });
     expect(response.status).toBe(401);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id?: string } }>();
     expect(json.error.code).toBe('UNAUTHORIZED');
     expect(json.error.message).toContain('Missing');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
   });
 
   it('returns 400 when Authorization header does not use Bearer scheme', async () => {
@@ -28,9 +30,11 @@ describe('Auth middleware', () => {
       body: '{}',
     });
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id?: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
     expect(json.error.message).toContain('Bearer');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
   });
 
   it('returns 401 when token is invalid', async () => {
@@ -40,9 +44,11 @@ describe('Auth middleware', () => {
       body: '{}',
     });
     expect(response.status).toBe(401);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id?: string } }>();
     expect(json.error.code).toBe('UNAUTHORIZED');
     expect(json.error.message).toContain('Invalid');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
   });
 
   it('returns 400 when token is empty (Bearer with no token)', async () => {
@@ -54,8 +60,10 @@ describe('Auth middleware', () => {
       body: '{}',
     });
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id?: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
   });
 
   it('allows request with valid token (returns downstream response)', async () => {

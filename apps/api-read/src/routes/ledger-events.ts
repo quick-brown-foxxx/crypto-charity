@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { createVaultDb, getRawEventsPaginated } from '@open-care/vault-db';
+import { generateRequestId } from '@open-care/vault-core';
 import type { RawLedgerEventRow } from '@open-care/vault-db';
 import type { Env } from '../lib/env.js';
 import { withCache } from '../lib/cache.js';
@@ -12,6 +13,7 @@ const DEFAULT_LIMIT = 500;
 const MAX_LIMIT = 1000;
 
 app.get('/api/ledger-events', async (c) => {
+  const requestId = generateRequestId();
   const limit = validateLimit(c.req.query('limit'), DEFAULT_LIMIT, MAX_LIMIT);
   if (limit instanceof Response) return limit;
 
@@ -27,7 +29,7 @@ app.get('/api/ledger-events', async (c) => {
     result = await getRawEventsPaginated(db, options);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown database error';
-    return internalErrorResponse(`Failed to fetch ledger events: ${message}`);
+    return internalErrorResponse(`Failed to fetch ledger events: ${message}`, requestId);
   }
 
   // Return raw rows directly — payload_json is the original stored string,

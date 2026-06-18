@@ -5,6 +5,8 @@ import { corsMiddleware } from './lib/cors';
 import { forwardToService } from './lib/forward';
 import { rateLimitMiddleware } from './lib/rate-limit';
 import { healthRoute } from './routes/health';
+import { errorResponse, unavailableResponse } from './lib/errors.js';
+import { generateRequestId } from '@open-care/vault-core';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -56,16 +58,15 @@ app.post('/tg/internal/send-code', async (c) => {
 // response shapes without mocking service bindings.
 
 // GET /api/forbidden — always returns 403 FORBIDDEN
-app.get('/api/forbidden', (c) => {
-  return c.json({ error: { code: 'FORBIDDEN', message: 'Access denied.' } }, 403);
+app.get('/api/forbidden', () => {
+  const requestId = generateRequestId();
+  return errorResponse('FORBIDDEN', 'Access denied.', 403, requestId);
 });
 
 // GET /api/unavailable — always returns 503 UNAVAILABLE
-app.get('/api/unavailable', (c) => {
-  return c.json(
-    { error: { code: 'UNAVAILABLE', message: 'Service temporarily unavailable.' } },
-    503,
-  );
+app.get('/api/unavailable', () => {
+  const requestId = generateRequestId();
+  return unavailableResponse('Service temporarily unavailable.', requestId);
 });
 
 export default app;

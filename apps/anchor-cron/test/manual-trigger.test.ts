@@ -92,11 +92,13 @@ describe('POST /api/anchor/manual', () => {
       expect(response.status).toBe(409);
 
       const body = (await response.json()) as {
-        error: { code: string; message: string };
+        error: { code: string; message: string; request_id?: string };
       };
       expect(body.error).toBeDefined();
       expect(body.error.code).toBe('ANCHOR_RUN_IN_PROGRESS');
       expect(body.error.message).toBe('Another anchor run is in progress');
+      expect(body.error.request_id).toBeDefined();
+      expect(typeof body.error.request_id).toBe('string');
     });
 
     it('returns correct Content-Type for error responses', async () => {

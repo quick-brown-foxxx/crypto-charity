@@ -13,4 +13,14 @@ export { buildAnchorMemo, parseAnchorMemo } from './anchor-memo.js';
 export { computeEventHash, verifyChain, ZERO_HASH } from './hash-chain.js';
 export { log, logInfo, logWarn, logError, redact, generateRequestId } from './logging.js';
 export type { LogEntry } from './logging.js';
+export {
+  errorResponse,
+  badRequestResponse,
+  internalErrorResponse,
+  unauthorizedResponse,
+  unavailableResponse,
+  conflictErrorResponse,
+  validationErrorResponse,
+} from './lib/errors.js';
+export type { ErrorResponseBody } from './lib/errors.js';
 export { constantTimeEqual } from './lib/constant-time.js';

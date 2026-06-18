@@ -305,9 +305,11 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(404);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('HANDLE_NOT_FOUND');
     expect(json.error.message).toContain('non-existent-opaque-id');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
   });
 
   // -- Error: conversation not owned ----------------------------------------
@@ -341,8 +343,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response2.status).toBe(403);
-    const json = await response2.json<{ error: { code: string; message: string } }>();
+    const json = await response2.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('CONVERSATION_NOT_OWNED');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
   });
 
   // -- Error: already delivered ----------------------------------------------
@@ -367,8 +371,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(409);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('ALREADY_DELIVERED');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
   });
 
   // -- Error: Telegram delivery failure -------------------------------------
@@ -388,8 +394,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(503);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('TELEGRAM_DELIVERY_FAILED');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
 
     // Verify conversation was marked as failed with TTL blob
     const db = createBotDb(env.bot_db);
@@ -412,8 +420,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.message).toContain('opaque_id');
   });
 
@@ -425,8 +435,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.message).toContain('opaque_id');
   });
 
@@ -437,8 +449,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.message).toContain('code');
   });
 
@@ -450,8 +464,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.message).toContain('code');
   });
 
@@ -462,8 +478,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.message).toContain('conversation_id');
   });
 
@@ -475,8 +493,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.message).toContain('conversation_id');
   });
 
@@ -488,8 +508,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.message).toContain('conversation_id');
   });
 
@@ -501,8 +523,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.message).toContain('conversation_id');
   });
 
@@ -514,8 +538,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.message).toContain('conversation_id');
   });
 
@@ -528,8 +554,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.message).toContain('beneficiary');
   });
 
@@ -542,8 +570,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.message).toContain('public_beneficiary_ref');
   });
 
@@ -555,8 +585,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.message).toContain('JSON');
   });
 
@@ -568,8 +600,10 @@ describe('POST /tg/internal/send-code', () => {
     });
 
     expect(response.status).toBe(400);
-    const json = await response.json<{ error: { code: string; message: string } }>();
+    const json = await response.json<{ error: { code: string; message: string; request_id: string } }>();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.message).toContain('object');
   });
 

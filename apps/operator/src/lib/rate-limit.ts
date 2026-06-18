@@ -1,4 +1,6 @@
 import type { Context, Next } from 'hono';
+import { errorResponse } from './errors.js';
+import { generateRequestId } from '@open-care/vault-core';
 
 /**
  * In-memory rate limiter for the operator Worker.
@@ -75,18 +77,15 @@ export function rateLimitMiddleware(
 
     if (entry.count > maxRequests) {
       const retryAfter = Math.ceil((entry.windowStart + windowMs - now) / 1000);
-      return c.json(
-        {
-          error: {
-            code: 'RATE_LIMITED',
-            message: `Too many requests. Try again in ${retryAfter} seconds.`,
-          },
-        },
+      const requestId = generateRequestId();
+      const resp = errorResponse(
+        'RATE_LIMITED',
+        `Too many requests. Try again in ${retryAfter} seconds.`,
         429,
-        {
-          'Retry-After': String(retryAfter),
-        },
+        requestId,
       );
+      resp.headers.set('Retry-After', String(retryAfter));
+      return resp;
     }
 
     await next();

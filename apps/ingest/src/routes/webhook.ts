@@ -4,7 +4,7 @@ import { authMiddleware } from '../lib/auth.js';
 import { badRequestResponse } from '../lib/errors.js';
 import { insertIntoInbox, processInbox, nowIso } from '../lib/inbox.js';
 import { createVaultDb } from '@open-care/vault-db';
-import { logInfo } from '@open-care/vault-core';
+import { logInfo, generateRequestId } from '@open-care/vault-core';
 
 const webhookRoute = new Hono<HonoEnv>();
 
@@ -13,6 +13,7 @@ webhookRoute.use('*', authMiddleware);
 
 // POST / — the actual webhook handler (mounted at /webhook/helius in index.ts)
 webhookRoute.post('/', async (c) => {
+  const requestId = generateRequestId();
   const db = createVaultDb(c.env.vault_db);
 
   // Parse body
@@ -20,12 +21,12 @@ webhookRoute.post('/', async (c) => {
   try {
     body = await c.req.json();
   } catch {
-    return badRequestResponse('Invalid JSON body');
+    return badRequestResponse('Invalid JSON body', requestId);
   }
 
   // Validate it's an array
   if (!Array.isArray(body)) {
-    return badRequestResponse('Body must be a JSON array of webhook events');
+    return badRequestResponse('Body must be a JSON array of webhook events', requestId);
   }
 
   // Extract entries for inbox
@@ -38,7 +39,7 @@ webhookRoute.post('/', async (c) => {
       event === null ||
       typeof (event as Record<string, unknown>).signature !== 'string'
     ) {
-      return badRequestResponse('Each webhook event must have a string "signature" field');
+      return badRequestResponse('Each webhook event must have a string "signature" field', requestId);
     }
     entries.push({
       signature: (event as { signature: string }).signature,

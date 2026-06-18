@@ -1,9 +1,9 @@
 import type { Context } from 'hono';
 import type { BotDb } from '@open-care/vault-db';
-import { isValidBeneficiaryRef, logInfo, logError } from '@open-care/vault-core';
+import { isValidBeneficiaryRef, logInfo, logError, generateRequestId } from '@open-care/vault-core';
 import { deliverCode } from '../../lib/code-delivery.js';
 import type { SendCodeInput } from '../../lib/code-delivery.js';
-import { errorResponse } from '../../lib/errors.js';
+import { errorResponse, badRequestResponse, internalErrorResponse } from '../../lib/errors.js';
 import { janitorExpiredCodeBlobs } from '../../lib/janitor.js';
 
 /**
@@ -42,6 +42,8 @@ export async function sendCodeHandler(
   encKey: CryptoKey,
   botToken: string,
 ): Promise<Response> {
+  const requestId = generateRequestId();
+
   // Clean up expired encrypted code blobs before processing
   c.executionCtx.waitUntil(janitorExpiredCodeBlobs(db));
 
@@ -50,11 +52,11 @@ export async function sendCodeHandler(
   try {
     body = await c.req.json();
   } catch {
-    return errorResponse(c, 400, 'BAD_REQUEST', 'Request body must be valid JSON');
+    return badRequestResponse('Request body must be valid JSON', requestId);
   }
 
   if (body === null || typeof body !== 'object') {
-    return errorResponse(c, 400, 'BAD_REQUEST', 'Request body must be a JSON object');
+    return badRequestResponse('Request body must be a JSON object', requestId);
   }
 
   const obj = body as Record<string, unknown>;
@@ -62,18 +64,16 @@ export async function sendCodeHandler(
   // Validate opaque_id
   const opaqueId = obj.opaque_id;
   if (typeof opaqueId !== 'string' || opaqueId.length === 0) {
-    return errorResponse(
-      c,
-      400,
-      'BAD_REQUEST',
+    return badRequestResponse(
       'opaque_id is required and must be a non-empty string',
+      requestId,
     );
   }
 
   // Validate code
   const code = obj.code;
   if (typeof code !== 'string' || code.length === 0) {
-    return errorResponse(c, 400, 'BAD_REQUEST', 'code is required and must be a non-empty string');
+    return badRequestResponse('code is required and must be a non-empty string', requestId);
   }
 
   // Validate conversation_id
@@ -83,11 +83,9 @@ export async function sendCodeHandler(
     !Number.isInteger(conversationId) ||
     conversationId < 1
   ) {
-    return errorResponse(
-      c,
-      400,
-      'BAD_REQUEST',
+    return badRequestResponse(
       'conversation_id is required and must be a positive integer',
+      requestId,
     );
   }
 
@@ -96,19 +94,15 @@ export async function sendCodeHandler(
   let beneficiaryRef: string | null = null;
   if (publicBeneficiaryRef !== undefined && publicBeneficiaryRef !== null) {
     if (typeof publicBeneficiaryRef !== 'string') {
-      return errorResponse(
-        c,
-        400,
-        'BAD_REQUEST',
+      return badRequestResponse(
         'public_beneficiary_ref must be a string or null',
+        requestId,
       );
     }
     if (!isValidBeneficiaryRef(publicBeneficiaryRef)) {
-      return errorResponse(
-        c,
-        400,
-        'BAD_REQUEST',
+      return badRequestResponse(
         'public_beneficiary_ref is not a valid beneficiary reference',
+        requestId,
       );
     }
     beneficiaryRef = publicBeneficiaryRef;
@@ -132,18 +126,18 @@ export async function sendCodeHandler(
     });
     switch (err.code) {
       case 'HANDLE_NOT_FOUND':
-        return errorResponse(c, 404, err.code, err.message);
+        return errorResponse(err.code, err.message, 404, requestId);
       case 'CONVERSATION_NOT_OWNED':
-        return errorResponse(c, 403, err.code, err.message);
+        return errorResponse(err.code, err.message, 403, requestId);
       case 'ALREADY_DELIVERED':
-        return errorResponse(c, 409, err.code, err.message);
+        return errorResponse(err.code, err.message, 409, requestId);
       case 'TELEGRAM_DELIVERY_FAILED':
-        return errorResponse(c, 503, err.code, err.message);
+        return errorResponse(err.code, err.message, 503, requestId);
       case 'DECRYPT_FAILED':
         // Internal error — don't leak details
-        return errorResponse(c, 500, 'INTERNAL_ERROR', 'Failed to process delivery');
+        return internalErrorResponse('Failed to process delivery', requestId);
       default:
-        return errorResponse(c, 500, 'INTERNAL_ERROR', 'Unexpected error');
+        return internalErrorResponse('Unexpected error', requestId);
     }
   }
 

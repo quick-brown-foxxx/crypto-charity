@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { createVaultDb, getTotals, getLatestAnchor } from '@open-care/vault-db';
+import { generateRequestId } from '@open-care/vault-core';
 import type { Env } from '../lib/env.js';
 import { withCache } from '../lib/cache.js';
 import { internalErrorResponse } from '../lib/errors.js';
@@ -35,6 +36,7 @@ function isAnchorWalletLowSol(
 // ---------------------------------------------------------------------------
 
 app.get('/api/totals', async (c) => {
+  const requestId = generateRequestId();
   const db = createVaultDb(c.env.vault_db);
 
   let totals;
@@ -42,7 +44,7 @@ app.get('/api/totals', async (c) => {
     totals = await getTotals(db);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown database error';
-    return internalErrorResponse(`Failed to fetch totals: ${message}`);
+    return internalErrorResponse(`Failed to fetch totals: ${message}`, requestId);
   }
 
   const totalIn = BigInt(totals.total_donations_usdc_minor);

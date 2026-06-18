@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { sql } from 'drizzle-orm';
 import { createVaultDb, getHead, getLatestAnchor, getDonations } from '@open-care/vault-db';
+import { generateRequestId } from '@open-care/vault-core';
 import type { Env } from '../lib/env.js';
 import { withCache } from '../lib/cache.js';
 import { unavailableResponse } from '../lib/errors.js';
@@ -48,6 +49,7 @@ function isAnchorWalletLowSol(
 // ---------------------------------------------------------------------------
 
 app.get('/api/health', async (c) => {
+  const requestId = generateRequestId();
   const startTime = Date.now();
   const db = createVaultDb(c.env.vault_db);
 
@@ -64,7 +66,7 @@ app.get('/api/health', async (c) => {
     dbReachable = true;
   } catch {
     // D1 is unreachable — all other checks will also fail, return 503 early.
-    return unavailableResponse('Database unreachable');
+    return unavailableResponse('Database unreachable', requestId);
   }
 
   // --- anchor_stale ---

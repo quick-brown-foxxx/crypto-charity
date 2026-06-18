@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { createVaultDb, getDonations } from '@open-care/vault-db';
+import { generateRequestId } from '@open-care/vault-core';
 import type { Env } from '../lib/env.js';
 import { withCache } from '../lib/cache.js';
 import { internalErrorResponse } from '../lib/errors.js';
@@ -11,6 +12,7 @@ const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
 
 app.get('/api/donations', async (c) => {
+  const requestId = generateRequestId();
   const limit = validateLimit(c.req.query('limit'), DEFAULT_LIMIT, MAX_LIMIT);
   if (limit instanceof Response) return limit;
 
@@ -26,7 +28,7 @@ app.get('/api/donations', async (c) => {
     result = await getDonations(db, options);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown database error';
-    return internalErrorResponse(`Failed to fetch donations: ${message}`);
+    return internalErrorResponse(`Failed to fetch donations: ${message}`, requestId);
   }
 
   withCache(c);

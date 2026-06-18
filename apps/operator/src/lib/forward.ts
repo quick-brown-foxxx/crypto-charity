@@ -1,5 +1,5 @@
-import { errorResponse } from './errors';
-import { logInfo, logError } from '@open-care/vault-core';
+import { unavailableResponse } from './errors';
+import { logInfo, logError, generateRequestId } from '@open-care/vault-core';
 
 /**
  * Forward a request to a downstream Worker via service binding.
@@ -23,6 +23,7 @@ export async function forwardToService(fetcher: Fetcher, request: Request): Prom
     logError('Service forward failed', {
       path: new URL(request.url).pathname,
     });
-    return errorResponse('UNAVAILABLE', 'Downstream service unreachable.', 503);
+    const requestId = generateRequestId();
+    return unavailableResponse('Downstream service unreachable.', requestId);
   }
 }

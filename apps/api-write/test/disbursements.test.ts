@@ -92,6 +92,8 @@ describe('POST /api/disbursements', () => {
 
     const json = await response.json();
     expect(json.error.code).toBe('VALIDATION_ERROR');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
     expect(json.error.details.field_errors).toHaveProperty('public_beneficiary_ref');
   });
 
@@ -105,6 +107,8 @@ describe('POST /api/disbursements', () => {
 
     const json = await response.json();
     expect(json.error.code).toBe('VALIDATION_ERROR');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
 
     const fieldErrors = json.error.details.field_errors;
     // At minimum, amount_usdc_minor, gift_card_count, service, receipt_ref,
@@ -193,6 +197,8 @@ describe('POST /api/disbursements', () => {
 
     const json = await response.json();
     expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
   });
 
   // ------------------------------------------------------------------
