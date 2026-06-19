@@ -100,5 +100,6 @@ independently.
 - 401 responses auto-clear the token; 403 responses do not
 - SSR data loading via `+page.ts` for landing, ledger, and verify pages
 - All API responses validated against Valibot schemas before use
+- `/admin/bot` treats `conversation_id` as the numeric internal bot conversation ID and sends it unchanged to `/tg/internal/send-code`
 - Code input on `/admin/bot` is cleared on component destroy
 - `prefers-reduced-motion` respected in CSS animations

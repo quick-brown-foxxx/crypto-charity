@@ -169,7 +169,7 @@ export interface DisbursementBody {
 export interface SendCodeBody {
   opaque_id: string;
   code: string;
-  conversation_id: string;
+  conversation_id: number;
   public_beneficiary_ref?: string | null;
 }
 

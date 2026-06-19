@@ -54,7 +54,7 @@ export type AnchorManualResponse = v.InferOutput<typeof AnchorManualResponseSche
 
 export const PendingRequestSchema = v.object({
   opaque_id: v.string(),
-  conversation_id: v.string(),
+  conversation_id: v.pipe(v.number(), v.integer(), v.minValue(1)),
   internal_handle: v.nullable(v.string()),
   request_status: v.string(),
   created_at_utc: timestamp,

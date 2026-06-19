@@ -334,7 +334,7 @@ test.describe('Admin pages', () => {
   }) => {
     const pendingRequest = {
       opaque_id: 'opaque_test_request_1',
-      conversation_id: 'conversation_test_1',
+      conversation_id: 12345,
       internal_handle: 'beneficiary-telegram',
       request_status: 'pending',
       created_at_utc: '2026-06-19T10:00:00Z',
