@@ -44,11 +44,12 @@ Operator sends code → vault-operator → tg-bot → Telegram delivery
 
 ### Shared packages
 
-| Package                 | Role                                                                                                                                                               | Consumers                                        |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| `@open-care/vault-core` | Domain foundation: 4 event types, Zod schemas, RFC 8785 canonical JSON, SHA-256 hash chain, Solana anchor memo, beneficiary refs, structured logging, Result type. | All 6 Workers, vault-db, bot-crypto, seed tool   |
-| `@open-care/vault-db`   | Database layer: Drizzle schemas for vault-db (4 tables) and bot-db (2 tables), client factories, ledger append helper, query helpers, public API types.            | ingest, api-read, api-write, anchor-cron, tg-bot |
-| `@open-care/bot-crypto` | Telegram crypto: HMAC-SHA256 user ref derivation, AES-GCM chat ID encryption/decryption, base64url.                                                                | tg-bot only                                      |
+| Package                   | Role                                                                                                                                                               | Consumers                                                                               |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `@open-care/vault-core`   | Domain foundation: 4 event types, Zod schemas, RFC 8785 canonical JSON, SHA-256 hash chain, Solana anchor memo, beneficiary refs, structured logging, Result type. | All 6 Workers, vault-db, bot-crypto, seed tool                                          |
+| `@open-care/vault-db`     | Database layer: Drizzle schemas for vault-db (4 tables) and bot-db (2 tables), client factories, ledger append helper, query helpers, public API types.            | ingest, api-read, api-write, anchor-cron, tg-bot                                        |
+| `@open-care/bot-crypto`   | Telegram crypto: HMAC-SHA256 user ref derivation, AES-GCM chat ID encryption/decryption, base64url.                                                                | tg-bot only                                                                             |
+| `@open-care/api-contract` | Type-only API response/request contracts shared across Workers and frontend schema checks; no runtime validation code.                                             | api-read, api-write, anchor-cron, operator, tg-bot, web; ingest tests use shared errors |
 
 ### Databases
 
