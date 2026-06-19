@@ -19,7 +19,7 @@ describe('429 RATE_LIMITED', () => {
       headers: { ...authHeader(), ...ip, 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount_usdc_minor: '50000000' }),
     });
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(200);
   });
 
   it('allows 10 requests (at the limit)', async () => {
@@ -31,7 +31,7 @@ describe('429 RATE_LIMITED', () => {
         headers: { ...authHeader(), ...ip, 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount_usdc_minor: '50000000' }),
       });
-      expect(response.status).toBe(201);
+      expect(response.status).toBe(200);
     }
   });
 
@@ -116,7 +116,7 @@ describe('429 RATE_LIMITED', () => {
       headers: { ...authHeader(), ...ipB, 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount_usdc_minor: '50000000' }),
     });
-    expect(responseB.status).toBe(201);
+    expect(responseB.status).toBe(200);
   });
 
   it('rate limits apply to /api/corrections', async () => {

@@ -140,6 +140,9 @@ importers:
 
   apps/ingest:
     dependencies:
+      '@open-care/api-contract':
+        specifier: workspace:*
+        version: link:../../packages/api-contract
       '@open-care/vault-core':
         specifier: workspace:*
         version: link:../../packages/vault-core

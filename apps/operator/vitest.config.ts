@@ -46,24 +46,46 @@ export default defineConfig({
             },
           },
           VAULT_API_WRITE: async (request: Request) => {
+            const url = new URL(request.url);
+            const path = url.pathname;
+            const operatorTestMode = url.searchParams.get('__operator_test');
             const body = await request
               .clone()
               .json()
               .catch(() => ({}));
-            return new Response(
-              JSON.stringify({
-                sequence_no: 1,
-                event_hash: 'a'.repeat(64),
-                head_hash: 'a'.repeat(64),
-                public_beneficiary_ref: 'benpub_MOCK1234567890',
-                next_action: 'send_code_to_beneficiary_via_bot',
-                forwarded_body: body, // So tests can verify forwarding
-              }),
-              { status: 201, headers: { 'Content-Type': 'application/json' } },
-            );
+            const bodyRecord = body as Record<string, unknown>;
+            if (path.includes('corrections')) {
+              return new Response(
+                JSON.stringify({
+                  sequence_no: 2,
+                  event_hash: 'b'.repeat(64),
+                  head_hash: 'b'.repeat(64),
+                  corrects_sequence_no:
+                    typeof bodyRecord.corrects_sequence_no === 'number'
+                      ? bodyRecord.corrects_sequence_no
+                      : 1,
+                }),
+                { status: 200, headers: { 'Content-Type': 'application/json' } },
+              );
+            }
+            const disbursementResponse: Record<string, unknown> = {
+              sequence_no: 1,
+              event_hash: 'a'.repeat(64),
+              head_hash: 'a'.repeat(64),
+              public_beneficiary_ref:
+                bodyRecord.public_beneficiary_ref === null ? null : 'benpub_MOCK1234567890',
+              next_action: 'send_code_to_beneficiary_via_bot',
+            };
+            if (operatorTestMode === 'echo-body') {
+              disbursementResponse.forwarded_body = body;
+            }
+            return new Response(JSON.stringify(disbursementResponse), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            });
           },
           VAULT_ANCHOR_CRON: () => {
-            return new Response(JSON.stringify({ status: 'ok', signature: 'mock_sig' }), {
+            return new Response(JSON.stringify({ status: 'empty_ledger', duration_ms: 42 }), {
               status: 200,
               headers: { 'Content-Type': 'application/json' },
             });
@@ -72,13 +94,13 @@ export default defineConfig({
             const url = new URL(request.url);
             const path = url.pathname;
             if (path.includes('pending-requests')) {
-              return new Response(JSON.stringify({ requests: [], count: 0 }), {
+              return new Response(JSON.stringify({ items: [], next_cursor: null }), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' },
               });
             }
             if (path.includes('send-code')) {
-              return new Response(JSON.stringify({ ok: true, sent: true }), {
+              return new Response(JSON.stringify({ delivered_at_utc: '2026-06-14T10:23:00Z' }), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' },
               });

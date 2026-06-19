@@ -15,7 +15,7 @@ describe('CORS middleware', () => {
       headers: { ...authHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount_usdc_minor: '50000000' }),
     });
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(200);
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe(SITE_URL);
     expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
     expect(response.headers.get('Access-Control-Allow-Headers')).toContain('Authorization');

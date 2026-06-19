@@ -83,7 +83,7 @@ describe('Auth middleware', () => {
       },
       body: JSON.stringify({ amount_usdc_minor: '50000000' }),
     });
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(200);
     const json = await response.json<{ sequence_no: number }>();
     expect(json.sequence_no).toBe(1);
   });
@@ -95,7 +95,7 @@ describe('Auth middleware', () => {
     });
     expect(response.status).toBe(200);
     const json = await response.json<{ status: string }>();
-    expect(json.status).toBe('ok');
+    expect(json.status).toBe('empty_ledger');
   });
 
   it('applies auth to /tg/internal/pending-requests', async () => {
@@ -107,8 +107,9 @@ describe('Auth middleware', () => {
       },
     );
     expect(response.status).toBe(200);
-    const json = await response.json<{ requests: unknown }>();
-    expect(json).toHaveProperty('requests');
+    const json = await response.json<{ items: unknown[]; next_cursor: string | null }>();
+    expect(json.items).toEqual([]);
+    expect(json.next_cursor).toBeNull();
   });
 
   it('applies auth to /tg/internal/send-code', async () => {
@@ -118,7 +119,7 @@ describe('Auth middleware', () => {
       body: JSON.stringify({ beneficiary_ref: 'benpub_TEST1234567890' }),
     });
     expect(response.status).toBe(200);
-    const json = await response.json<{ ok: boolean }>();
-    expect(json.ok).toBe(true);
+    const json = await response.json<{ delivered_at_utc: string }>();
+    expect(json.delivered_at_utc).toBe('2026-06-14T10:23:00Z');
   });
 });

@@ -5,5 +5,9 @@
     "noEmit": true
   },
   "include": ["src", "vitest.config.ts"],
-  "references": [{ "path": "../../packages/vault-core" }, { "path": "../../packages/vault-db" }]
+  "references": [
+    { "path": "../../packages/api-contract" },
+    { "path": "../../packages/vault-core" },
+    { "path": "../../packages/vault-db" }
+  ]
 }
