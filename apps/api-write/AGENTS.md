@@ -16,7 +16,7 @@ operator.
 | Method | Path                 | Purpose                                                                                                                                                            |
 | ------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | POST   | `/api/disbursements` | Record a gift-card disbursement. Validates body, generates `benpub_` ref if omitted, appends `disbursement_recorded` to ledger.                                    |
-| POST   | `/api/corrections`   | Record a correction to a previous disbursement event. Validates body, requires the target to be `disbursement_recorded`, enforces replacement field whitelist (`receipt_ref`, `service_note` only), appends `correction_recorded`. |
+| POST   | `/api/corrections`   | Record a correction to a previous disbursement event. Validates body, requires the target to be `disbursement_recorded`, requires at least one replacement field, enforces replacement field whitelist (`receipt_ref`, `service_note` only), appends `correction_recorded`. |
 | GET    | `/health`            | Liveness check.                                                                                                                                                    |
 
 All routes are internal-only (no public route in `wrangler.jsonc`).
@@ -60,7 +60,7 @@ All routes are internal-only (no public route in `wrangler.jsonc`).
 
 - No auth middleware — trusts upstream `vault-operator` (in-process service binding, not publicly routable)
 - `service_note` required when `service === "Other"`, must be null for known services (`Alter`, `Yasno`, `Zigmund`)
-- Correction whitelist: only `receipt_ref` and `service_note` can be replaced. Defense-in-depth: Zod `.strict()` + runtime check.
+- Correction whitelist: at least one of `receipt_ref` or `service_note` is required, and no other fields can be replaced. Defense-in-depth: Zod `.strict()` + runtime check.
 - `corrects_sequence_no` must be strictly less than current head
 - `corrects_sequence_no` must reference an existing `disbursement_recorded` event; donation, anchor, and correction events are not valid correction targets.
 - Every append goes through `appendLedgerEvent` from vault-db — hash chain integrity enforced at write time

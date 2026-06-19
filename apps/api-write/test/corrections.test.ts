@@ -180,6 +180,20 @@ async function expectCorrectionTargetRejected(response: Response): Promise<void>
   expect(json.error.details.field_errors).toHaveProperty('corrects_sequence_no');
 }
 
+async function getCorrectionPayloadBySequenceNo(
+  db: VaultDb,
+  sequenceNo: number,
+): Promise<CorrectionPayload> {
+  const rawPage = await getRawEventsPaginated(db, { cursor: sequenceNo - 1, limit: 1 });
+  const event = rawPage.items[0];
+
+  expect(event).toBeDefined();
+  expect(event!.sequence_no).toBe(sequenceNo);
+  expect(event!.event_type).toBe('correction_recorded');
+
+  return JSON.parse(event!.payload_json) as CorrectionPayload;
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -217,7 +231,115 @@ describe('POST /api/corrections', () => {
   });
 
   // ------------------------------------------------------------------
-  // 2. Non-disbursement correction targets → 422
+  // 2. service_note replacement fields → 200
+  // ------------------------------------------------------------------
+
+  /*
+  Scenario: Service-note-only correction succeeds
+    Given an existing disbursement with an original service note
+    When the operator submits a correction with only `service_note: "Updated note"`
+    Then the API returns 200
+    And a correction ledger event is appended showing the replacement service note.
+  */
+  it('returns 200 and appends a correction event for service_note-only replacement', async () => {
+    const targetSeqNo = await seedDisbursement(db, {
+      service: 'Other',
+      service_note: 'Original note',
+      receipt_ref: 'ALTER-2026-06-14-SVC-ORIG',
+    });
+    await seedDisbursement(db, { receipt_ref: 'ALTER-2026-06-14-SVC-BUMP' });
+
+    const response = await post(
+      validCorrectionBody({
+        corrects_sequence_no: targetSeqNo,
+        replacement_fields: {
+          service_note: 'Updated note',
+        },
+        reason: 'Updated service note',
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const json = await responseJson<CorrectionSuccessJson>(response);
+    expect(json.corrects_sequence_no).toBe(targetSeqNo);
+
+    const payload = await getCorrectionPayloadBySequenceNo(db, json.sequence_no);
+    expect(payload.corrects_sequence_no).toBe(targetSeqNo);
+    expect(payload.replacement_fields).toEqual({
+      service_note: 'Updated note',
+    });
+  });
+
+  /*
+  Scenario: Receipt reference and service note correction succeeds
+    Given an existing disbursement with original receipt ref and service note
+    When the operator submits a correction with `receipt_ref: "NEW-REF"` and `service_note: "Updated note"`
+    Then the API returns 200
+    And the correction event records both replacement fields.
+  */
+  it('returns 200 and appends a correction event for receipt_ref and service_note replacement', async () => {
+    const targetSeqNo = await seedDisbursement(db, {
+      service: 'Other',
+      service_note: 'Original note',
+      receipt_ref: 'ALTER-2026-06-14-BOTH-ORIG',
+    });
+    await seedDisbursement(db, { receipt_ref: 'ALTER-2026-06-14-BOTH-BUMP' });
+
+    const response = await post(
+      validCorrectionBody({
+        corrects_sequence_no: targetSeqNo,
+        replacement_fields: {
+          receipt_ref: 'NEW-REF',
+          service_note: 'Updated note',
+        },
+        reason: 'Updated receipt reference and service note',
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const json = await responseJson<CorrectionSuccessJson>(response);
+    expect(json.corrects_sequence_no).toBe(targetSeqNo);
+
+    const payload = await getCorrectionPayloadBySequenceNo(db, json.sequence_no);
+    expect(payload.corrects_sequence_no).toBe(targetSeqNo);
+    expect(payload.replacement_fields).toEqual({
+      receipt_ref: 'NEW-REF',
+      service_note: 'Updated note',
+    });
+  });
+
+  /*
+  Scenario: Empty replacement_fields is rejected
+    Given an existing disbursement
+    When the operator submits a correction with `replacement_fields: {}`
+    Then the API returns 422 with the existing validation error shape
+    And no correction event is appended.
+  */
+  it('returns 422 and does not append a correction event when replacement_fields is empty', async () => {
+    const headBefore = await getHead(db);
+    expect(headBefore).not.toBeNull();
+
+    const response = await post(
+      validCorrectionBody({
+        replacement_fields: {},
+      }),
+    );
+
+    expect(response.status).toBe(422);
+
+    const json = await responseJson<ValidationErrorJson>(response);
+    expect(json.error.code).toBe('VALIDATION_ERROR');
+    expect(json.error.request_id).toBeDefined();
+    expect(typeof json.error.request_id).toBe('string');
+    expect(json.error.details.field_errors).toHaveProperty('replacement_fields');
+
+    const headAfter = await getHead(db);
+    expect(headAfter!.sequence_no).toBe(headBefore!.sequence_no);
+    expect(headAfter!.event_hash).toBe(headBefore!.event_hash);
+  });
+
+  // ------------------------------------------------------------------
+  // 3. Non-disbursement correction targets → 422
   // ------------------------------------------------------------------
 
   it('returns 422 when corrects_sequence_no targets a donation_confirmed event', async () => {
@@ -248,7 +370,7 @@ describe('POST /api/corrections', () => {
   });
 
   // ------------------------------------------------------------------
-  // 3. corrects_sequence_no >= current head → 422
+  // 4. corrects_sequence_no >= current head → 422
   // ------------------------------------------------------------------
 
   it('returns 422 when corrects_sequence_no equals current head', async () => {
@@ -281,7 +403,7 @@ describe('POST /api/corrections', () => {
   });
 
   // ------------------------------------------------------------------
-  // 4. replacement_fields with amount_usdc_minor → 422 (whitelist rejection)
+  // 5. replacement_fields with amount_usdc_minor → 422 (whitelist rejection)
   // ------------------------------------------------------------------
 
   it('returns 422 when replacement_fields contains amount_usdc_minor', async () => {
@@ -304,7 +426,7 @@ describe('POST /api/corrections', () => {
   });
 
   // ------------------------------------------------------------------
-  // 5. replacement_fields with gift_card_count → 422 (whitelist rejection)
+  // 6. replacement_fields with gift_card_count → 422 (whitelist rejection)
   // ------------------------------------------------------------------
 
   it('returns 422 when replacement_fields contains gift_card_count', async () => {
@@ -326,7 +448,7 @@ describe('POST /api/corrections', () => {
   });
 
   // ------------------------------------------------------------------
-  // 6. replacement_fields with unknown key → 422 (whitelist rejection)
+  // 7. replacement_fields with unknown key → 422 (whitelist rejection)
   // ------------------------------------------------------------------
 
   it('returns 422 when replacement_fields contains an unknown key', async () => {
@@ -348,7 +470,7 @@ describe('POST /api/corrections', () => {
   });
 
   // ------------------------------------------------------------------
-  // 7. Missing reason → 422
+  // 8. Missing reason → 422
   // ------------------------------------------------------------------
 
   it('returns 422 when reason is missing', async () => {
@@ -366,7 +488,7 @@ describe('POST /api/corrections', () => {
   });
 
   // ------------------------------------------------------------------
-  // 8. Bivalent: original event's payload_json unchanged after correction
+  // 9. Bivalent: original event's payload_json unchanged after correction
   // ------------------------------------------------------------------
 
   it('preserves original event payload_json byte-for-byte after correction', async () => {

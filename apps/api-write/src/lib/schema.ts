@@ -74,13 +74,18 @@ export const DisbursementRequestSchema = z
 
 export type DisbursementRequest = z.infer<typeof DisbursementRequestSchema>;
 
+const CorrectionReplacementFieldsSchema = ReplacementFieldsSchema.refine(
+  (fields) => Object.keys(fields).length > 0,
+  'At least one replacement field is required',
+);
+
 /**
  * Zod schema for the POST /api/corrections request body.
  *
  * The request body contains:
  * - `corrects_sequence_no`: integer, positive (must be < current head, validated at runtime)
- * - `replacement_fields`: object with ONLY `receipt_ref` (optional string) and
- *   `service_note` (optional string) — closed whitelist, reject any other keys
+ * - `replacement_fields`: object with at least one of `receipt_ref` and
+ *   `service_note` — closed whitelist, reject any other keys
  * - `reason`: required non-empty string, max 256 chars
  *
  * Uses `.strict()` to reject unknown fields.
@@ -88,7 +93,7 @@ export type DisbursementRequest = z.infer<typeof DisbursementRequestSchema>;
 export const CorrectionRequestSchema = z
   .object({
     corrects_sequence_no: z.number().int().positive('Must be a positive integer'),
-    replacement_fields: ReplacementFieldsSchema,
+    replacement_fields: CorrectionReplacementFieldsSchema,
     reason: z
       .string()
       .min(1, 'Reason is required')
