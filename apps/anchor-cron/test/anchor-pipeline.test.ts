@@ -351,31 +351,76 @@ describe('Anchor Cron Worker', () => {
       expect(runRows[0].trigger_source).toBe('operator-manual');
     });
 
-    it('appends an anchor_published ledger event', async () => {
-      const { hash } = await seedLedgerEvent(db);
+    it('appends an anchor_published ledger event for the pre-anchor head', async () => {
+      /*
+      Scenario: Anchor memo commits to the ledger head before the anchor event exists
+        Given the ledger already has multiple events and its head hash is H1
+        When the anchor pipeline publishes an anchor
+        Then the persisted memo text contains H1
+        And the new ledger head H2 is the persisted anchor_published event hash
+        And H2 differs from H1 so the anchor event is not covered by its own memo
+      */
+      const firstSeededEvent = await seedLedgerEvent(db);
+      const secondSeededEvent = await seedLedgerEvent(db);
+      const preAnchorHead = await getHead(db);
+      expect(preAnchorHead).not.toBeNull();
+      expect(preAnchorHead!.event_hash).toBe(secondSeededEvent.hash);
+      expect(preAnchorHead!.event_hash).not.toBe(firstSeededEvent.hash);
 
       const response = await SELF.fetch(postManual());
       expect(response.status).toBe(200);
       const body = (await response.json()) as {
         status: string;
+        anchored_head_hash: string;
+        memo_text: string;
         tx_signature: string;
+        anchor_runs_id: number;
       };
       expect(body.status).toBe('published');
+      expect(body.anchored_head_hash).toBe(preAnchorHead!.event_hash);
+      expect(body.memo_text).toBe(`ccv-anchor:${preAnchorHead!.event_hash}`);
 
-      // Query ledger_events for the anchor_published event
       const result = await getEventsPaginated(db, {
         eventType: 'anchor_published',
         limit: 1,
       });
       expect(result.items.length).toBe(1);
       const anchorEvent = result.items[0];
+      if (!anchorEvent) {
+        throw new Error('Expected anchor_published event');
+      }
       expect(anchorEvent.event_type).toBe('anchor_published');
-      const payload = anchorEvent.payload as Record<string, unknown>;
-      expect(payload.anchored_head_hash).toBe(hash);
-      expect(payload.tx_signature).toBe(body.tx_signature);
-      expect(payload.cluster).toBe('devnet');
-      expect(payload.anchor_wallet_address).toBeDefined();
-      expect(payload.published_at_utc).toBeDefined();
+      expect(anchorEvent.prev_hash).toBe(preAnchorHead!.event_hash);
+      expect(anchorEvent.event_hash).not.toBe(preAnchorHead!.event_hash);
+      expect(anchorEvent.event_hash).toBe(await computeEventHash(anchorEvent));
+
+      expect(isAnchorPayload(anchorEvent.payload)).toBe(true);
+      if (!isAnchorPayload(anchorEvent.payload)) {
+        throw new Error('Expected anchor_published payload');
+      }
+      expect(anchorEvent.payload.anchored_head_hash).toBe(preAnchorHead!.event_hash);
+      expect(anchorEvent.payload.memo_text).toBe(`ccv-anchor:${preAnchorHead!.event_hash}`);
+      expect(anchorEvent.payload.memo_text).not.toContain(anchorEvent.event_hash);
+      expect(anchorEvent.payload.tx_signature).toBe(body.tx_signature);
+      expect(anchorEvent.payload.cluster).toBe('devnet');
+      expect(anchorEvent.payload.anchor_wallet_address).toBeDefined();
+      expect(anchorEvent.payload.published_at_utc).toBeDefined();
+
+      const runRows = await db
+        .select()
+        .from(anchorRuns)
+        .where(eq(anchorRuns.id, body.anchor_runs_id))
+        .all();
+      expect(runRows).toHaveLength(1);
+      expect(runRows[0]?.status).toBe('published');
+      expect(runRows[0]?.anchored_head_hash).toBe(preAnchorHead!.event_hash);
+      expect(runRows[0]?.anchored_head_sequence_no).toBe(preAnchorHead!.sequence_no);
+      expect(runRows[0]?.memo_text).toBe(`ccv-anchor:${preAnchorHead!.event_hash}`);
+
+      const postAnchorHead = await getHead(db);
+      expect(postAnchorHead).not.toBeNull();
+      expect(postAnchorHead!.event_hash).toBe(anchorEvent.event_hash);
+      expect(postAnchorHead!.event_hash).not.toBe(preAnchorHead!.event_hash);
     });
 
     it('creates a valid memo with ccv-anchor prefix', async () => {
