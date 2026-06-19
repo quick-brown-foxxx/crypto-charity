@@ -313,14 +313,6 @@ describe('GET /tg/internal/pending-requests', () => {
     expect(item!.internal_handle).toBe('handle_lookup_test');
   });
 
-  it('returns unknown for conversations with missing handle', () => {
-    // FK constraint prevents deleting handles that have conversations,
-    // so this scenario can't occur in practice. Skip this test.
-    // The code path exists in the handler but is unreachable via normal
-    // operations due to the FK constraint.
-    expect(true).toBe(true);
-  });
-
   it('includes in_flight conversations', async () => {
     const userId = 300011;
     const opaqueId = await registerUser(userId, 'inflight_test');

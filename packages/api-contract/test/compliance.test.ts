@@ -1,4 +1,4 @@
-import { describe, it, expect, expectTypeOf } from 'vitest';
+import { describe, it, expectTypeOf } from 'vitest';
 import type {
   TotalsResponse,
   TotalsAnchor,
@@ -327,28 +327,6 @@ describe('Backend response shapes match contract types', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Frontend Valibot-inferred type compliance
-// ---------------------------------------------------------------------------
-//
-// The frontend schema files (apps/web/src/lib/schemas/totals.ts and health.ts)
-// contain compile-time contract checks using conditional types:
-//
-//   type _TotalsContractCheck = TotalsResponse extends TotalsResponseContract ? true : never;
-//
-// These checks run at tsc time and will fail the build if the Valibot-inferred
-// types diverge from the contract. No additional runtime tests are needed here
-// because the contract package cannot import from apps/web (different project
-// reference boundary). The compile-time checks in the schema files are the
-// canonical verification.
-
-describe('Frontend Valibot-inferred types match contract types', () => {
-  it('compile-time contract checks exist in frontend schema files', () => {
-    // This test documents that the verification happens at compile time.
-    // The schema files contain:
-    //   type _TotalsContractCheck = TotalsResponse extends TotalsResponseContract ? true : never;
-    //   type _HealthContractCheck = HealthResponse extends HealthResponseContract ? true : never;
-    // If these fail, tsc -b will fail.
-    expect(true).toBe(true);
-  });
-});
+// Frontend Valibot-inferred contract checks live in the frontend schema files
+// and are enforced by `tsc -b`; this package cannot import apps/web across the
+// project-reference boundary for a runtime test.

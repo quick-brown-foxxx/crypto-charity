@@ -223,11 +223,10 @@ describe('encryptChatId', () => {
     // Change keyVersion from 5 to 6
     const tampered = envelope.replace(/^aesgcm:v1:5:/, 'aesgcm:v1:6:');
     const result = await decryptChatId(aesKey, tampered, 'opaque');
-    // Different keyVersion should still decrypt if using same key
-    // (keyVersion is metadata, not part of the AEAD)
-    // But if the implementation uses keyVersion in AAD, it would fail
-    // We just verify the function handles it gracefully
-    expect([true, false]).toContain(result.ok);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.type).toBe('decrypt_failed');
+    }
   });
 
   it('works with number chatId', async () => {
