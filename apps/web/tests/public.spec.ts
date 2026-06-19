@@ -1,4 +1,37 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+async function mockVerifyResponse(page: Page): Promise<() => number> {
+  let requestCount = 0;
+
+  await page.route('**/api/verify', async (route) => {
+    requestCount += 1;
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        head_sequence_no: 5,
+        head_hash: 'a'.repeat(64),
+        latest_anchor: {
+          anchor_date: '2025-01-15',
+          anchored_head_sequence_no: 5,
+          anchored_head_hash: 'a'.repeat(64),
+          tx_signature: '2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
+          anchor_wallet_address: '2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
+          memo_text: 'ccv-anchor:' + 'a'.repeat(64),
+          published_at_utc: '2025-01-15T12:00:00Z',
+          solscan_url:
+            'https://solscan.io/tx/2xQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2LfYDzQwe2Lf',
+        },
+        previous_anchors: [],
+        instructions: { typescript: '// verification code' },
+        anchor_stale: false,
+      }),
+    });
+  });
+
+  return () => requestCount;
+}
 
 test.describe('Public pages', () => {
   test('landing page renders hero and feed', async ({ page }) => {
@@ -48,6 +81,24 @@ test.describe('Public pages', () => {
     await expect(page.getByText(/Публичность/i)).toBeVisible();
   });
 
+  /*
+  Scenario: Donate page explains wallet transaction status honestly
+    Given a visitor opens the static donate address/QR page
+    When they read the donation processing guidance
+    Then the UI explains a successful wallet transaction is not ledger confirmation
+    And final completion happens only after backend/ledger processing
+    And the UI must not present the donation as complete.
+  */
+  test('donate page explains wallet success is not ledger confirmation', async ({ page }) => {
+    await page.goto('/donate');
+
+    await expect(
+      page.getByText(/Успешная транзакция в кошельке не означает подтверждение в реестре/i),
+    ).toBeVisible();
+    await expect(page.getByText(/после финализации и обработки бэкендом/i)).toBeVisible();
+    await expect(page.getByText(/пожертвование завершено|donation complete/i)).toHaveCount(0);
+  });
+
   test('ledger page renders filters and timeline', async ({ page }) => {
     await page.goto('/ledger');
     await expect(page.locator('h1')).toBeVisible();
@@ -70,6 +121,31 @@ test.describe('Public pages', () => {
     // Verify the page is not blank
     const cardCount = await page.locator('.standalone-card').count();
     expect(cardCount).toBeGreaterThan(0);
+  });
+
+  /*
+  Scenario: Verify explains pre-anchor-head semantics
+    Given a visitor starts on a non-verify public page with a deterministic verify API response
+    When they open the verify page through the public navigation
+    Then the page explains that the current pre-anchor head represents the ledger state before the selected anchor/event is appended/confirmed.
+  */
+  test('verify page explains pre-anchor-head semantics', async ({ page }) => {
+    await page.goto('/donate');
+
+    const getVerifyRequestCount = await mockVerifyResponse(page);
+
+    await page.getByRole('link', { name: 'Проверить' }).click();
+    await expect(page).toHaveURL(/\/verify\/?$/);
+
+    await expect(
+      page.getByText(/Якорь фиксирует HEAD реестра, существовавший ДО публикации якоря/i),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        /подтверждает все события, произошедшие до него, но не включает сам факт своей публикации/i,
+      ),
+    ).toBeVisible();
+    expect(getVerifyRequestCount()).toBeGreaterThan(0);
   });
 
   test('verify page shows no validation error with empty ledger', async ({ page }) => {
