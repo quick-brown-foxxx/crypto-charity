@@ -23,8 +23,6 @@ even though service bindings are in-process and not publicly routable.
 | POST   | `/api/anchor/manual`            | Yes  | 10/60s per IP | `VAULT_ANCHOR_CRON` | Manual anchor trigger              |
 | GET    | `/tg/internal/pending-requests` | Yes  | No            | `TG_BOT`            | List pending beneficiary requests  |
 | POST   | `/tg/internal/send-code`        | Yes  | No            | `TG_BOT`            | Send gift-card code to beneficiary |
-| GET    | `/api/forbidden`                | No   | No            | (self)              | Test-only: always 403              |
-| GET    | `/api/unavailable`              | No   | No            | (self)              | Test-only: always 503              |
 
 ## Bindings
 

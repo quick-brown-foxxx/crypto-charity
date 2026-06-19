@@ -5,8 +5,6 @@ import { corsMiddleware } from './lib/cors';
 import { forwardToService } from './lib/forward';
 import { rateLimitMiddleware } from './lib/rate-limit';
 import { healthRoute } from './routes/health';
-import { errorResponse, unavailableResponse } from './lib/errors.js';
-import { generateRequestId } from '@open-care/vault-core';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -51,22 +49,6 @@ app.get('/tg/internal/pending-requests', async (c) => {
 // POST /tg/internal/send-code → tg-bot
 app.post('/tg/internal/send-code', async (c) => {
   return forwardToService(c.env.TG_BOT, c.req.raw);
-});
-
-// Test-only routes for error-code coverage verification.
-// These exist so integration tests can verify the 403 and 503
-// response shapes without mocking service bindings.
-
-// GET /api/forbidden — always returns 403 FORBIDDEN
-app.get('/api/forbidden', () => {
-  const requestId = generateRequestId();
-  return errorResponse('FORBIDDEN', 'Access denied.', 403, requestId);
-});
-
-// GET /api/unavailable — always returns 503 UNAVAILABLE
-app.get('/api/unavailable', () => {
-  const requestId = generateRequestId();
-  return unavailableResponse('Service temporarily unavailable.', requestId);
 });
 
 export default app;

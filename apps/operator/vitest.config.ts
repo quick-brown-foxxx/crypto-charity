@@ -1,4 +1,5 @@
 import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { defineConfig } from 'vitest/config';
 import configShared from '../../vitest.shared';
 
@@ -12,11 +13,37 @@ export default defineConfig({
           OPERATOR_TOKEN: 'test-operator-token-abc123',
         },
         serviceBindings: {
-          VAULT_API_READ: () => {
-            return new Response(JSON.stringify({ items: [], next_cursor: null }), {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' },
-            });
+          VAULT_API_READ: {
+            node: (request: IncomingMessage, response: ServerResponse) => {
+              const originalUrlHeader = request.headers['mf-original-url'];
+              const originalUrl = Array.isArray(originalUrlHeader)
+                ? originalUrlHeader[0]
+                : originalUrlHeader;
+              const url = new URL(originalUrl ?? request.url ?? '/', 'https://example.com');
+              const operatorTestMode = url.searchParams.get('__operator_test');
+
+              if (operatorTestMode === 'forbidden') {
+                response.writeHead(403, { 'Content-Type': 'application/json' });
+                response.end(
+                  JSON.stringify({
+                    error: {
+                      code: 'FORBIDDEN',
+                      message: 'Access denied.',
+                      request_id: 'test-request-id-forbidden',
+                    },
+                  }),
+                );
+                return;
+              }
+
+              if (operatorTestMode === 'unavailable') {
+                response.destroy(new Error('operator test service binding failure'));
+                return;
+              }
+
+              response.writeHead(200, { 'Content-Type': 'application/json' });
+              response.end(JSON.stringify({ items: [], next_cursor: null }));
+            },
           },
           VAULT_API_WRITE: async (request: Request) => {
             const body = await request

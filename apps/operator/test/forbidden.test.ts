@@ -8,8 +8,16 @@ function authHeader(): Record<string, string> {
 }
 
 describe('403 FORBIDDEN', () => {
-  it('returns 403 from the dedicated /api/forbidden test route', async () => {
-    const response = await exports.default.fetch('https://example.com/api/forbidden');
+  it('forwards public disbursement reads and returns downstream 403 errors', async () => {
+    /*
+    Scenario: downstream service denies a forwarded public operator request
+      Given the operator VAULT_API_READ test binding returns a 403 JSON error
+      When a request is made to GET /api/disbursements?... through the operator Worker
+      Then the operator forwards through the service binding path and returns status 403 with error code FORBIDDEN.
+    */
+    const response = await exports.default.fetch(
+      'https://example.com/api/disbursements?__operator_test=forbidden',
+    );
     expect(response.status).toBe(403);
     const json = await response.json<{
       error: { code: string; message: string; request_id?: string };
@@ -20,16 +28,20 @@ describe('403 FORBIDDEN', () => {
     expect(typeof json.error.request_id).toBe('string');
   });
 
-  it('returns 403 with CORS headers (CORS middleware runs before route)', async () => {
-    const response = await exports.default.fetch('https://example.com/api/forbidden');
+  it('returns forwarded 403 responses with CORS headers', async () => {
+    const response = await exports.default.fetch(
+      'https://example.com/api/disbursements?__operator_test=forbidden',
+    );
     expect(response.status).toBe(403);
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe(
       'https://staging.open-care.org',
     );
   });
 
-  it('returns 403 with JSON content type', async () => {
-    const response = await exports.default.fetch('https://example.com/api/forbidden');
+  it('returns forwarded 403 responses with JSON content type', async () => {
+    const response = await exports.default.fetch(
+      'https://example.com/api/disbursements?__operator_test=forbidden',
+    );
     expect(response.headers.get('Content-Type')).toContain('application/json');
   });
 
