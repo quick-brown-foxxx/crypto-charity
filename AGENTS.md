@@ -67,11 +67,12 @@ All Workers use Hono. Main export is the Hono app from `src/index.ts`.
 
 ## Shared packages
 
-| Package                 | Contents                                                                                                       |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `@open-care/vault-core` | RFC 8785 canonical JSON, 4 event schemas (Zod), hash chain, test vector, beneficiary ref, anchor memo, logging |
-| `@open-care/vault-db`   | Drizzle schemas (6 tables), ledger append helper, query helpers, client factories                              |
-| `@open-care/bot-crypto` | HMAC-SHA256 user ref derivation, AES-GCM chat ID encryption/decryption, base64url                              |
+| Package                   | Contents                                                                                                       |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `@open-care/vault-core`   | RFC 8785 canonical JSON, 4 event schemas (Zod), hash chain, test vector, beneficiary ref, anchor memo, logging |
+| `@open-care/vault-db`     | Drizzle schemas (6 tables), ledger append helper, query helpers, client factories                              |
+| `@open-care/bot-crypto`   | HMAC-SHA256 user ref derivation, AES-GCM chat ID encryption/decryption, base64url                              |
+| `@open-care/api-contract` | Type-only API response/request contracts shared by Workers and frontend schemas                                |
 
 ## Migration directory location
 

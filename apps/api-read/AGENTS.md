@@ -51,6 +51,7 @@ Wrangler environment routes `open-care.org/api/*` and sets `workers_dev=false`.
 
 - `@open-care/vault-db` — `createVaultDb`, `getHead`, `getLatestAnchor`, `getTotals`, `getDonations`, `getDisbursements`, `getRawEventsPaginated`
 - `@open-care/vault-core` — transitive through vault-db (not imported directly)
+- `@open-care/api-contract` — type-only response contracts for public read endpoints
 
 ### Connected to
 

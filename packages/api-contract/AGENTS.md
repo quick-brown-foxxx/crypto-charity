@@ -43,25 +43,40 @@ and frontend Valibot schemas as the shared compile-time truth.
 
 Re-exports all types using `export type { ... }` — pure type-only exports.
 
-### Compliance tests (`test/compliance.test.ts`)
+### Compliance tests
 
-Vitest tests using `expectTypeOf` to verify:
-
-- Backend response shapes are assignable to contract types
-- Frontend Valibot-inferred types are assignable to contract types
+- Package-local Vitest tests (`test/compliance.test.ts`) use `expectTypeOf` to
+  verify exported contract examples without importing app code.
+- Per-app Worker tests exercise real route responses and assert assignability to
+  the shared response contracts.
+- Web schema files and `apps/web/src/lib/schemas/contract-compliance.test.ts`
+  verify that Valibot-inferred response types are assignable to the shared
+  contracts.
 
 ## Connections
 
 ### Consumed by
 
-| Consumer              | What it uses                                                                                                                                                   |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/api-read`       | `TotalsResponse`, `TotalsAnchor`, `DonationsResponse`, `DisbursementsResponse`, `LedgerEventsResponse`, `VerifyResponse`, `HealthResponse`, `ApiErrorResponse` |
-| `apps/api-write`      | `DisbursementWriteResponse`, `CorrectionWriteResponse`, `DisbursementRequestBody`, `CorrectionRequestBody`, `ApiErrorResponse`                                 |
-| `apps/anchor-cron`    | `AnchorManualResponse`, `ApiErrorResponse`                                                                                                                     |
-| `apps/tg-bot`         | `PendingRequestsResponse`, `PendingRequestItem`, `SendCodeResponse`, `SendCodeRequestBody`, `ApiErrorResponse`                                                 |
-| `apps/operator`       | All operator response types (via service bindings)                                                                                                             |
-| `apps/web` (frontend) | All public response types for Valibot schema type verification                                                                                                 |
+| Consumer              | Production usage                                                                                                                                                                     | Compliance/test usage                                                           |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| `apps/api-read`       | Public route responses use `TotalsResponse`, `TotalsAnchor`, `DonationsResponse`, `DisbursementsResponse`, `LedgerEventsResponse`, `AnchorInfo`, `VerifyResponse`, `HealthResponse`. | Real Worker response tests cover public read endpoints.                         |
+| `apps/api-write`      | Write routes use `DisbursementWriteResponse` and `CorrectionWriteResponse`. Request validation remains in local Zod schemas.                                                         | Real Worker response tests cover disbursement and correction writes.            |
+| `apps/anchor-cron`    | Manual anchor route uses `AnchorManualResponse`.                                                                                                                                     | Real Worker response test covers the manual trigger.                            |
+| `apps/tg-bot`         | Internal routes use `PendingRequestItem`, `PendingRequestsResponse`, and `SendCodeResponse`.                                                                                         | Real Worker response tests cover pending requests and send-code.                |
+| `apps/operator`       | Forwarded route type parameters use downstream response contracts plus `ApiErrorResponse`.                                                                                           | Forwarding tests assert operator responses preserve downstream contract shapes. |
+| `apps/web` (frontend) | Valibot schemas import public and operator/admin response contracts for compile-time assignability checks.                                                                           | Schema compliance tests cover the response types used by the frontend.          |
+| `apps/ingest`         | No endpoint-specific success contract types.                                                                                                                                         | Webhook error compliance test uses `ApiErrorResponse`.                          |
+
+### Current adoption status
+
+- Response contracts are imported by the public read Worker, operator-facing
+  write/cron/bot Workers, the operator gateway, and frontend schemas.
+- `apps/ingest` only imports the shared error response contract in tests because
+  its production endpoints do not have endpoint-specific success contract types.
+- Request body contracts are exported for API documentation/type reuse, but app
+  code currently keeps request validation and request body typing local to the
+  relevant Zod/Valibot schemas.
+- No `tools/*` package imports this contract package.
 
 ### Depends on
 

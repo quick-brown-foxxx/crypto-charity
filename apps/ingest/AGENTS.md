@@ -50,6 +50,7 @@ production Wrangler environment routes `open-care.org/webhook/helius` and sets
 
 - `@open-care/vault-core` — types (`DonationPayload`, `Cluster`, `Result`), logging, `ok`/`err`
 - `@open-care/vault-db` — `createVaultDb`, `appendLedgerEvent`, `vaultSchema`
+- `@open-care/api-contract` — test-only `ApiErrorResponse` contract for webhook error compliance
 
 ### Connected to
 
