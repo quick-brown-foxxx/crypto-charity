@@ -124,9 +124,10 @@ in [`02-invariants.md`](02-invariants.md).
   helpers for `vault-db`.
 - **`packages/bot-crypto`** — HMAC and authenticated-encryption helpers for
   Telegram identity and chat-route storage.
-- **`tools/anchor-job`** — optional TypeScript backup/manual anchor CLI. Reuses
-  `packages/vault-core` and the same `@solana/web3.js` packages as
-  `apps/anchor-cron`.
+- **`tools/verify`**, **`tools/localnet`**, **`tools/smoke`**, and
+  **`tools/e2e-tg`** — auxiliary verification and smoke-test tooling for public
+  chain verification, local Solana validation, env-gated live checks, and
+  Telegram E2E.
 
 ## Operator Worker trust model
 

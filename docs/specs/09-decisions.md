@@ -341,14 +341,15 @@ receipt evidence.
 ### How stable should `public_beneficiary_ref` be?
 
 Default: `vault-operator` (forwarding to `vault-api-write`) generates a
-fresh `^benpub_[A-Z0-9]{16}$` public reference per disbursement when
+fresh `^benpub_[A-Z2-7]{16}$` public reference per disbursement when
 `POST /api/disbursements` omits `public_beneficiary_ref`, or stores
 no public reference when the caller sends `null`. Do not accept
 caller strings or create a permanent per-person reference. If bot
 conversation state stores this value, it stores only the
 server-generated value returned by the disbursement write, never
-request or operator input. Revisit if donors need longitudinal
-aggregate counts without exposing handles.
+request or operator input. The suffix uses the RFC 4648 base32 alphabet, so
+ambiguous `0`, `1`, `8`, and `9` characters are not generated. Revisit if
+donors need longitudinal aggregate counts without exposing handles.
 
 ### How often should reconciliation run?
 

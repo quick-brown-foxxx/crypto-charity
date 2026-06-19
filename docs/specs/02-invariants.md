@@ -236,7 +236,9 @@ operator workflow but should not be exposed publicly by default.
 
 Donor memos and internal handles are not public API fields by default. Public
 disbursement records use a server-generated `public_beneficiary_ref` matching
-`^benpub_[A-Z0-9]{16}$` or no beneficiary reference. For
+`^benpub_[A-Z2-7]{16}$` or no beneficiary reference. The suffix uses the
+RFC 4648 base32 alphabet (`A-Z2-7`), so ambiguous `0`, `1`, `8`, and `9`
+characters never appear. For
 `POST /api/disbursements`, callers may only omit `public_beneficiary_ref` for
 generation or set it to `null`; caller-supplied strings are rejected because the
 write API must not depend on `bot-db` private handles or opaque IDs. If a donor
@@ -246,7 +248,7 @@ unless a future explicit moderation policy allows it.
 - **Enforced by:** public response schemas and ledger payload schemas.
 - **Test:** schema tests fail if public response examples include donor memos or
   internal handles; API validation rejects any caller-supplied string
-  `public_beneficiary_ref`; generated refs match `^benpub_[A-Z0-9]{16}$`.
+  `public_beneficiary_ref`; generated refs match `^benpub_[A-Z2-7]{16}$`.
 
 ### I-9: Public verification can recompute the exact chain
 

@@ -1,6 +1,6 @@
 # 08 — Testing Strategy
 
-**Status:** Implemented
+**Status:** Partially implemented
 **Date:** 2026-06-18
 **Scope:** MVP behavior proof, blockchain test tiers, and CI policy.
 
@@ -16,17 +16,24 @@
 
 ## Test levels
 
-| Level                      | Tooling                                               | CI policy                         | What it proves                                                                                                |
-| -------------------------- | ----------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Unit                       | vitest                                                | PR CI                             | Canonical JSON, hash preimages, schema validation, Memo text builder.                                         |
-| Worker integration         | vitest + wrangler unstable_dev / miniflare / local D1 | PR CI                             | HTTP contracts, ledger appends, durable inbox behavior.                                                       |
-| Public verification        | vitest + TypeScript verify script                     | PR CI                             | TypeScript verification script and public export recompute the same head hash and match known Solana anchors. |
-| Browser smoke              | SvelteKit + Playwright                                | PR CI if stable                   | Public site renders seeded data, donate warnings, ledger, verify instructions, and `/admin` safe states.      |
-| Local-validator blockchain | Solana local validator                                | PR CI if tooling permits          | Real Memo and SPL token flows without secrets or funds.                                                       |
-| Devnet live smoke          | Solana devnet                                         | manual/nightly, env-gated         | Real devnet send/fetch/finality behavior.                                                                     |
-| Helius webhook contract    | Helius + public HTTPS staging                         | manual/nightly, env-gated         | Provider auth header, payload shape, retry/duplicate behavior.                                                |
-| Telegram E2E               | Telethon + pytest, staging bot + test user account    | manual/nightly, env-gated         | Real user→bot→user flow: `/start`, `/card`, delivery, no sensitive data in responses.                         |
-| Tiny mainnet smoke         | Solana mainnet                                        | optional manual release gate only | Real mainnet compatibility with tiny paid transactions.                                                       |
+| Level                      | Tooling                                               | Current state                        | CI policy                                       | What it proves                                                                                             |
+| -------------------------- | ----------------------------------------------------- | ------------------------------------ | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Unit                       | vitest                                                | Implemented                          | PR CI                                           | Canonical JSON, hash preimages, schema validation, Memo text builder.                                      |
+| Worker integration         | vitest + wrangler unstable_dev / miniflare / local D1 | Implemented                          | PR CI                                           | HTTP contracts, ledger appends, durable inbox behavior.                                                    |
+| Public verification        | Python test vector + TypeScript verify script         | Implemented                          | PR CI for test vector; deployment/manual verify | Cross-implementation hash parity; public export recomputes head hash and checks published anchor metadata. |
+| Browser smoke              | SvelteKit + Playwright Chromium                       | Implemented                          | PR CI                                           | Public site renders seeded data, donate warnings, ledger, verify instructions, and `/admin` safe states.   |
+| Local-validator blockchain | Solana local validator                                | Implemented; skips if tooling absent | PR CI via Vitest when available; local harness  | Real Memo and SPL token flows without secrets or funds.                                                    |
+| Devnet live smoke          | Solana devnet                                         | Implemented                          | manual/nightly, env-gated, informational        | Real devnet send/fetch/finality behavior.                                                                  |
+| Helius webhook contract    | Helius + public HTTPS staging                         | Implemented                          | manual/nightly, env-gated, informational        | Provider auth header, payload shape, retry/duplicate behavior.                                             |
+| Telegram E2E               | Telethon + pytest, staging bot + test user account    | Implemented                          | manual/nightly, env-gated, informational        | Real user→bot→user flow: `/start`, `/card`, delivery, no sensitive data in responses.                      |
+| Tiny mainnet smoke         | Solana mainnet                                        | Planned optional gate                | optional manual release gate only               | Real mainnet compatibility with tiny paid transactions.                                                    |
+
+The strategy is therefore only partially implemented as always-on CI coverage:
+the PR path has unit/integration, contract, public verification parity,
+Chromium browser, and conditional local-validator evidence, while live devnet,
+Helius, and Telegram checks are implemented as gated manual/nightly smoke jobs.
+The tiny mainnet smoke remains a planned optional release gate, not a normal CI
+or nightly requirement.
 
 ## Blockchain test tiers
 
@@ -62,7 +69,8 @@
 - **Where:** manual or nightly environment-gated job.
 - **Required env:** `SOLANA_CLUSTER=devnet`, `HELIUS_RPC_URL`,
   `ANCHOR_WALLET_SECRET` for a throwaway devnet anchor wallet,
-  `ANCHOR_WALLET_ADDRESS`, `TREASURY_WALLET_ADDRESS`, `VAULT_USDC_ATA`,
+  `ANCHOR_WALLET_ADDRESS`, `DONOR_WALLET_SECRET`,
+  `TREASURY_WALLET_ADDRESS`, `VAULT_USDC_ATA`,
   `USDC_MINT=4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU`.
 - **Must cover:** real Memo anchor send/fetch, finalized transaction fetch,
   `maxSupportedTransactionVersion: 0`, and RPC null-before-finality retry.
@@ -72,8 +80,9 @@
 - **Cost/secrets:** Helius free tier is expected to be enough; requires Helius
   API key/auth header and a public HTTPS staging endpoint.
 - **Where:** manual or nightly environment-gated job, not PR CI.
-- **Required env:** `HELIUS_API_KEY`, `HELIUS_WEBHOOK_AUTH_HEADER`,
-  `HELIUS_RPC_URL`, staging `WEBHOOK_URL`, devnet wallet/ATA config.
+- **Required env:** `SOLANA_CLUSTER=devnet`, `HELIUS_API_KEY`,
+  `HELIUS_WEBHOOK_AUTH_HEADER`, `HELIUS_RPC_URL`, `DONOR_WALLET_SECRET`, devnet
+  treasury/vault/mint config. `WEBHOOK_URL` is an optional staging-host override.
 - **Must cover:** Bearer token extraction from `Authorization` header and
   comparison against configured secret, ACK-fast behavior, duplicate replay,
   payload shape validation, and provider retry behavior.
@@ -95,18 +104,18 @@
   deterministic send→await→assert loops. `sequential_updates=True` ensures
   message ordering is deterministic.
 - **Required env:** `TELETHON_API_ID`, `TELETHON_API_HASH`,
-  `TELETHON_SESSION_STRING`, `TG_BOT_TOKEN` (staging bot), plus any
-  Solana devnet env vars if the test triggers donation flows.
+  `TELETHON_SESSION_STRING`, `TG_BOT_TOKEN` (staging bot), `OPERATOR_TOKEN`,
+  plus any Solana devnet env vars if the test triggers donation flows.
 - **Must cover:**
   - `/start <handle>` → registration succeeds, bot replies with welcome;
   - `/card` → pending request created, visible to operator via
     `/tg/internal/pending-requests`;
   - Delivery via `/tg/internal/send-code` → test user receives the message;
   - No plaintext Telegram user IDs or chat IDs in bot responses;
-  - No full gift-card codes retained after delivery (only hash/last4 remain);
+  - No full gift-card codes appear in operator-visible responses after delivery;
   - Bot handles duplicate `/start` and invalid commands gracefully.
 - **Session management:** The `StringSession` is generated once via
-  `tools/e2e-tg/get_session_string.py` and stored as a CI secret. If the
+  `tools/e2e-tg/get_session_string_draft.py` and stored as a CI secret. If the
   session is invalidated (Telegram logout, password change), a team member
   re-runs the generator and updates the secret.
 - **Rate limiting:** Add `asyncio.sleep(1)` between test cases. Keep tests
@@ -318,7 +327,7 @@ Scenario: disbursement write generates or omits public beneficiary refs safely
 ```gherkin
 Given a valid `POST /api/disbursements` request without `public_beneficiary_ref`
 When the write API appends the disbursement event
-Then the response and ledger payload contain a fresh `^benpub_[A-Z0-9]{16}$` value
+Then the response and ledger payload contain a fresh `^benpub_[A-Z2-7]{16}$` value
 When the request explicitly sends `public_beneficiary_ref: null`
 Then the response and ledger payload contain no public beneficiary reference
 When the request sends any string `public_beneficiary_ref`
@@ -436,7 +445,7 @@ And it explains that the anchor event is covered by a later anchor
 Scenario: FAQ page contains required "honest limits" phrases
 
 ```gherkin
-Given a built SvelteKit preview
+Given the Playwright-configured SvelteKit dev server
 When a donor navigates to `/faq`
 Then the page contains the phrase "anchor proves a ledger head was published, not that receipts are real" (or a close paraphrase that the test vector allows)
 And the page contains a section on what hashes prove
@@ -448,7 +457,7 @@ And no plaintext Telegram IDs, internal handles, donor memos, or gift-card codes
 Scenario: About page contains the project name and trust promises
 
 ```gherkin
-Given a built SvelteKit preview
+Given the Playwright-configured SvelteKit dev server
 When a donor navigates to `/about`
 Then the page title is "Open Care" (or matches the configured `SITE_NAME` if the brand is renamed later)
 And the page describes the manual conversion loop
@@ -496,45 +505,55 @@ And the plaintext code is cleared after successful delivery
 
 ## Environment variables by test type
 
-| Variable                     | PR CI            | Local validator      | Devnet smoke     | Helius contract                   | Mainnet smoke            | TG E2E                 |
-| ---------------------------- | ---------------- | -------------------- | ---------------- | --------------------------------- | ------------------------ | ---------------------- |
-| `SOLANA_CLUSTER`             | test/local value | `localnet`           | `devnet`         | `devnet`                          | `mainnet-beta`           | `devnet`               |
-| `USDC_MINT`                  | test/local value | local mint           | devnet USDC mint | devnet USDC mint                  | mainnet USDC mint        | devnet USDC mint       |
-| `TREASURY_WALLET_ADDRESS`    | fake/local       | local keypair pubkey | throwaway devnet | throwaway devnet                  | throwaway mainnet        | devnet pubkey          |
-| `VAULT_USDC_ATA`             | fake/local       | local ATA            | devnet ATA       | devnet ATA                        | throwaway mainnet ATA    | devnet ATA             |
-| `ANCHOR_WALLET_ADDRESS`      | fake/local       | local keypair pubkey | devnet pubkey    | optional                          | throwaway mainnet pubkey | devnet pubkey          |
-| `ANCHOR_WALLET_SECRET`       | no               | local generated only | required         | optional                          | required, throwaway only | no                     |
-| `DONOR_WALLET_SECRET`        | no               | no                   | required         | no                                | no                       | required               |
-| `HELIUS_API_KEY`             | no               | no                   | optional         | required                          | required                 | no                     |
-| `HELIUS_RPC_URL`             | no               | no                   | required         | required                          | required                 | no                     |
-| `HELIUS_WEBHOOK_AUTH_HEADER` | no               | no                   | optional         | required                          | optional                 | no                     |
-| `WEBHOOK_URL`                | no               | no                   | no               | required public HTTPS staging URL | optional                 | no                     |
-| `TELETHON_API_ID`            | no               | no                   | no               | no                                | no                       | required               |
-| `TELETHON_API_HASH`          | no               | no                   | no               | no                                | no                       | required               |
-| `TELETHON_SESSION_STRING`    | no               | no                   | no               | no                                | no                       | required               |
-| `TG_BOT_TOKEN`               | no               | no                   | no               | no                                | no                       | required (staging bot) |
-| `ALLOW_MAINNET_SMOKE`        | no               | no                   | no               | no                                | must be `true`           | no                     |
+| Variable                     | PR CI            | Local validator      | Devnet smoke     | Helius contract           | Mainnet smoke            | TG E2E                 |
+| ---------------------------- | ---------------- | -------------------- | ---------------- | ------------------------- | ------------------------ | ---------------------- |
+| `SOLANA_CLUSTER`             | test/local value | `localnet`           | `devnet`         | `devnet`                  | `mainnet-beta`           | `devnet`               |
+| `USDC_MINT`                  | test/local value | local mint           | devnet USDC mint | devnet USDC mint          | mainnet USDC mint        | devnet USDC mint       |
+| `TREASURY_WALLET_ADDRESS`    | fake/local       | local keypair pubkey | throwaway devnet | throwaway devnet          | throwaway mainnet        | devnet pubkey          |
+| `VAULT_USDC_ATA`             | fake/local       | local ATA            | devnet ATA       | devnet ATA                | throwaway mainnet ATA    | devnet ATA             |
+| `ANCHOR_WALLET_ADDRESS`      | fake/local       | local keypair pubkey | devnet pubkey    | optional                  | throwaway mainnet pubkey | devnet pubkey          |
+| `ANCHOR_WALLET_SECRET`       | no               | local generated only | required         | optional                  | required, throwaway only | no                     |
+| `DONOR_WALLET_SECRET`        | no               | no                   | required         | required                  | no                       | no                     |
+| `HELIUS_API_KEY`             | no               | no                   | optional         | required                  | required                 | no                     |
+| `HELIUS_RPC_URL`             | no               | no                   | required         | required                  | required                 | no                     |
+| `HELIUS_WEBHOOK_AUTH_HEADER` | no               | no                   | optional         | required                  | optional                 | no                     |
+| `WEBHOOK_URL`                | no               | no                   | no               | optional staging override | optional                 | no                     |
+| `TELETHON_API_ID`            | no               | no                   | no               | no                        | no                       | required               |
+| `TELETHON_API_HASH`          | no               | no                   | no               | no                        | no                       | required               |
+| `TELETHON_SESSION_STRING`    | no               | no                   | no               | no                        | no                       | required               |
+| `TG_BOT_TOKEN`               | no               | no                   | no               | no                        | no                       | required (staging bot) |
+| `OPERATOR_TOKEN`             | no               | no                   | no               | no                        | no                       | required               |
+| `ALLOW_MAINNET_SMOKE`        | no               | no                   | no               | no                        | must be `true`           | no                     |
 
 ## Local and CI commands
 
 Exact command names may evolve with the repo, but the proof set remains:
 
 ```sh
-pnpm check
-pnpm lint
-pnpm format:check
-pnpm exec vitest run
-pnpm exec playwright test
-pnpm build
-pnpm anchor-job --dry-run verify
-pnpm blockchain:local-validator
+pnpm run check
+pnpm run lint
+pnpm run format:check
+pnpm run test
+pnpm run test:python-verify
+pnpm run build
+pnpm exec playwright test --project=chromium
+pnpm run verify:chain -- --base-url https://staging.open-care.org
+pnpm run blockchain:local-validator
+pnpm run smoke:devnet
+pnpm run smoke:helius-contract
+uv run --project tools/e2e-tg pytest tools/e2e-tg/tests/ -v
 ```
 
-`pnpm check` runs SvelteKit type generation plus `svelte-check`; browser tests
-run against a built preview server, not an untyped development-only path.
+`pnpm run check` runs the TypeScript project build; CI runs SvelteKit type
+generation before the check. Chromium Playwright smoke tests run against the
+SvelteKit dev server configured in `playwright.config.ts`; `pnpm run build`
+separately proves the production build. The live smoke commands above are not
+PR-CI requirements; they fail closed unless their required environment variables
+and explicit allow flags are present.
 
-Live smoke commands must fail closed unless their required environment variables
-are present and the cluster is explicit.
+There is no anchor-job dry-run command in the current workspace; public chain
+verification is performed by `verify:chain`. Tiny mainnet smoke is planned as a
+separate manual release gate and has no always-on CI command here.
 
 Bot privacy tests use generated local test keys for `TG_ID_HMAC_KEY` and
 `TG_CHAT_ENC_KEY` in PR CI. They must never require real Telegram bot secrets,
@@ -544,16 +563,22 @@ real Telegram user IDs, or production chat routes.
 
 Green PR CI means:
 
-- unit, integration, invariant, and parity tests pass;
-- public API contract tests prove sensitive fields are absent;
-- SvelteKit check/lint/build and browser tests prove core public and operator
-  routes render correct states without sensitive fields; the FAQ and About
-  pages contain the required "honest limits" phrases;
+- secret scan, formatting, lint, TypeScript build/check, Vitest, Python verifier,
+  production build, and Chromium Playwright jobs pass;
+- public API contract tests in the PR suite prove sensitive fields are absent;
+- frontend build and browser tests prove core public and operator routes render
+  correct states without sensitive fields; the FAQ and About pages contain the
+  required "honest limits" phrases;
 - bot identity storage tests prove HMAC refs, encrypted chat routes, schema
   denylist, and log/API redaction behavior;
-- local-validator blockchain tests pass or are explicitly skipped because the
-  toolchain is unavailable;
-- no paid funds, real mainnet secrets, or production treasury key are required.
+- local-validator blockchain tests pass when `solana-test-validator` is
+  available, or are explicitly skipped with a reason when the CI image lacks the
+  Solana toolchain;
+- no paid funds, real mainnet secrets, live Telegram account, staging bot token,
+  Helius credential, or production treasury key are required.
 
-Live devnet, Helius contract, Telegram E2E, and optional mainnet smoke results
-are release evidence, not mandatory PR evidence.
+Green PR CI does **not** mean live devnet, Helius contract, Telegram E2E, or
+mainnet compatibility has just been proven. Devnet, Helius, and Telegram E2E
+checks are implemented as env-gated manual/nightly jobs and are release evidence
+when enabled and inspected. Tiny mainnet smoke is optional planned release
+evidence only.

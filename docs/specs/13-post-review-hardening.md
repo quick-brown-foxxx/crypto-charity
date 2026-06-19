@@ -614,22 +614,21 @@ calling them correctly.
 ## Epic 4: Testing Layer Build-Out (Levels 5–8)
 
 Testing layers 5–8 from [`08-testing-strategy.md`](08-testing-strategy.md)
-§"Test levels" exist only as documented aspirations. Zero test scripts
-exist for any of them. All Solana interaction is mocked. The most
-trust-critical behaviors (on-chain anchors, SPL transfers, webhook
-reliability, Telegram delivery) are never tested against real external
-systems.
+§"Test levels" are mixed runtime proof layers rather than unconditional PR-CI
+gates. Local-validator coverage has a reusable script and skips when the Solana
+toolchain is unavailable; devnet, Helius contract, and Telegram E2E checks are
+env-gated manual/nightly evidence for trust-critical external-system behavior.
 
-| Level | Description                | Current Status                                   |
-| ----- | -------------------------- | ------------------------------------------------ |
-| 5     | Local-validator blockchain | No localnet scripts, no Solana test infra        |
-| 6     | Devnet live smoke          | Env vars configured but zero test scripts        |
-| 7     | Helius webhook contract    | Only mocked at Level 2; no real webhook tests    |
-| 8     | Telegram E2E (Telethon)    | Only session generator exists; zero pytest files |
+| Level | Description                | Current status                                         |
+| ----- | -------------------------- | ------------------------------------------------------ |
+| 5     | Local-validator blockchain | Implemented as a local script/test harness; skippable. |
+| 6     | Devnet live smoke          | Implemented as env-gated manual/nightly smoke.         |
+| 7     | Helius webhook contract    | Implemented as env-gated manual/nightly smoke.         |
+| 8     | Telegram E2E (Telethon)    | Implemented as env-gated manual/nightly pytest.        |
 
 ### Slice 4.1 — Local-validator blockchain test infrastructure
 
-- Add a `blockchain:local-validator` script to `package.json` that:
+- Maintain a `blockchain:local-validator` script in `package.json` that:
   - Starts `solana-test-validator` (with `--reset`).
   - Creates local keypairs, SPL token mint, donor/source token account,
     treasury owner, and vault ATA during setup.
@@ -732,14 +731,14 @@ systems.
   - Delivery via `/tg/internal/send-code` → test user receives the
     message.
   - No plaintext Telegram user IDs or chat IDs in bot responses.
-  - No full gift-card codes retained after delivery (verify via operator
-    pending-requests endpoint — only hash/last4 remain).
+  - No full gift-card codes appear in operator-visible responses after delivery.
   - Duplicate `/start` and invalid commands handled gracefully.
 - Use `sequential_updates=True` for deterministic message ordering.
 - Add `asyncio.sleep(1)` between test cases for rate limiting.
 - Tests are manual/nightly only, not PR CI.
-- Secrets are already configured in GitHub Actions
-  (`TELETHON_API_ID`, `TELETHON_API_HASH`, `TELETHON_SESSION_STRING`).
+- Secrets are configured in GitHub Actions for the staging-only harness
+  (`TELETHON_API_ID`, `TELETHON_API_HASH`, `TELETHON_SESSION_STRING`,
+  `TG_BOT_TOKEN`, `OPERATOR_TOKEN`).
 
 **Acceptance criteria:**
 
@@ -754,20 +753,19 @@ systems.
 
 ## Epic 5: CI/CD Pipeline Completion
 
-The review found significant CI/CD gaps: Playwright not in CI, no
-post-deploy verification, no nightly jobs, incomplete production
-environment coverage, no rollback mechanism, and 5 orphaned CI secrets.
+CI/CD coverage includes PR quality gates, Chromium Playwright, staging smoke,
+nightly env-gated live checks, production environment blocks, and rollback
+runbook coverage. Keep these gates accurate as scripts and workflows evolve.
 
 ### Slice 5.1 — Add Playwright to CI
 
-**Problem:** 51 browser tests exist (4 spec files, 17 unique tests × 3
-browsers) covering all public routes and admin token gate. They are
-well-structured and the Playwright config is ready. But they are never
-executed in CI. Frontend regressions can merge undetected.
+**Problem:** Browser smoke must remain part of CI so frontend regressions do not
+merge undetected. CI runs the Chromium project as the stable PR gate; local runs
+may use additional Playwright browser projects.
 
 **Fix:**
 
-- Add a `playwright` job to `.github/workflows/ci.yml`:
+- Keep a `playwright` job in `.github/workflows/ci.yml`:
   ```yaml
   playwright:
     runs-on: ubuntu-latest
@@ -776,7 +774,7 @@ executed in CI. Frontend regressions can merge undetected.
       - uses: pnpm/action-setup@v4
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm exec playwright test
+      - run: pnpm exec playwright test --project=chromium
   ```
 - The `webServer` config in `playwright.config.ts` already handles
   starting the SvelteKit dev server.
@@ -824,15 +822,14 @@ deployment goes undetected until a human notices.
 
 ### Slice 5.3 — Create nightly CI workflow
 
-**Problem:** Devnet live smoke, Helius contract tests, and Telegram E2E
-are documented as "manual/nightly" but there is no automation to run them
-periodically. 5 CI secrets (`HELIUS_API_KEY`, `DONOR_WALLET_SECRET`,
-`TELETHON_API_ID`, `TELETHON_API_HASH`, `TELETHON_SESSION_STRING`) are
-configured in GitHub Actions but orphaned — no workflow consumes them.
+**Problem:** Devnet live smoke, Helius contract tests, and Telegram E2E are
+manual/nightly evidence, not PR-CI gates. The nightly workflow must keep their
+secret usage explicit and fail closed when required env is absent or an allow
+flag is not set.
 
 **Fix:**
 
-- Create `.github/workflows/nightly.yml`:
+- Keep `.github/workflows/nightly.yml` scheduled and manually triggerable:
   ```yaml
   on:
     schedule:
@@ -853,7 +850,7 @@ configured in GitHub Actions but orphaned — no workflow consumes them.
 **Acceptance criteria:**
 
 - Nightly workflow runs on schedule and can be triggered manually.
-- Each job consumes the currently-orphaned CI secrets.
+- Each job declares and consumes only the CI secrets it needs.
 - Workflow reports pass/fail for each job without blocking anything.
 
 ---
@@ -910,17 +907,14 @@ reachable through `*.workers.dev` when deployed to production.
 
 ### Slice 5.5 — Fix CI format check
 
-**Problem:** CI runs `pnpm run format` which uses `prettier --write`
-(auto-fix) instead of `prettier --check` (fail on unformatted).
-`DEVELOPMENT.md` references `pnpm run format:check` but this script does
-not exist in `package.json`. CI should fail on unformatted code, not
-silently fix it.
+**Problem:** CI must run the non-mutating `pnpm run format:check` gate rather
+than `pnpm run format`, which writes changes locally. `DEVELOPMENT.md` and root
+scripts must keep `format:check` documented as the verification command.
 
 **Fix:**
 
-- Add `"format:check": "prettier --check ."` to root `package.json`
-  scripts.
-- Change CI to run `pnpm run format:check` instead of `pnpm run format`.
+- Keep `"format:check": "prettier --check ."` in root `package.json` scripts.
+- Keep CI on `pnpm run format:check` instead of `pnpm run format`.
 - Keep `"format": "prettier --write ."` for local use.
 - Update `DEVELOPMENT.md` if it references the old command.
 
@@ -1046,15 +1040,16 @@ any of them. Documentation bug.
 ### Slice 6.5 — Integrate Python cross-implementation verifier into CI
 
 **Problem:** The Python cross-implementation verifier
-(`tools/verify/test_vector.py`) independently confirms the normative
-hash `fda2610f...` matches the TypeScript implementation byte-for-byte.
-It passes but is not run in CI or `pnpm run test`.
+(`tools/verify/test_vector.py`) independently confirms the normative hash
+`fda2610f...` matches the TypeScript implementation byte-for-byte. It must stay
+wired into CI and the final verification pipeline so TypeScript/Python hash
+parity cannot drift silently.
 
 **Fix:**
 
-- Add a `test:python-verify` script to `package.json` that runs
+- Keep a `test:python-verify` script in `package.json` that runs
   `python3 tools/verify/test_vector.py`.
-- Add the script to the `final-check` pipeline (or CI `test` job).
+- Keep the script in the `final-check` pipeline and CI.
 - Ensure the script fails with non-zero exit code if verification fails.
 
 **Acceptance criteria:**
@@ -1071,22 +1066,23 @@ Fix documentation that is stale, misleading, or contradicts reality.
 
 ### Slice 7.1 — Update 08-testing-strategy.md status
 
-**Problem:** `08-testing-strategy.md` line 3 claims "Status:
-**Implemented**" but 4 of 9 test layers (Levels 5–8) have zero
-implementation. This creates false confidence. `DEVELOPMENT.md` line
-131–136 is more honest: "Local realistic simulation... intentionally
-deferred."
+**Problem:** `08-testing-strategy.md` can overstate always-on CI coverage when it
+uses a blanket implemented status. The current test stack is mixed: PR CI covers
+unit/integration, verification parity, browser, and conditional local-validator
+checks, while devnet, Helius, and Telegram E2E are env-gated manual/nightly
+evidence. Tiny mainnet smoke remains optional planned release evidence.
 
 **Fix:**
 
 - Change status to "Status: **Partially Implemented**".
 - Add a section documenting which layers are implemented and which are
-  planned (referencing this spec, `13-post-review-hardening.md`).
+  manual/nightly or planned.
 - Update the "What green CI means" section to reflect that
-  local-validator tests do not exist (not "pass or are explicitly
-  skipped").
-- Remove or mark as "Planned" the commands that don't exist:
-  `pnpm blockchain:local-validator`, `pnpm anchor-job --dry-run verify`.
+  green PR CI does not include live devnet, Helius, Telegram E2E, or mainnet
+  evidence.
+- Keep the existing local-validator command documented as current, and remove or
+  mark unavailable any anchor-job dry-run command that is not present in the
+  workspace.
 
 **Acceptance criteria:**
 
@@ -1115,16 +1111,15 @@ that don't exist in `wrangler.jsonc` or source code.
 
 ---
 
-### Slice 7.3 — Fix DEVELOPMENT.md format:check reference
+### Slice 7.3 — Keep DEVELOPMENT.md format:check reference accurate
 
-**Problem:** `DEVELOPMENT.md` references `pnpm run format:check` but this
-script does not exist in `package.json`. Only `pnpm run format` exists
-(which runs `prettier --write`, not `--check`).
+**Problem:** `DEVELOPMENT.md` must document `pnpm run format:check` as the
+non-mutating Prettier verification command, and that script must exist in
+`package.json`.
 
 **Fix:**
 
-- After adding `format:check` script (Slice 5.5), verify
-  `DEVELOPMENT.md` references are correct.
+- Verify `DEVELOPMENT.md` references are correct.
 - Update any other stale command references in `DEVELOPMENT.md`.
 
 **Acceptance criteria:**
@@ -1136,14 +1131,14 @@ script does not exist in `package.json`. Only `pnpm run format` exists
 
 ### Slice 7.4 — Fix I-8 spec regex for beneficiary ref
 
-**Problem:** `docs/specs/02-invariants.md` line 239 says
-`^benpub_[A-Z0-9]{16}$` but the implementation uses
+**Problem:** some beneficiary-ref docs use a broader alphanumeric suffix, but
+the implementation uses
 `^benpub_[A-Z2-7]{16}$` (RFC 4648 base32, stricter — excludes 0, 1, 8,
 9). The implementation is correct; the spec regex should be updated.
 
 **Fix:**
 
-- Update `02-invariants.md` I-8 regex from `[A-Z0-9]` to `[A-Z2-7]`.
+- Update `02-invariants.md` I-8 regex to `[A-Z2-7]`.
 - Update `08-testing-strategy.md` BDD scenario regex if it appears
   there.
 - Add a note that the implementation uses RFC 4648 base32 (no ambiguous

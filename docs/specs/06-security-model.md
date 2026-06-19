@@ -53,7 +53,9 @@ The operator tries to map a public record or bot handle to a Telegram account.
   email. `bot-db` stores no plaintext Telegram user IDs or chat IDs; it stores
   `telegram_user_ref` as a keyed HMAC and `telegram_chat_id_enc` as an encrypted
   chat route. Public donor APIs use server-generated `public_beneficiary_ref`
-  values matching `^benpub_[A-Z0-9]{16}$` or omit beneficiary reference. The
+  values matching `^benpub_[A-Z2-7]{16}$` or omit beneficiary reference. The
+  suffix uses the RFC 4648 base32 alphabet without ambiguous `0`, `1`, `8`, or
+  `9` characters. The
   write API rejects caller-supplied string refs instead of comparing them to
   `bot-db` private handles or opaque IDs.
 - **Limit:** the bot runtime still receives Telegram identifiers from incoming

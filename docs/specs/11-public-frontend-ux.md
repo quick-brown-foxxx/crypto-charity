@@ -203,7 +203,7 @@ Public UI must never render:
 
 Allowed public fields are amounts, counts, service names, receipt references,
 server-generated `public_beneficiary_ref` values matching
-`^benpub_[A-Z0-9]{16}$`,
+`^benpub_[A-Z2-7]{16}$` (RFC 4648 base32, no ambiguous `0`, `1`, `8`, or `9`),
 Solana transaction signatures, vault
 addresses, USDC mint, sequence numbers, hashes, timestamps, and public anchor
 Memo text.
