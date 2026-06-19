@@ -48,7 +48,7 @@ pnpm exec wrangler d1 migrations apply bot-db --local
 ## Quality gates (run before commit/PR)
 
 ```bash
-pnpm run final-check   # install → secret scan → ledger guard → sync → lint/format:check/check/test/build
+pnpm run final-check   # install → secret scan → ledger guard → sync → lint/format:check/check/test/python-verify/build
 ```
 
 This runs the local pre-commit sequence, including the secret scan and ledger
@@ -62,6 +62,7 @@ pnpm run format:check   # prettier --check .
 pnpm run lint           # eslint --fix .
 pnpm run check          # tsc -b
 pnpm run test           # vitest run
+pnpm run test:python-verify # python3 tools/verify/test_vector.py
 pnpm run build          # tsc -b + SvelteKit build
 pnpm exec playwright test --project=chromium # Chromium browser smoke suite
 pnpm run final-check:secret-scan # scan repo source, docs, tools, and root files for treasury key material
