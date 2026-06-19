@@ -1,34 +1,14 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import process from 'node:process';
+import { pathToFileURL } from 'node:url';
 
 // =============================================================================
 // Constants
 // =============================================================================
-
-const SCANNED_FILE_EXTENSIONS = new Set([
-  '.cjs',
-  '.css',
-  '.html',
-  '.js',
-  '.json',
-  '.jsonc',
-  '.md',
-  '.mdx',
-  '.mjs',
-  '.py',
-  '.sh',
-  '.sql',
-  '.ts',
-  '.tsx',
-  '.txt',
-  '.yaml',
-  '.yml',
-]);
-
-const SCANNED_FILE_NAMES = new Set(['.env.example']);
 
 const IGNORED_DIR_NAMES = new Set([
   '.git',
@@ -66,31 +46,31 @@ const FORBIDDEN_PATTERNS = [
 // Helpers
 // =============================================================================
 
-function isScannedFile(fileName) {
-  return SCANNED_FILE_NAMES.has(fileName) || SCANNED_FILE_EXTENSIONS.has(path.extname(fileName));
+function trackedFilePaths(repoRoot) {
+  return execFileSync('git', ['ls-files', '-z'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  })
+    .split('\0')
+    .filter((filePath) => filePath.length > 0);
+}
+
+function isIgnoredTrackedPath(relativeFilePath) {
+  const pathSegments = relativeFilePath.split('/');
+  const fileName = pathSegments[pathSegments.length - 1];
+
+  if (fileName === undefined || IGNORED_FILE_NAMES.has(fileName)) {
+    return true;
+  }
+
+  return pathSegments.slice(0, -1).some((segment) => IGNORED_DIR_NAMES.has(segment));
 }
 
 function sourceFiles(directoryPath) {
-  const files = [];
-
-  for (const entry of fs.readdirSync(directoryPath, { withFileTypes: true })) {
-    const entryPath = path.join(directoryPath, entry.name);
-
-    if (entry.isDirectory()) {
-      if (!IGNORED_DIR_NAMES.has(entry.name)) {
-        files.push(...sourceFiles(entryPath));
-      }
-      continue;
-    }
-
-    if (!entry.isFile() || IGNORED_FILE_NAMES.has(entry.name) || !isScannedFile(entry.name)) {
-      continue;
-    }
-
-    files.push(entryPath);
-  }
-
-  return files;
+  return trackedFilePaths(directoryPath)
+    .filter((relativeFilePath) => !isIgnoredTrackedPath(relativeFilePath))
+    .map((relativeFilePath) => path.join(directoryPath, relativeFilePath))
+    .filter((filePath) => fs.existsSync(filePath) && fs.statSync(filePath).isFile());
 }
 
 function lineAndColumn(contents, matchIndex) {
@@ -110,7 +90,7 @@ function relativePath(repoRoot, filePath) {
 // Business Logic
 // =============================================================================
 
-function findTreasuryKeyFindings(repoRoot) {
+export function findTreasuryKeyFindings(repoRoot) {
   const findings = [];
 
   for (const filePath of sourceFiles(repoRoot)) {
@@ -140,14 +120,16 @@ function findTreasuryKeyFindings(repoRoot) {
 // CLI Interface
 // =============================================================================
 
-const repoRoot = process.cwd();
-const findings = findTreasuryKeyFindings(repoRoot);
+export function runCli(repoRoot) {
+  const findings = findTreasuryKeyFindings(repoRoot);
 
-if (findings.length === 0) {
-  process.stdout.write(
-    'PASS: no treasury key material found in repository source, docs, tooling, or root files\n',
-  );
-} else {
+  if (findings.length === 0) {
+    process.stdout.write(
+      'PASS: no treasury key material found in repository source, docs, tooling, or root files\n',
+    );
+    return;
+  }
+
   process.stderr.write(
     'FAIL: potential treasury key material found in repository source, docs, tooling, or root files\n',
   );
@@ -157,4 +139,8 @@ if (findings.length === 0) {
     );
   }
   process.exitCode = 1;
+}
+
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  runCli(process.cwd());
 }
