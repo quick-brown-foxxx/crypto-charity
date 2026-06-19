@@ -4,54 +4,19 @@ import { anchorRuns } from '@open-care/vault-db/schema/vault-db';
 import { isAnchorPayload, ok, type Cluster } from '@open-care/vault-core';
 import { eq } from 'drizzle-orm';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { cleanTables, seedLedgerEvent } from './seed.js';
+import { postManualAnchor } from './helpers.js';
+import {
+  anchorMemo,
+  cleanTables,
+  seedLedgerEvent,
+  seedStaleLockNoTx,
+  seedStaleLockWithTx,
+  TEST_ALT_ANCHOR_HEAD_HASH,
+  TEST_TX_SIGNATURE,
+} from './seed.js';
 import { recoverStaleLock } from '../src/lib/recovery.js';
 import * as solana from '../src/lib/solana.js';
 import { configureSolanaMock, resetSolanaMockConfig } from './__mocks__/lib/solana.js';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function postManual(): Request {
-  return new Request('https://example.com/api/anchor/manual', { method: 'POST' });
-}
-
-/**
- * Insert a stale sending row with a tx_signature and an expired
- * locked_until_utc.  The recovery path should look up the tx on-chain
- * (mocked) and backfill to published.
- */
-async function seedStaleLockWithTx(
-  db: ReturnType<typeof createVaultDb>,
-  anchoredHead: { hash: string; seq: number },
-  memoText = 'ccv-anchor:' + anchoredHead.hash,
-): Promise<number> {
-  const pastDate = new Date(Date.now() - 20 * 60 * 1000).toISOString();
-  const insertedRows = await db
-    .insert(anchorRuns)
-    .values({
-      anchor_date: '2026-06-16',
-      anchored_head_sequence_no: anchoredHead.seq,
-      anchored_head_hash: anchoredHead.hash,
-      status: 'sending',
-      trigger_source: 'cron',
-      tx_signature:
-        '5Jofwx5DPe1qBwHL7hN3VpFqLxqFj4mJLo5iY7nP8kRt2sT9uVvWxYzAbCdEfGhIjKlMnOpQrStUvWxYz1234',
-      anchor_wallet_address: env.ANCHOR_WALLET_ADDRESS,
-      memo_text: memoText,
-      attempt_count: 1,
-      locked_until_utc: pastDate,
-      created_at_utc: pastDate,
-      updated_at_utc: pastDate,
-    })
-    .returning({ id: anchorRuns.id });
-  const insertedRow = insertedRows[0];
-  if (!insertedRow) {
-    throw new Error('Expected stale anchor run row to be inserted');
-  }
-  return insertedRow.id;
-}
 
 async function getAnchorRunById(
   db: ReturnType<typeof createVaultDb>,
@@ -65,59 +30,25 @@ async function getAnchorRunById(
   return row;
 }
 
-/**
- * Insert a stale sending row whose anchor payload is invalid for ledger append.
- * The DB allows the row, but appendLedgerEvent rejects sequence_no=0.
- */
-async function seedStaleLockWithInvalidAnchorSequence(
+function seedRecoveryStaleLockWithTx(
   db: ReturnType<typeof createVaultDb>,
-  anchoredHead: { hash: string },
+  anchoredHead: { hash: string; seq?: number },
+  memoText = anchorMemo(anchoredHead.hash),
 ): Promise<number> {
-  const pastDate = new Date(Date.now() - 20 * 60 * 1000).toISOString();
-  const insertedRows = await db
-    .insert(anchorRuns)
-    .values({
-      anchor_date: '2026-06-16',
-      anchored_head_sequence_no: 0,
-      anchored_head_hash: anchoredHead.hash,
-      status: 'sending',
-      trigger_source: 'cron',
-      tx_signature:
-        '5Jofwx5DPe1qBwHL7hN3VpFqLxqFj4mJLo5iY7nP8kRt2sT9uVvWxYzAbCdEfGhIjKlMnOpQrStUvWxYz1234',
-      anchor_wallet_address: env.ANCHOR_WALLET_ADDRESS,
-      memo_text: 'ccv-anchor:' + anchoredHead.hash,
-      attempt_count: 1,
-      locked_until_utc: pastDate,
-      created_at_utc: pastDate,
-      updated_at_utc: pastDate,
-    })
-    .returning({ id: anchorRuns.id });
-  const insertedRow = insertedRows[0];
-  if (!insertedRow) {
-    throw new Error('Expected stale anchor run row to be inserted');
-  }
-  return insertedRow.id;
+  return seedStaleLockWithTx(db, {
+    anchorDate: '2026-06-16',
+    anchoredHead,
+    memoText,
+    attemptCount: 1,
+  });
 }
 
-/**
- * Insert a stale sending row with no tx_signature and an expired
- * locked_until_utc.  The recovery path should mark it as failed.
- */
-async function seedStaleLockNoTx(db: ReturnType<typeof createVaultDb>): Promise<void> {
-  const pastDate = new Date(Date.now() - 20 * 60 * 1000).toISOString();
-  await db.insert(anchorRuns).values({
-    anchor_date: '2026-06-16',
-    anchored_head_sequence_no: 0,
-    anchored_head_hash: 'b'.repeat(64),
-    status: 'sending',
-    trigger_source: 'cron',
-    tx_signature: null,
-    anchor_wallet_address: env.ANCHOR_WALLET_ADDRESS,
-    memo_text: 'ccv-anchor:' + 'b'.repeat(64),
-    attempt_count: 1,
-    locked_until_utc: pastDate,
-    created_at_utc: pastDate,
-    updated_at_utc: pastDate,
+function seedRecoveryStaleLockNoTx(db: ReturnType<typeof createVaultDb>): Promise<number> {
+  return seedStaleLockNoTx(db, {
+    anchorDate: '2026-06-16',
+    anchoredHeadHash: TEST_ALT_ANCHOR_HEAD_HASH,
+    anchoredHeadSequenceNo: 0,
+    attemptCount: 1,
   });
 }
 
@@ -144,10 +75,10 @@ describe('Stale lock recovery', () => {
       // Seed a ledger event so the pipeline has a head to anchor
       const originalHead = await seedLedgerEvent(db);
       // Insert a stale lock with tx_signature for that real ledger head.
-      await seedStaleLockWithTx(db, originalHead);
+      await seedRecoveryStaleLockWithTx(db, originalHead);
 
       // Trigger anchor via manual endpoint
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
       expect(response.status).toBe(200);
       const body = (await response.json()) as {
         status: string;
@@ -188,9 +119,7 @@ describe('Stale lock recovery', () => {
       expect(recoveredStale!.status).toBe('published');
       expect(recoveredStale!.anchored_head_sequence_no).toBe(originalHead.seq);
       expect(recoveredStale!.locked_until_utc).toBeNull();
-      expect(recoveredStale!.tx_signature).toBe(
-        '5Jofwx5DPe1qBwHL7hN3VpFqLxqFj4mJLo5iY7nP8kRt2sT9uVvWxYzAbCdEfGhIjKlMnOpQrStUvWxYz1234',
-      );
+      expect(recoveredStale!.tx_signature).toBe(TEST_TX_SIGNATURE);
 
       // Verify a new anchor was created for the current head after recovery.
       const newAnchor = publishedRows.find(
@@ -205,10 +134,10 @@ describe('Stale lock recovery', () => {
       // Seed a ledger event
       const originalHead = await seedLedgerEvent(db);
       // Insert a stale lock with tx_signature for that real ledger head.
-      await seedStaleLockWithTx(db, originalHead);
+      await seedRecoveryStaleLockWithTx(db, originalHead);
 
       // Trigger anchor
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
       expect(response.status).toBe(200);
 
       const publishedAnchorEvents = await getEventsPaginated(db, {
@@ -236,7 +165,7 @@ describe('Stale lock recovery', () => {
       // before updating anchor_runs from sending to published. Retrying recovery
       // must reuse the ledger event instead of appending a duplicate.
       const originalHead = await seedLedgerEvent(db);
-      const staleRowId = await seedStaleLockWithTx(db, originalHead);
+      const staleRowId = await seedRecoveryStaleLockWithTx(db, originalHead);
       const staleRow = await getAnchorRunById(db, staleRowId);
       const txSignature = staleRow.tx_signature;
       if (!txSignature) {
@@ -299,7 +228,7 @@ describe('Stale lock recovery', () => {
         And no anchor_published event is appended
       */
       const originalHead = await seedLedgerEvent(db);
-      const staleRowId = await seedStaleLockWithTx(db, originalHead);
+      const staleRowId = await seedRecoveryStaleLockWithTx(db, originalHead);
       const staleRow = await getAnchorRunById(db, staleRowId);
       configureSolanaMock({
         getSignatureStatus: { kind: 'null' },
@@ -338,7 +267,7 @@ describe('Stale lock recovery', () => {
         And no anchor_published event is appended
       */
       const originalHead = await seedLedgerEvent(db);
-      const staleRowId = await seedStaleLockWithTx(db, originalHead);
+      const staleRowId = await seedRecoveryStaleLockWithTx(db, originalHead);
       const staleRow = await getAnchorRunById(db, staleRowId);
       configureSolanaMock({
         getSignatureStatus: { kind: 'non-finalized', confirmation_status: 'confirmed' },
@@ -371,7 +300,10 @@ describe('Stale lock recovery', () => {
       // Scenario: recovery finds the stale tx on-chain, but ledger backfill
       // rejects the stale row's anchor payload. The row must remain retryable.
       const originalHead = await seedLedgerEvent(db);
-      const staleRowId = await seedStaleLockWithInvalidAnchorSequence(db, originalHead);
+      const staleRowId = await seedRecoveryStaleLockWithTx(db, {
+        hash: originalHead.hash,
+        seq: 0,
+      });
 
       const staleRows = await db
         .select()
@@ -426,7 +358,7 @@ describe('Stale lock recovery', () => {
       // Scenario: recovery finds the stale tx on-chain, but the persisted memo
       // cannot be parsed as an anchor memo. The row must remain retryable.
       const originalHead = await seedLedgerEvent(db);
-      const staleRowId = await seedStaleLockWithTx(db, originalHead, 'not-an-anchor-memo');
+      const staleRowId = await seedRecoveryStaleLockWithTx(db, originalHead, 'not-an-anchor-memo');
       const staleRow = await getAnchorRunById(db, staleRowId);
 
       await expect(
@@ -463,7 +395,7 @@ describe('Stale lock recovery', () => {
       const originalHead = await seedLedgerEvent(db);
       const mismatchedMemoHash =
         originalHead.hash === 'f'.repeat(64) ? 'e'.repeat(64) : 'f'.repeat(64);
-      const staleRowId = await seedStaleLockWithTx(
+      const staleRowId = await seedRecoveryStaleLockWithTx(
         db,
         originalHead,
         `ccv-anchor:${mismatchedMemoHash}`,
@@ -502,7 +434,7 @@ describe('Stale lock recovery', () => {
       // Scenario: recovery finds the stale tx on-chain, but Solana does not
       // provide a blockTime. The recovered event must not invent a timestamp.
       const originalHead = await seedLedgerEvent(db);
-      const staleRowId = await seedStaleLockWithTx(db, originalHead);
+      const staleRowId = await seedRecoveryStaleLockWithTx(db, originalHead);
       const staleRow = await getAnchorRunById(db, staleRowId);
       const txSignature = staleRow.tx_signature;
       if (!txSignature) {
@@ -553,12 +485,12 @@ describe('Stale lock recovery', () => {
   describe('stale lock without tx_signature', () => {
     it('marks stale lock as failed with lock_expired_no_tx_found', async () => {
       // Insert a stale lock with no tx_signature
-      await seedStaleLockNoTx(db);
+      await seedRecoveryStaleLockNoTx(db);
       // Seed a ledger event so the pipeline has a head to anchor
       await seedLedgerEvent(db);
 
       // Trigger anchor via manual endpoint
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
       expect(response.status).toBe(200);
 
       // Verify the stale lock was marked as failed
@@ -572,17 +504,17 @@ describe('Stale lock recovery', () => {
       expect(recoveredStale).toBeDefined();
       expect(recoveredStale!.locked_until_utc).toBeNull();
       expect(recoveredStale!.tx_signature).toBeNull();
-      expect(recoveredStale!.anchored_head_hash).toBe('b'.repeat(64));
+      expect(recoveredStale!.anchored_head_hash).toBe(TEST_ALT_ANCHOR_HEAD_HASH);
     });
 
     it('proceeds to publish new anchor after recovering stale lock', async () => {
       // Insert a stale lock with no tx_signature
-      await seedStaleLockNoTx(db);
+      await seedRecoveryStaleLockNoTx(db);
       // Seed a ledger event
       const { hash } = await seedLedgerEvent(db);
 
       // Trigger anchor
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
       expect(response.status).toBe(200);
       const body = (await response.json()) as {
         status: string;

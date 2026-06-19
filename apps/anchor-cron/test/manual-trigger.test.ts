@@ -1,38 +1,8 @@
 import { env, SELF } from 'cloudflare:test';
 import { createVaultDb } from '@open-care/vault-db';
-import { anchorRuns } from '@open-care/vault-db/schema/vault-db';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { cleanTables, seedLedgerEvent } from './seed.js';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function postManual(): Request {
-  return new Request('https://example.com/api/anchor/manual', { method: 'POST' });
-}
-
-/**
- * Insert a sending anchor_runs row with a future locked_until_utc so
- * the pipeline detects a genuine concurrent run (conflict).
- */
-async function seedActiveLock(db: ReturnType<typeof createVaultDb>): Promise<void> {
-  const now = new Date();
-  const futureDate = new Date(now.getTime() + 30 * 60 * 1000).toISOString();
-  await db.insert(anchorRuns).values({
-    anchor_date: '2026-06-17',
-    anchored_head_sequence_no: 1,
-    anchored_head_hash: 'a'.repeat(64),
-    status: 'sending',
-    trigger_source: 'cron',
-    anchor_wallet_address: env.ANCHOR_WALLET_ADDRESS,
-    memo_text: 'ccv-anchor:' + 'a'.repeat(64),
-    attempt_count: 0,
-    locked_until_utc: futureDate,
-    created_at_utc: now.toISOString(),
-    updated_at_utc: now.toISOString(),
-  });
-}
+import { postManualAnchor } from './helpers.js';
+import { cleanTables, seedActiveLock, seedLedgerEvent } from './seed.js';
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -50,7 +20,7 @@ describe('POST /api/anchor/manual', () => {
     it('returns published with all expected fields', async () => {
       const { hash } = await seedLedgerEvent(db);
 
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
       expect(response.status).toBe(200);
 
       const body = (await response.json()) as {
@@ -72,7 +42,7 @@ describe('POST /api/anchor/manual', () => {
     });
 
     it('returns empty_ledger when no events exist', async () => {
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
       expect(response.status).toBe(200);
 
       const body = (await response.json()) as {
@@ -88,7 +58,7 @@ describe('POST /api/anchor/manual', () => {
     it('returns 409 with ANCHOR_RUN_IN_PROGRESS error code', async () => {
       await seedActiveLock(db);
 
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
       expect(response.status).toBe(409);
 
       const body = (await response.json()) as {
@@ -104,7 +74,7 @@ describe('POST /api/anchor/manual', () => {
     it('returns correct Content-Type for error responses', async () => {
       await seedActiveLock(db);
 
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
       expect(response.status).toBe(409);
       expect(response.headers.get('Content-Type')).toContain('application/json');
     });
@@ -114,7 +84,7 @@ describe('POST /api/anchor/manual', () => {
     it('published response has all required top-level fields', async () => {
       await seedLedgerEvent(db);
 
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
       expect(response.status).toBe(200);
 
       const body = (await response.json()) as Record<string, unknown>;
@@ -130,7 +100,7 @@ describe('POST /api/anchor/manual', () => {
     });
 
     it('empty_ledger response has status and duration_ms', async () => {
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
       expect(response.status).toBe(200);
 
       const body = (await response.json()) as Record<string, unknown>;
@@ -142,7 +112,7 @@ describe('POST /api/anchor/manual', () => {
     it('conflict response has error object with code and message', async () => {
       await seedActiveLock(db);
 
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
       expect(response.status).toBe(409);
 
       const body = (await response.json()) as Record<string, unknown>;

@@ -1,0 +1,2 @@
+export const TEST_TX_SIGNATURE =
+  '5Jofwx5DPe1qBwHL7hN3VpFqLxqFj4mJLo5iY7nP8kRt2sT9uVvWxYzAbCdEfGhIjKlMnOpQrStUvWxYz1234';

@@ -3,6 +3,89 @@ import { createVaultDb, appendLedgerEvent } from '@open-care/vault-db';
 import { anchorRuns } from '@open-care/vault-db/schema/vault-db';
 import type { VaultDb } from '@open-care/vault-db';
 import { resetLedgerEventsForTest } from './reset-ledger-events.js';
+import { TEST_TX_SIGNATURE } from './solana-test-values.js';
+
+export { TEST_TX_SIGNATURE } from './solana-test-values.js';
+export const TEST_ANCHOR_HEAD_HASH = 'a'.repeat(64);
+export const TEST_ALT_ANCHOR_HEAD_HASH = 'b'.repeat(64);
+export const DEFAULT_ANCHOR_DATE = '2026-06-14';
+
+type AnchorRunStatus = 'pending' | 'sending' | 'published' | 'failed';
+type AnchorRunTriggerSource = 'cron' | 'operator-manual' | 'reconciliation';
+
+export interface SeedAnchorRunOptions {
+  anchorDate?: string;
+  anchoredHeadSequenceNo?: number;
+  anchoredHeadHash?: string;
+  status?: AnchorRunStatus;
+  triggerSource?: AnchorRunTriggerSource;
+  txSignature?: string | null;
+  memoText?: string;
+  attemptCount?: number;
+  lastError?: string | null;
+  lockedUntilUtc?: string | null;
+  lastAnchorWalletSolLamports?: number | null;
+  createdAtUtc?: string;
+  updatedAtUtc?: string;
+}
+
+export interface SeedStaleLockOptions {
+  anchorDate?: string;
+  anchoredHead?: { hash: string; seq?: number };
+  anchoredHeadSequenceNo?: number;
+  anchoredHeadHash?: string;
+  memoText?: string;
+  attemptCount?: number;
+}
+
+export function anchorMemo(headHash: string): string {
+  return `ccv-anchor:${headHash}`;
+}
+
+function minutesFromNowIso(minutes: number): string {
+  return new Date(Date.now() + minutes * 60 * 1000).toISOString();
+}
+
+export function futureIso(minutes = 30): string {
+  return minutesFromNowIso(minutes);
+}
+
+export function pastIso(minutes = 20): string {
+  return minutesFromNowIso(-minutes);
+}
+
+export async function seedAnchorRun(
+  db: VaultDb,
+  options: SeedAnchorRunOptions = {},
+): Promise<number> {
+  const now = new Date().toISOString();
+  const anchoredHeadHash = options.anchoredHeadHash ?? TEST_ANCHOR_HEAD_HASH;
+  const insertedRows = await db
+    .insert(anchorRuns)
+    .values({
+      anchor_date: options.anchorDate ?? DEFAULT_ANCHOR_DATE,
+      anchored_head_sequence_no: options.anchoredHeadSequenceNo ?? 1,
+      anchored_head_hash: anchoredHeadHash,
+      status: options.status ?? 'sending',
+      trigger_source: options.triggerSource ?? 'cron',
+      tx_signature: options.txSignature ?? null,
+      anchor_wallet_address: env.ANCHOR_WALLET_ADDRESS,
+      memo_text: options.memoText ?? anchorMemo(anchoredHeadHash),
+      attempt_count: options.attemptCount ?? 0,
+      last_error: options.lastError ?? null,
+      locked_until_utc: options.lockedUntilUtc ?? null,
+      last_anchor_wallet_sol_lamports: options.lastAnchorWalletSolLamports ?? null,
+      created_at_utc: options.createdAtUtc ?? now,
+      updated_at_utc: options.updatedAtUtc ?? options.createdAtUtc ?? now,
+    })
+    .returning({ id: anchorRuns.id });
+
+  const insertedRow = insertedRows[0];
+  if (!insertedRow) {
+    throw new Error('Expected anchor run row to be inserted');
+  }
+  return insertedRow.id;
+}
 
 /**
  * Clean all rows from anchor_runs and ledger_events tables.
@@ -27,8 +110,7 @@ export async function seedLedgerEvent(db: VaultDb): Promise<{ hash: string; seq:
       usdc_mint: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
       treasury_wallet_address: '8ufYGMkmAWeaYaM4CnANrxLxpQoaESKTGFN1BcgU71tG',
       vault_usdc_ata: '52MK6GwPWLvjfZuXm3K9fy9PozZAgUAKridA7ycSQUtG',
-      tx_signature:
-        '5Jofwx5DPe1qBwHL7hN3VpFqLxqFj4mJLo5iY7nP8kRt2sT9uVvWxYzAbCdEfGhIjKlMnOpQrStUvWxYz1234',
+      tx_signature: TEST_TX_SIGNATURE,
       transaction_version: 0,
       instruction_index: 0,
       inner_index: null,
@@ -53,21 +135,18 @@ export async function seedPublishedAnchor(
   headHash: string,
   headSeq: number,
 ): Promise<void> {
-  await db.insert(anchorRuns).values({
-    anchor_date: '2026-06-14',
-    anchored_head_sequence_no: headSeq,
-    anchored_head_hash: headHash,
+  await seedAnchorRun(db, {
+    anchorDate: DEFAULT_ANCHOR_DATE,
+    anchoredHeadSequenceNo: headSeq,
+    anchoredHeadHash: headHash,
     status: 'published',
-    trigger_source: 'cron',
-    tx_signature:
-      '5Jofwx5DPe1qBwHL7hN3VpFqLxqFj4mJLo5iY7nP8kRt2sT9uVvWxYzAbCdEfGhIjKlMnOpQrStUvWxYz1234',
-    anchor_wallet_address: env.ANCHOR_WALLET_ADDRESS,
-    memo_text: 'test-memo',
-    attempt_count: 1,
-    locked_until_utc: null,
-    last_anchor_wallet_sol_lamports: 1_000_000_000,
-    created_at_utc: '2026-06-14T10:23:00Z',
-    updated_at_utc: '2026-06-14T10:23:00Z',
+    triggerSource: 'cron',
+    txSignature: TEST_TX_SIGNATURE,
+    memoText: 'test-memo',
+    attemptCount: 1,
+    lastAnchorWalletSolLamports: 1_000_000_000,
+    createdAtUtc: '2026-06-14T10:23:00Z',
+    updatedAtUtc: '2026-06-14T10:23:00Z',
   });
 }
 
@@ -75,21 +154,17 @@ export async function seedPublishedAnchor(
  * Insert a sending anchor_runs row with a future locked_until_utc so
  * the pipeline detects a genuine concurrent run (conflict).
  */
-export async function seedActiveLock(db: VaultDb): Promise<void> {
-  const now = new Date();
-  const futureDate = new Date(now.getTime() + 30 * 60 * 1000).toISOString(); // 30 min ahead
-  await db.insert(anchorRuns).values({
-    anchor_date: '2026-06-14',
-    anchored_head_sequence_no: 1,
-    anchored_head_hash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+export async function seedActiveLock(
+  db: VaultDb,
+  options: Omit<SeedAnchorRunOptions, 'status' | 'lockedUntilUtc'> = {},
+): Promise<number> {
+  const now = new Date().toISOString();
+  return seedAnchorRun(db, {
+    ...options,
     status: 'sending',
-    trigger_source: 'cron',
-    anchor_wallet_address: env.ANCHOR_WALLET_ADDRESS,
-    memo_text: 'test-memo',
-    attempt_count: 0,
-    locked_until_utc: futureDate,
-    created_at_utc: now.toISOString(),
-    updated_at_utc: now.toISOString(),
+    lockedUntilUtc: futureIso(),
+    createdAtUtc: options.createdAtUtc ?? now,
+    updatedAtUtc: options.updatedAtUtc ?? now,
   });
 }
 
@@ -97,21 +172,25 @@ export async function seedActiveLock(db: VaultDb): Promise<void> {
  * Insert a stale sending row with no tx_signature and an expired
  * locked_until_utc.  The recovery path should mark it as failed.
  */
-export async function seedStaleLockNoTx(db: VaultDb): Promise<void> {
-  const pastDate = new Date(Date.now() - 20 * 60 * 1000).toISOString(); // 20 min ago
-  await db.insert(anchorRuns).values({
-    anchor_date: '2026-06-14',
-    anchored_head_sequence_no: 1,
-    anchored_head_hash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+export async function seedStaleLockNoTx(
+  db: VaultDb,
+  options: SeedStaleLockOptions = {},
+): Promise<number> {
+  const anchoredHeadHash =
+    options.anchoredHeadHash ?? options.anchoredHead?.hash ?? TEST_ANCHOR_HEAD_HASH;
+  const pastDate = pastIso();
+  return seedAnchorRun(db, {
+    anchorDate: options.anchorDate ?? DEFAULT_ANCHOR_DATE,
+    anchoredHeadSequenceNo: options.anchoredHeadSequenceNo ?? options.anchoredHead?.seq ?? 1,
+    anchoredHeadHash,
     status: 'sending',
-    trigger_source: 'cron',
-    tx_signature: null,
-    anchor_wallet_address: env.ANCHOR_WALLET_ADDRESS,
-    memo_text: 'test-memo',
-    attempt_count: 0,
-    locked_until_utc: pastDate,
-    created_at_utc: pastDate,
-    updated_at_utc: pastDate,
+    triggerSource: 'cron',
+    txSignature: null,
+    memoText: options.memoText ?? anchorMemo(anchoredHeadHash),
+    attemptCount: options.attemptCount ?? 0,
+    lockedUntilUtc: pastDate,
+    createdAtUtc: pastDate,
+    updatedAtUtc: pastDate,
   });
 }
 
@@ -120,21 +199,24 @@ export async function seedStaleLockNoTx(db: VaultDb): Promise<void> {
  * locked_until_utc.  The recovery path should look up the tx on-chain
  * (mocked) and backfill to published.
  */
-export async function seedStaleLockWithTx(db: VaultDb): Promise<void> {
-  const pastDate = new Date(Date.now() - 20 * 60 * 1000).toISOString();
-  await db.insert(anchorRuns).values({
-    anchor_date: '2026-06-14',
-    anchored_head_sequence_no: 1,
-    anchored_head_hash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+export async function seedStaleLockWithTx(
+  db: VaultDb,
+  options: SeedStaleLockOptions = {},
+): Promise<number> {
+  const anchoredHeadHash =
+    options.anchoredHeadHash ?? options.anchoredHead?.hash ?? TEST_ANCHOR_HEAD_HASH;
+  const pastDate = pastIso();
+  return seedAnchorRun(db, {
+    anchorDate: options.anchorDate ?? DEFAULT_ANCHOR_DATE,
+    anchoredHeadSequenceNo: options.anchoredHeadSequenceNo ?? options.anchoredHead?.seq ?? 1,
+    anchoredHeadHash,
     status: 'sending',
-    trigger_source: 'cron',
-    tx_signature:
-      '5Jofwx5DPe1qBwHL7hN3VpFqLxqFj4mJLo5iY7nP8kRt2sT9uVvWxYzAbCdEfGhIjKlMnOpQrStUvWxYz1234',
-    anchor_wallet_address: env.ANCHOR_WALLET_ADDRESS,
-    memo_text: 'test-memo',
-    attempt_count: 0,
-    locked_until_utc: pastDate,
-    created_at_utc: pastDate,
-    updated_at_utc: pastDate,
+    triggerSource: 'cron',
+    txSignature: TEST_TX_SIGNATURE,
+    memoText: options.memoText ?? anchorMemo(anchoredHeadHash),
+    attemptCount: options.attemptCount ?? 0,
+    lockedUntilUtc: pastDate,
+    createdAtUtc: pastDate,
+    updatedAtUtc: pastDate,
   });
 }

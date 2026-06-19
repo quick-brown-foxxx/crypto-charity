@@ -14,6 +14,7 @@
 
 import { ok, err, parseAnchorMemo } from '@open-care/vault-core';
 import type { Result } from '@open-care/vault-core';
+import { TEST_TX_SIGNATURE } from '../../solana-test-values.js';
 
 // ---------------------------------------------------------------------------
 // Fake types that match @solana/web3.js shapes enough for the pipeline
@@ -75,8 +76,7 @@ export interface SolanaMockConfig {
   getTransaction?: MockGetTransactionBehavior;
 }
 
-const DEFAULT_SIGNATURE =
-  '5Jofwx5DPe1qBwHL7hN3VpFqLxqFj4mJLo5iY7nP8kRt2sT9uVvWxYzAbCdEfGhIjKlMnOpQrStUvWxYz1234';
+const DEFAULT_SIGNATURE = TEST_TX_SIGNATURE;
 const DEFAULT_BLOCK_TIME = 1_712_345_678;
 const MIN_SOLANA_SIGNATURE_LENGTH = 32;
 const MAX_SOLANA_SIGNATURE_LENGTH = 128;

@@ -8,21 +8,14 @@ import {
   cleanTables,
   seedLedgerEvent,
   seedPublishedAnchor,
-  seedActiveLock,
   seedStaleLockNoTx,
   seedStaleLockWithTx,
+  TEST_ANCHOR_HEAD_HASH,
 } from './seed.js';
+import { postManualAnchor } from './helpers.js';
 import { resetLedgerEventsForTest } from './reset-ledger-events.js';
 import { runAnchor } from '../src/lib/anchor-pipeline.js';
 import { configureSolanaMock, resetSolanaMockConfig } from './__mocks__/lib/solana.js';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function postManual(): Request {
-  return new Request('https://example.com/api/anchor/manual', { method: 'POST' });
-}
 
 async function expectOnlySeedLedgerEvent(
   db: ReturnType<typeof createVaultDb>,
@@ -154,23 +147,6 @@ describe('Anchor Cron Worker', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Manual trigger — empty ledger
-  // ---------------------------------------------------------------------------
-
-  describe('POST /api/anchor/manual — empty ledger', () => {
-    it('returns empty_ledger when no events exist', async () => {
-      const response = await SELF.fetch(postManual());
-      expect(response.status).toBe(200);
-      const body = (await response.json()) as {
-        status: string;
-        duration_ms: number;
-      };
-      expect(body.status).toBe('empty_ledger');
-      expect(body.duration_ms).toBeGreaterThan(0);
-    });
-  });
-
-  // ---------------------------------------------------------------------------
   // Manual trigger — already published
   // ---------------------------------------------------------------------------
 
@@ -181,7 +157,7 @@ describe('Anchor Cron Worker', () => {
       const head = await getHead(db);
       const actualSeq = head!.sequence_no;
 
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
       expect(response.status).toBe(200);
       const body = (await response.json()) as {
         status: string;
@@ -197,26 +173,6 @@ describe('Anchor Cron Worker', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Manual trigger — lock conflict
-  // ---------------------------------------------------------------------------
-
-  describe('POST /api/anchor/manual — lock conflict', () => {
-    it('returns 409 when another run is in progress', async () => {
-      await seedActiveLock(db);
-
-      const response = await SELF.fetch(postManual());
-      expect(response.status).toBe(409);
-      const body = (await response.json()) as {
-        error: { code: string; message: string; request_id?: string };
-      };
-      expect(body.error.code).toBe('ANCHOR_RUN_IN_PROGRESS');
-      expect(body.error.message).toBe('Another anchor run is in progress');
-      expect(body.error.request_id).toBeDefined();
-      expect(typeof body.error.request_id).toBe('string');
-    });
-  });
-
-  // ---------------------------------------------------------------------------
   // Stale lock recovery
   // ---------------------------------------------------------------------------
 
@@ -225,7 +181,7 @@ describe('Anchor Cron Worker', () => {
       await seedStaleLockNoTx(db);
       const { hash } = await seedLedgerEvent(db);
 
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
 
       // The stale lock should be recovered (marked as failed)
       const failedRows = await db
@@ -254,7 +210,7 @@ describe('Anchor Cron Worker', () => {
 
   describe('stale lock recovery — with tx_signature', () => {
     it('backfills stale lock to published, then proceeds to publish', async () => {
-      const staleHeadHash = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+      const staleHeadHash = TEST_ANCHOR_HEAD_HASH;
       await seedStaleLockWithTx(db);
       await db
         .update(anchorRuns)
@@ -262,7 +218,7 @@ describe('Anchor Cron Worker', () => {
         .where(eq(anchorRuns.anchored_head_hash, staleHeadHash));
       await seedLedgerEvent(db);
 
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
 
       // The stale lock should be recovered (backfilled to published)
       const publishedRows = await db
@@ -314,7 +270,7 @@ describe('Anchor Cron Worker', () => {
       const head = await getHead(db);
       const actualSeq = head!.sequence_no;
 
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
 
       expect(response.status).toBe(200);
       const body = (await response.json()) as {
@@ -367,7 +323,7 @@ describe('Anchor Cron Worker', () => {
       expect(preAnchorHead!.event_hash).toBe(secondSeededEvent.hash);
       expect(preAnchorHead!.event_hash).not.toBe(firstSeededEvent.hash);
 
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
       expect(response.status).toBe(200);
       const body = (await response.json()) as {
         status: string;
@@ -426,7 +382,7 @@ describe('Anchor Cron Worker', () => {
     it('creates a valid memo with ccv-anchor prefix', async () => {
       const { hash } = await seedLedgerEvent(db);
 
-      const response = await SELF.fetch(postManual());
+      const response = await SELF.fetch(postManualAnchor());
       expect(response.status).toBe(200);
       const body = (await response.json()) as { memo_text: string };
       // Memo format: ccv-anchor:<64-lowercase-hex-chars>
@@ -487,7 +443,7 @@ describe('Anchor Cron Worker', () => {
 
       const cronPromise = runAnchor(db, env, 'cron');
       await waitForSendingAnchorRun(db);
-      const manualPromise = SELF.fetch(postManual());
+      const manualPromise = SELF.fetch(postManualAnchor());
 
       const [cronResult, manualResponse] = await Promise.all([cronPromise, manualPromise]);
 
@@ -541,7 +497,7 @@ describe('Anchor Cron Worker', () => {
         updated_at_utc: now,
       });
 
-      const manualResponse = await SELF.fetch(postManual());
+      const manualResponse = await SELF.fetch(postManualAnchor());
 
       expect(manualResponse.status).toBe(409);
       const manualBody = (await manualResponse.json()) as {
