@@ -81,24 +81,20 @@ const DEFAULT_BLOCK_TIME = 1_712_345_678;
 const MIN_SOLANA_SIGNATURE_LENGTH = 32;
 const MAX_SOLANA_SIGNATURE_LENGTH = 128;
 
-type SolanaMockGlobal = typeof globalThis & {
-  __openCareAnchorCronSolanaMockConfig?: SolanaMockConfig;
-};
-
-function solanaMockGlobal(): SolanaMockGlobal {
-  return globalThis as SolanaMockGlobal;
+declare global {
+  var __openCareAnchorCronSolanaMockConfig: SolanaMockConfig | undefined;
 }
 
 export function readSolanaMockConfig(): SolanaMockConfig {
-  return solanaMockGlobal().__openCareAnchorCronSolanaMockConfig ?? {};
+  return globalThis.__openCareAnchorCronSolanaMockConfig ?? {};
 }
 
 export function configureSolanaMock(config: SolanaMockConfig): void {
-  solanaMockGlobal().__openCareAnchorCronSolanaMockConfig = { ...config };
+  globalThis.__openCareAnchorCronSolanaMockConfig = { ...config };
 }
 
 export function resetSolanaMockConfig(): void {
-  solanaMockGlobal().__openCareAnchorCronSolanaMockConfig = {};
+  globalThis.__openCareAnchorCronSolanaMockConfig = {};
 }
 
 function errorFromMessage(message: string): Error {

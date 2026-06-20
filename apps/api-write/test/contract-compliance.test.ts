@@ -13,7 +13,7 @@ function validDisbursementBody(receiptRef: string): Record<string, unknown> {
   };
 }
 
-async function postJson(path: string, body: unknown): Promise<Response> {
+function postJson(path: string, body: unknown): Promise<Response> {
   return SELF.fetch(`https://example.com${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

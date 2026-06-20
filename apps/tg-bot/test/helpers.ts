@@ -163,6 +163,12 @@ export function createTelegramApiMock(): TelegramApiMock {
     );
   }
 
+  function requestBodyToRawJson(body: RequestInit['body'] | undefined): string | null {
+    if (body == null) return null;
+    if (typeof body === 'string') return body;
+    throw new TypeError('Telegram API mock expects a JSON string request body');
+  }
+
   function setupTelegramResponse(responseFactory: () => Response): void {
     globalThis.fetch = vi
       .fn()
@@ -170,7 +176,7 @@ export function createTelegramApiMock(): TelegramApiMock {
         const url =
           typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
         if (url.includes('api.telegram.org')) {
-          const rawBody = init?.body == null ? null : String(init.body);
+          const rawBody = requestBodyToRawJson(init?.body);
           const attempt: TelegramApiAttempt = { url, rawBody };
           telegramApiAttempts.push(attempt);
 

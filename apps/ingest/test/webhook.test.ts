@@ -103,7 +103,7 @@ describe('POST /webhook/helius', () => {
     });
 
     return {
-      fetch: async (_input, _init) => {
+      fetch: async () => {
         resolveRequestStarted?.();
         await gate;
         return new Response(JSON.stringify(responseBody), {
@@ -533,7 +533,7 @@ describe('POST /webhook/helius', () => {
     it('returns standard { error: { code, message, request_id } } shape for 401', async () => {
       const response = await postWebhook([], undefined);
       expect(response.status).toBe(401);
-      const json = (await response.json()) as Record<string, unknown>;
+      const json = await response.json<Record<string, unknown>>();
       // Top-level shape
       expect(json).toHaveProperty('error');
       expect(typeof json.error).toBe('object');
@@ -553,7 +553,7 @@ describe('POST /webhook/helius', () => {
     it('returns standard { error: { code, message, request_id } } shape for 400', async () => {
       const response = await postWebhook({ not: 'an array' }, VALID_AUTH_TOKEN);
       expect(response.status).toBe(400);
-      const json = (await response.json()) as Record<string, unknown>;
+      const json = await response.json<Record<string, unknown>>();
       expect(json).toHaveProperty('error');
       expect(typeof json.error).toBe('object');
       expect(json.error).not.toBeNull();

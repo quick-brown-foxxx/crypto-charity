@@ -10,14 +10,14 @@ import type { VaultDb } from '@open-care/vault-db';
 import { canonicalJson } from '@open-care/vault-core';
 import type { AnchorPayload, CorrectionPayload, DisbursementPayload } from '@open-care/vault-core';
 
-type CorrectionSuccessJson = {
+interface CorrectionSuccessJson {
   sequence_no: number;
   event_hash: string;
   head_hash: string;
   corrects_sequence_no: number;
-};
+}
 
-type ValidationErrorJson = {
+interface ValidationErrorJson {
   error: {
     code: string;
     request_id?: string;
@@ -26,7 +26,7 @@ type ValidationErrorJson = {
       field_errors: Record<string, string[]>;
     };
   };
-};
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -59,7 +59,7 @@ function createTestVaultDb(): VaultDb {
 }
 
 async function responseJson<T>(response: Response): Promise<T> {
-  return (await response.json()) as T;
+  return response.json<T>();
 }
 
 /** Seed a donation event. */
