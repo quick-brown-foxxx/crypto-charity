@@ -114,7 +114,7 @@ checks are gated manual smoke jobs, not normal CI or scheduled requirements.
   - No full gift-card codes appear in operator-visible responses after delivery;
   - Bot handles duplicate `/start` and invalid commands gracefully.
 - **Session management:** The `StringSession` is generated once via
-  `tools/e2e-tg/get_session_string_draft.py` and stored as a manual workflow secret. If the
+  `test/e2e-tg/get_session_string_draft.py` and stored as a manual workflow secret. If the
   session is invalidated (Telegram logout, password change), a team member
   re-runs the generator and updates the secret.
 - **Rate limiting:** Add `asyncio.sleep(1)` between test cases. Keep tests

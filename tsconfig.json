@@ -13,9 +13,9 @@
     { "path": "packages/api-contract" },
     { "path": "apps/web" },
     { "path": "tools/seed" },
-    { "path": "tools/verify" },
-    { "path": "tools/localnet" },
-    { "path": "tools/smoke" }
+    { "path": "test/verify" },
+    { "path": "test/localnet" },
+    { "path": "test/smoke" }
   ],
   "compilerOptions": {
     "target": "ES2022",

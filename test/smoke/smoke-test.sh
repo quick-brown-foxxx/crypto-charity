@@ -3,7 +3,7 @@
 # Smoke test script for Open Care staging/production endpoints.
 #
 # Usage:
-#   ./tools/smoke/smoke-test.sh [BASE_URL]
+#   ./test/smoke/smoke-test.sh [BASE_URL]
 #
 # Default BASE_URL: https://staging.open-care.org
 #

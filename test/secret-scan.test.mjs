@@ -5,7 +5,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { findTreasuryKeyFindings } from '../tools/secret-scan/check-no-treasury-key.mjs';
+import { findTreasuryKeyFindings } from './secret-scan/check-no-treasury-key.mjs';
 
 const forbiddenEnvName = ['TREASURY', 'KEY'].join('_');
 const forbiddenPrivateKeyName = ['treasury', 'private', 'key'].join('_');

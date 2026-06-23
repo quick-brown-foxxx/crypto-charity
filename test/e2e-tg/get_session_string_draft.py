@@ -21,7 +21,7 @@ Prerequisites:
     docs/ops/secrets-inventory.md § "E2E test account secrets").
 
 Usage:
-    uv run --script tools/e2e-tg/get_session_string_draft.py
+    uv run --script test/e2e-tg/get_session_string_draft.py
 
 The script will prompt for:
     1. API ID (integer)

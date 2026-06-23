@@ -2,9 +2,9 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { SELF } from 'cloudflare:test';
 import { getHead } from '@open-care/vault-db';
 import { seedTestData } from './seed.js';
-import { fetchAllLedgerEvents, verifyChainFromApi } from '../../../tools/verify/verify-chain.js';
+import { fetchAllLedgerEvents, verifyChainFromApi } from '../../../test/verify/verify-chain.js';
 import type { VaultDb } from '@open-care/vault-db';
-import type { FetchLike, PublicLedgerEvent } from '../../../tools/verify/verify-chain.js';
+import type { FetchLike, PublicLedgerEvent } from '../../../test/verify/verify-chain.js';
 
 function ledgerEvent(sequenceNo: number): PublicLedgerEvent {
   return {

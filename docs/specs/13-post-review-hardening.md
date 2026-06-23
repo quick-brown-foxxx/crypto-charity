@@ -181,7 +181,7 @@ correctness.
 
 **Fix:**
 
-- Create `tools/verify/verify-chain.ts` — a standalone TypeScript script
+- Create `test/verify/verify-chain.ts` — a standalone TypeScript script
   that:
   - Fetches all events from `/api/ledger-events`.
   - Parses `payload_json`, recomputes `event_hash` via `canonicalJson` +
@@ -206,7 +206,7 @@ correctness.
 
 **Acceptance criteria:**
 
-- `tools/verify/verify-chain.ts` exists and can be run against a live
+- `test/verify/verify-chain.ts` exists and can be run against a live
   deployment.
 - A test fetches raw events from the API, recomputes the chain, and
   verifies the head hash matches.
@@ -632,7 +632,7 @@ env-gated manual evidence for trust-critical external-system behavior.
   - Creates local keypairs, SPL token mint, donor/source token account,
     treasury owner, and vault ATA during setup.
   - Provides a teardown/cleanup mechanism.
-- Create fixture helpers in `tools/localnet/` that:
+- Create fixture helpers in `test/localnet/` that:
   - Generate throwaway keypairs.
   - Create and fund token accounts.
   - Send SPL Token transfers.
@@ -677,7 +677,7 @@ env-gated manual evidence for trust-critical external-system behavior.
 
 ### Slice 4.3 — Devnet live smoke test scripts
 
-- Write a TypeScript script in `tools/smoke/devnet-smoke.ts` that:
+- Write a TypeScript script in `test/smoke/devnet-smoke.ts` that:
   - Uses already-configured env vars (`SOLANA_CLUSTER=devnet`,
     `HELIUS_RPC_URL`, devnet wallet/ATA config).
   - Sends a real Memo anchor transaction on devnet.
@@ -691,7 +691,7 @@ env-gated manual evidence for trust-critical external-system behavior.
 
 **Acceptance criteria:**
 
-- `ALLOW_DEVNET_SMOKE=true npx tsx tools/smoke/devnet-smoke.ts` runs
+- `ALLOW_DEVNET_SMOKE=true npx tsx test/smoke/devnet-smoke.ts` runs
   and reports pass/fail for each check.
 - Script fails closed if `ALLOW_DEVNET_SMOKE` is not set.
 - Script uses the already-configured devnet wallets from
@@ -701,7 +701,7 @@ env-gated manual evidence for trust-critical external-system behavior.
 
 ### Slice 4.4 — Helius webhook contract test scripts
 
-- Write a TypeScript script in `tools/smoke/helius-contract.ts` that:
+- Write a TypeScript script in `test/smoke/helius-contract.ts` that:
   - Sends a real (or realistically-shaped) Helius webhook payload to the
     staging ingest endpoint (`https://staging.open-care.org/webhook/helius`).
   - Verifies `Authorization` header extraction and constant-time
@@ -791,7 +791,7 @@ may use additional Playwright browser projects.
 ### Slice 5.2 — Wire smoke test into deploy workflow
 
 **Problem:** `deploy.yml` pushes to staging with zero verification. A
-smoke test script exists (`tools/smoke/smoke-test.sh`, 342 lines, 8
+smoke test script exists (`test/smoke/smoke-test.sh`, 342 lines, 8
 endpoint checks) but is not called from any workflow. A broken
 deployment goes undetected until a human notices.
 
@@ -806,7 +806,7 @@ deployment goes undetected until a human notices.
     steps:
       - uses: actions/checkout@v4
       - name: Smoke test staging
-        run: bash tools/smoke/smoke-test.sh
+        run: bash test/smoke/smoke-test.sh
   ```
 - Ensure the smoke script fails with non-zero exit code if any check
   fails.
@@ -835,9 +835,9 @@ not set.
     workflow_dispatch: # manual trigger for live smoke testing
   ```
 - Jobs:
-  - `devnet-smoke`: runs `tools/smoke/devnet-smoke.ts` (from Slice 4.3),
+  - `devnet-smoke`: runs `test/smoke/devnet-smoke.ts` (from Slice 4.3),
     gated behind `ALLOW_DEVNET_SMOKE=true`.
-  - `helius-contract`: runs `tools/smoke/helius-contract.ts` (from Slice
+  - `helius-contract`: runs `test/smoke/helius-contract.ts` (from Slice
     4.4), gated behind env vars.
   - `tg-e2e`: runs `pnpm run test:tg-e2e` (from Slice 4.5), gated
     behind Telethon secrets.
@@ -1038,7 +1038,7 @@ any of them. Documentation bug.
 ### Slice 6.5 — Integrate Python cross-implementation verifier into CI
 
 **Problem:** The Python cross-implementation verifier
-(`tools/verify/test_vector.py`) independently confirms the normative hash
+(`test/verify/test_vector.py`) independently confirms the normative hash
 `fda2610f...` matches the TypeScript implementation byte-for-byte. It must stay
 wired into CI and the final verification pipeline so TypeScript/Python hash
 parity cannot drift silently.
@@ -1046,7 +1046,7 @@ parity cannot drift silently.
 **Fix:**
 
 - Keep a `test:python-verify` script in `package.json` that runs
-  `python3 tools/verify/test_vector.py`.
+  `python3 test/verify/test_vector.py`.
 - Keep the script in the `final-check` pipeline and CI.
 - Ensure the script fails with non-zero exit code if verification fails.
 

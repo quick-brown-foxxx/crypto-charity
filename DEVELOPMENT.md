@@ -64,7 +64,7 @@ pnpm run lint           # eslint .
 pnpm run lint:fix       # eslint --fix .
 pnpm run check          # tsc -b
 pnpm run test           # vitest run
-pnpm run test:python-verify # python3 tools/verify/test_vector.py
+pnpm run test:python-verify # python3 test/verify/test_vector.py
 pnpm run build          # tsc -b + SvelteKit build
 pnpm exec playwright test --project=chromium # Chromium browser smoke suite
 pnpm run final-check:secret-scan # scan repo source, docs, tools, and root files for treasury key material
@@ -298,7 +298,7 @@ Optional knobs:
 - `TG_E2E_TIMEOUT_SECONDS` — default `20`.
 
 The Python dependencies, Poe task definitions, and Telethon session generator
-remain in `tools/e2e-tg/`; the real pytest files live under `test/e2e-tg/` so
+remain in `test/e2e-tg/`; the real pytest files live under `test/e2e-tg/` so
 test code is kept in the top-level test tree. The suite constructs
 `TelegramClient(..., sequential_updates=True)`, uses
 Telethon's Conversation API for deterministic bot interactions, and sleeps one

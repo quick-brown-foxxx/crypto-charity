@@ -1,4 +1,4 @@
-# tools/smoke — Agent Notes
+# test/smoke — Agent Notes
 
 ## Role
 

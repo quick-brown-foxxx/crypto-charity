@@ -9,7 +9,7 @@ import {
   requestAirdropAndConfirm,
   sendMemoTransaction,
   sendSplTokenTransferChecked,
-} from '../../tools/localnet/src/fixtures.js';
+} from './src/fixtures.js';
 import {
   cleanupLocalValidator,
   findOpenPort,
@@ -17,7 +17,7 @@ import {
   startLocalValidator,
   waitForLocalValidatorReady,
   type LocalValidatorHandle,
-} from '../../tools/localnet/src/validator.js';
+} from './src/validator.js';
 import { fetchTransaction, parseSplTransfer } from '../../apps/ingest/src/lib/solana-rpc.js';
 import { insertIntoInbox, processInbox } from '../../apps/ingest/src/lib/inbox.js';
 import type { Env as IngestEnv } from '../../apps/ingest/src/lib/env.js';

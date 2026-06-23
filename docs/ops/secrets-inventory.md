@@ -256,7 +256,7 @@ or `.dev.vars`.
    underscores/hyphens), Description (40+ chars). If still failing, try
    incognito mode with all extensions disabled, or try again after 24 hours.
 3. Run the one-time session generator:
-   `uv run --script tools/e2e-tg/get_session_string_draft.py`
+   `uv run --script test/e2e-tg/get_session_string_draft.py`
    It will prompt for API ID, API Hash, phone number, and the login code that
    Telegram sends. On success it prints a `StringSession` value.
 4. Store the three values:

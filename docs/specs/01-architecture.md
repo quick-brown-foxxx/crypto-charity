@@ -124,8 +124,8 @@ in [`02-invariants.md`](02-invariants.md).
   helpers for `vault-db`.
 - **`packages/bot-crypto`** — HMAC and authenticated-encryption helpers for
   Telegram identity and chat-route storage.
-- **`tools/verify`**, **`tools/localnet`**, **`tools/smoke`**, and
-  **`tools/e2e-tg`** — auxiliary verification and smoke-test tooling for public
+- **`test/verify`**, **`test/localnet`**, **`test/smoke`**, and
+  **`test/e2e-tg`** — auxiliary verification and smoke-test tooling for public
   chain verification, local Solana validation, env-gated live checks, and
   Telegram E2E.
 

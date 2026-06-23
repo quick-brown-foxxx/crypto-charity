@@ -16,7 +16,7 @@ importers:
     devDependencies:
       '@cloudflare/vitest-pool-workers':
         specifier: ^0.16.16
-        version: 0.16.16(@cloudflare/workers-types@4.20260617.1)(@vitest/runner@4.1.9)(@vitest/snapshot@4.1.9)(bufferutil@4.1.0)(vitest@4.1.9(@types/node@25.9.3)(jsdom@29.1.1(@noble/hashes@1.8.0))(vite@6.4.3(@types/node@25.9.3)(tsx@4.22.4)))
+        version: 0.16.16(@cloudflare/workers-types@4.20260617.1)(@vitest/runner@4.1.9)(@vitest/snapshot@4.1.9)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vitest@4.1.9(@types/node@25.9.3)(jsdom@29.1.1(@noble/hashes@1.8.0))(vite@6.4.3(@types/node@25.9.3)(tsx@4.22.4)))
       '@cloudflare/workers-types':
         specifier: ^4.20260616.1
         version: 4.20260617.1
@@ -292,7 +292,7 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
 
-  tools/localnet:
+  test/localnet:
     dependencies:
       '@solana/spl-token':
         specifier: ^0.4.14
@@ -305,17 +305,7 @@ importers:
         specifier: ^4.22.4
         version: 4.22.4
 
-  tools/seed:
-    dependencies:
-      '@open-care/vault-core':
-        specifier: workspace:*
-        version: link:../../packages/vault-core
-    devDependencies:
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-
-  tools/smoke:
+  test/smoke:
     dependencies:
       '@solana/spl-token':
         specifier: ^0.4.14
@@ -331,7 +321,17 @@ importers:
         specifier: ^4.22.4
         version: 4.22.4
 
-  tools/verify:
+  test/verify:
+    dependencies:
+      '@open-care/vault-core':
+        specifier: workspace:*
+        version: link:../../packages/vault-core
+    devDependencies:
+      tsx:
+        specifier: ^4.22.4
+        version: 4.22.4
+
+  tools/seed:
     dependencies:
       '@open-care/vault-core':
         specifier: workspace:*
@@ -3643,7 +3643,7 @@ snapshots:
     optionalDependencies:
       workerd: 1.20260616.1
 
-  '@cloudflare/vitest-pool-workers@0.16.16(@cloudflare/workers-types@4.20260617.1)(@vitest/runner@4.1.9)(@vitest/snapshot@4.1.9)(bufferutil@4.1.0)(vitest@4.1.9(@types/node@25.9.3)(jsdom@29.1.1(@noble/hashes@1.8.0))(vite@6.4.3(@types/node@25.9.3)(tsx@4.22.4)))':
+  '@cloudflare/vitest-pool-workers@0.16.16(@cloudflare/workers-types@4.20260617.1)(@vitest/runner@4.1.9)(@vitest/snapshot@4.1.9)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vitest@4.1.9(@types/node@25.9.3)(jsdom@29.1.1(@noble/hashes@1.8.0))(vite@6.4.3(@types/node@25.9.3)(tsx@4.22.4)))':
     dependencies:
       '@vitest/runner': 4.1.9
       '@vitest/snapshot': 4.1.9
@@ -4509,7 +4509,7 @@ snapshots:
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
-  '@solana/spl-token-group@0.0.7(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)':
+  '@solana/spl-token-group@0.0.7(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)':
     dependencies:
       '@solana/codecs': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
@@ -4517,7 +4517,7 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - typescript
 
-  '@solana/spl-token-metadata@0.1.6(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)':
+  '@solana/spl-token-metadata@0.1.6(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)':
     dependencies:
       '@solana/codecs': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
@@ -4529,8 +4529,8 @@ snapshots:
     dependencies:
       '@solana/buffer-layout': 4.0.1
       '@solana/buffer-layout-utils': 0.2.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
-      '@solana/spl-token-group': 0.0.7(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
-      '@solana/spl-token-metadata': 0.1.6(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
+      '@solana/spl-token-group': 0.0.7(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
+      '@solana/spl-token-metadata': 0.1.6(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
       buffer: 6.0.3
     transitivePeerDependencies:
@@ -5567,7 +5567,7 @@ snapshots:
 
   isexe@2.0.0: {}
 
-  isomorphic-ws@4.0.1(ws@7.5.11(bufferutil@4.1.0)):
+  isomorphic-ws@4.0.1(ws@7.5.11(bufferutil@4.1.0)(utf-8-validate@6.0.6)):
     dependencies:
       ws: 7.5.11(bufferutil@4.1.0)(utf-8-validate@6.0.6)
 
@@ -5580,7 +5580,7 @@ snapshots:
       delay: 5.0.0
       es6-promisify: 5.0.0
       eyes: 0.1.8
-      isomorphic-ws: 4.0.1(ws@7.5.11(bufferutil@4.1.0))
+      isomorphic-ws: 4.0.1(ws@7.5.11(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       json-stringify-safe: 5.0.1
       stream-json: 1.9.1
       uuid: 8.3.2

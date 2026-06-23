@@ -1,4 +1,4 @@
-# tools/verify — Agent Notes
+# test/verify — Agent Notes
 
 ## Role
 

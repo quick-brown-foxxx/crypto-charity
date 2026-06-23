@@ -6,13 +6,13 @@ Quick health checks for the Open Care staging and production environments.
 
 ```bash
 # Run against staging (default)
-./tools/smoke/smoke-test.sh
+./test/smoke/smoke-test.sh
 
 # Run against a custom URL
-./tools/smoke/smoke-test.sh https://staging.open-care.org
+./test/smoke/smoke-test.sh https://staging.open-care.org
 
 # Run against production (when available)
-./tools/smoke/smoke-test.sh https://open-care.org
+./test/smoke/smoke-test.sh https://open-care.org
 ```
 
 ## What It Checks
@@ -48,7 +48,7 @@ The smoke test can be run as a post-deploy verification step in GitHub Actions:
 
 ```yaml
 - name: Smoke test staging
-  run: ./tools/smoke/smoke-test.sh https://staging.open-care.org
+  run: ./test/smoke/smoke-test.sh https://staging.open-care.org
 ```
 
 For production, the smoke test is gated behind the `ALLOW_MAINNET_SMOKE`

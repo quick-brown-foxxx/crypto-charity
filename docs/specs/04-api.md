@@ -262,8 +262,8 @@ Response 200:
   },
   "previous_anchors": [],
   "instructions": {
-    "typescript": "A TypeScript verifier script is available at tools/verify/. Donors can also reproduce the chain by (1) GET /api/ledger-events, (2) for each event, recompute SHA-256 over the canonical JSON preimage documented in docs/specs/03-data-model.md, (3) compare the result to event_hash and to the Memo text on the Solana transaction linked from latest_anchor.solscan_url. A Python cross-implementation verifier (tools/verify/test_vector.py) confirms the normative test vector hash fda2610f...",
-    "python": "A Python verifier using rfc8785 canonicalization is available at tools/verify/test_vector.py. It confirms the normative test vector hash fda2610fb171efe75bf16a821f8b87764801bab1e2f4e69bdd98ccb53bf1df41."
+    "typescript": "A TypeScript verifier script is available at test/verify/. Donors can also reproduce the chain by (1) GET /api/ledger-events, (2) for each event, recompute SHA-256 over the canonical JSON preimage documented in docs/specs/03-data-model.md, (3) compare the result to event_hash and to the Memo text on the Solana transaction linked from latest_anchor.solscan_url. A Python cross-implementation verifier (test/verify/test_vector.py) confirms the normative test vector hash fda2610f...",
+    "python": "A Python verifier using rfc8785 canonicalization is available at test/verify/test_vector.py. It confirms the normative test vector hash fda2610fb171efe75bf16a821f8b87764801bab1e2f4e69bdd98ccb53bf1df41."
   },
   "anchor_stale": false
 }

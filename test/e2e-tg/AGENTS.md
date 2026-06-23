@@ -1,4 +1,4 @@
-# tools/e2e-tg — Agent Notes
+# test/e2e-tg — Agent Notes
 
 ## Role
 

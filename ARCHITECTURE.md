@@ -120,7 +120,7 @@ vault-db            vault-db              bot-db
 
 1. Public `/verify` page shows current head hash and latest anchor memo
 2. Anyone can export the full ledger (`/api/ledger-events`)
-3. Anyone can independently verify with `tools/verify/verify-chain.ts`: recompute hash chain, check anchor memo matches the anchored ledger head, and confirm anchor tx metadata exposed by `/api/verify`
+3. Anyone can independently verify with `test/verify/verify-chain.ts`: recompute hash chain, check anchor memo matches the anchored ledger head, and confirm anchor tx metadata exposed by `/api/verify`
 
 ### Beneficiary flow (Telegram)
 
