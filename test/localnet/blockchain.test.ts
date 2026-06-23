@@ -9,7 +9,7 @@ import {
   requestAirdropAndConfirm,
   sendMemoTransaction,
   sendSplTokenTransferChecked,
-} from '../src/fixtures.js';
+} from '../../tools/localnet/src/fixtures.js';
 import {
   cleanupLocalValidator,
   findOpenPort,
@@ -17,14 +17,14 @@ import {
   startLocalValidator,
   waitForLocalValidatorReady,
   type LocalValidatorHandle,
-} from '../src/validator.js';
-import { fetchTransaction, parseSplTransfer } from '../../../apps/ingest/src/lib/solana-rpc.js';
-import { insertIntoInbox, processInbox } from '../../../apps/ingest/src/lib/inbox.js';
-import type { Env as IngestEnv } from '../../../apps/ingest/src/lib/env.js';
-import { appendLedgerEvent, getEventsPaginated } from '../../../packages/vault-db/src/index.js';
-import { createTestVaultDb } from '../../../packages/vault-db/test/setup.js';
-import { buildAnchorMemo, utcNow, verifyChain } from '../../../packages/vault-core/src/index.js';
-import type { SolanaGetTransactionResult } from '../../../packages/vault-core/src/schemas/solana-rpc.js';
+} from '../../tools/localnet/src/validator.js';
+import { fetchTransaction, parseSplTransfer } from '../../apps/ingest/src/lib/solana-rpc.js';
+import { insertIntoInbox, processInbox } from '../../apps/ingest/src/lib/inbox.js';
+import type { Env as IngestEnv } from '../../apps/ingest/src/lib/env.js';
+import { appendLedgerEvent, getEventsPaginated } from '../../packages/vault-db/src/index.js';
+import { createTestVaultDb } from '../../packages/vault-db/test/setup.js';
+import { buildAnchorMemo, utcNow, verifyChain } from '../../packages/vault-core/src/index.js';
+import type { SolanaGetTransactionResult } from '../../packages/vault-core/src/schemas/solana-rpc.js';
 
 const PREFLIGHT = preflightSolanaTestValidator();
 const describeIfValidatorAvailable = PREFLIGHT.ok ? describe : describe.skip;

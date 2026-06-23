@@ -1,6 +1,5 @@
 # 08 — Testing Strategy
 
-**Status:** Partially implemented
 **Date:** 2026-06-18
 **Scope:** MVP behavior proof, blockchain test tiers, and CI policy.
 
@@ -16,24 +15,22 @@
 
 ## Test levels
 
-| Level                      | Tooling                                               | Current state                        | CI policy                                       | What it proves                                                                                             |
-| -------------------------- | ----------------------------------------------------- | ------------------------------------ | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Unit                       | vitest                                                | Implemented                          | PR CI                                           | Canonical JSON, hash preimages, schema validation, Memo text builder.                                      |
-| Worker integration         | vitest + wrangler unstable_dev / miniflare / local D1 | Implemented                          | PR CI                                           | HTTP contracts, ledger appends, durable inbox behavior.                                                    |
-| Public verification        | Python test vector + TypeScript verify script         | Implemented                          | PR CI for test vector; deployment/manual verify | Cross-implementation hash parity; public export recomputes head hash and checks published anchor metadata. |
-| Browser smoke              | SvelteKit + Playwright Chromium                       | Implemented                          | PR CI                                           | Public site renders seeded data, donate warnings, ledger, verify instructions, and `/admin` safe states.   |
-| Local-validator blockchain | Solana local validator                                | Implemented; skips if tooling absent | PR CI via Vitest when available; local harness  | Real Memo and SPL token flows without secrets or funds.                                                    |
-| Devnet live smoke          | Solana devnet                                         | Implemented                          | manual/nightly, env-gated, informational        | Real devnet send/fetch/finality behavior.                                                                  |
-| Helius webhook contract    | Helius + public HTTPS staging                         | Implemented                          | manual/nightly, env-gated, informational        | Provider auth header, payload shape, retry/duplicate behavior.                                             |
-| Telegram E2E               | Telethon + pytest, staging bot + test user account    | Implemented                          | manual/nightly, env-gated, informational        | Real user→bot→user flow: `/start`, `/card`, delivery, no sensitive data in responses.                      |
-| Tiny mainnet smoke         | Solana mainnet                                        | Planned optional gate                | optional manual release gate only               | Real mainnet compatibility with tiny paid transactions.                                                    |
+| Level                      | Tooling                                               | CI policy                                       | What it proves                                                                                             |
+| -------------------------- | ----------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Unit                       | vitest                                                | PR CI                                           | Canonical JSON, hash preimages, schema validation, Memo text builder.                                      |
+| Worker integration         | vitest + wrangler unstable_dev / miniflare / local D1 | PR CI                                           | HTTP contracts, ledger appends, durable inbox behavior.                                                    |
+| Public verification        | Python test vector + TypeScript verify script         | PR CI for test vector; deployment/manual verify | Cross-implementation hash parity; public export recomputes head hash and checks published anchor metadata. |
+| Browser smoke              | SvelteKit + Playwright Chromium                       | PR CI                                           | Public site renders seeded data, donate warnings, ledger, verify instructions, and `/admin` safe states.   |
+| Local-validator blockchain | Solana local validator                                | PR CI via Vitest when available; local harness  | Real Memo and SPL token flows without secrets or funds.                                                    |
+| Devnet live smoke          | Solana devnet                                         | manual-only, env-gated, informational           | Real devnet send/fetch/finality behavior.                                                                  |
+| Helius webhook contract    | Helius + public HTTPS staging                         | manual-only, env-gated, informational           | Provider auth header, payload shape, retry/duplicate behavior.                                             |
+| Telegram E2E               | Telethon + pytest, staging bot + test user account    | manual-only, env-gated, informational           | Real user→bot→user flow: `/start`, `/card`, delivery, no sensitive data in responses.                      |
+| Tiny mainnet smoke         | Solana mainnet                                        | optional manual release gate only               | Real mainnet compatibility with tiny paid transactions.                                                    |
 
-The strategy is therefore only partially implemented as always-on CI coverage:
-the PR path has unit/integration, contract, public verification parity,
-Chromium browser, and conditional local-validator evidence, while live devnet,
-Helius, and Telegram checks are implemented as gated manual/nightly smoke jobs.
-The tiny mainnet smoke remains a planned optional release gate, not a normal CI
-or nightly requirement.
+Always-on PR coverage is limited to deterministic checks: unit/integration,
+contract, public verification parity, Chromium browser, and conditional
+local-validator evidence. Live devnet, Helius, Telegram, and tiny mainnet
+checks are gated manual smoke jobs, not normal CI or scheduled requirements.
 
 ## Blockchain test tiers
 
@@ -66,7 +63,7 @@ or nightly requirement.
 ### 2. Devnet live smoke tests
 
 - **Cost/secrets:** free; uses throwaway devnet keypair and faucet funds.
-- **Where:** manual or nightly environment-gated job.
+- **Where:** manual-only environment-gated job.
 - **Required env:** `SOLANA_CLUSTER=devnet`, `HELIUS_RPC_URL`,
   `ANCHOR_WALLET_SECRET` for a throwaway devnet anchor wallet,
   `ANCHOR_WALLET_ADDRESS`, `DONOR_WALLET_SECRET`,
@@ -79,7 +76,9 @@ or nightly requirement.
 
 - **Cost/secrets:** Helius free tier is expected to be enough; requires Helius
   API key/auth header and a public HTTPS staging endpoint.
-- **Where:** manual or nightly environment-gated job, not PR CI.
+- **Where:** manual-only environment-gated job, not PR CI. It remains manual
+  because live Helius credentials, public staging availability, devnet finality,
+  provider behavior, and webhook/API timing are not deterministic CI inputs.
 - **Required env:** `SOLANA_CLUSTER=devnet`, `HELIUS_API_KEY`,
   `HELIUS_WEBHOOK_AUTH_HEADER`, `HELIUS_RPC_URL`, `DONOR_WALLET_SECRET`, devnet
   treasury/vault/mint config. `WEBHOOK_URL` is an optional staging-host override.
@@ -93,7 +92,7 @@ or nightly requirement.
   phone number), Telegram API credentials (`api_id`/`api_hash`), and a
   pre-authenticated `StringSession`. See `docs/ops/secrets-inventory.md`
   §"E2E test account secrets" for setup.
-- **Where:** manual or nightly environment-gated job, not PR CI. Telegram
+- **Where:** manual-only environment-gated job, not PR CI. Telegram
   interaction is nondeterministic (rate limits, message ordering, API
   downtime); adding it to PR CI would make CI flaky.
 - **Tooling:** [Telethon](https://codeberg.org/Lonami/Telethon) (Python
@@ -115,7 +114,7 @@ or nightly requirement.
   - No full gift-card codes appear in operator-visible responses after delivery;
   - Bot handles duplicate `/start` and invalid commands gracefully.
 - **Session management:** The `StringSession` is generated once via
-  `tools/e2e-tg/get_session_string_draft.py` and stored as a CI secret. If the
+  `tools/e2e-tg/get_session_string_draft.py` and stored as a manual workflow secret. If the
   session is invalidated (Telegram logout, password change), a team member
   re-runs the generator and updates the secret.
 - **Rate limiting:** Add `asyncio.sleep(1)` between test cases. Keep tests
@@ -541,7 +540,7 @@ pnpm run verify:chain -- --base-url https://staging.open-care.org
 pnpm run blockchain:local-validator
 pnpm run smoke:devnet
 pnpm run smoke:helius-contract
-uv run --project tools/e2e-tg pytest tools/e2e-tg/tests/ -v
+pnpm run test:tg-e2e
 ```
 
 `pnpm run check` runs the TypeScript project build; CI runs SvelteKit type
@@ -579,6 +578,5 @@ Green PR CI means:
 
 Green PR CI does **not** mean live devnet, Helius contract, Telegram E2E, or
 mainnet compatibility has just been proven. Devnet, Helius, and Telegram E2E
-checks are implemented as env-gated manual/nightly jobs and are release evidence
-when enabled and inspected. Tiny mainnet smoke is optional planned release
-evidence only.
+checks run as env-gated manual jobs and are release evidence when enabled and
+inspected. Tiny mainnet smoke is optional release evidence only.

@@ -2,18 +2,18 @@
 
 ## Role
 
-Manual/nightly Telegram E2E tooling for the staging bot. The pytest suite uses
+Manual Telegram E2E tooling for the staging bot. The pytest suite uses
 Telethon as a real Telegram test user and verifies the user → bot → operator →
 user gift-card handoff against staging.
 
 ## What lives here
 
-| File                          | Role                                                                                                                               |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `get_session_string_draft.py` | One-time Telethon `StringSession` generator for the dedicated test account.                                                        |
-| `pyproject.toml`              | Local Python project config for the E2E pytest suite and dependencies.                                                             |
-| `tests/conftest.py`           | Env gate, Telethon client fixture, staging bot resolution, operator HTTP helpers, and redaction-safe assertions.                   |
-| `tests/test_staging_bot.py`   | BDD-style staging E2E scenarios for registration, card requests, delivery, redaction, retention, duplicates, and invalid commands. |
+| File                                    | Role                                                                                                                               |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `get_session_string_draft.py`           | One-time Telethon `StringSession` generator for the dedicated test account.                                                        |
+| `pyproject.toml`                        | Local Python project config, Poe tasks, pytest config, and dependencies for the E2E suite.                                         |
+| `../../test/e2e-tg/conftest.py`         | Env gate, Telethon client fixture, staging bot resolution, operator HTTP helpers, and redaction-safe assertions.                   |
+| `../../test/e2e-tg/test_staging_bot.py` | BDD-style staging E2E scenarios for registration, card requests, delivery, redaction, retention, duplicates, and invalid commands. |
 
 ## Connections
 
@@ -31,6 +31,7 @@ user gift-card handoff against staging.
 ## Key invariants
 
 - Tests are fail-closed behind `ALLOW_TG_E2E=true` and are not part of PR CI.
+- Root package scripts run the suite through `uv` + Poe and skip by default without live env; the fail-closed helper proves explicit allow still fails closed when required live env is absent.
 - Required live env is checked before test execution. Missing or invalid values
   skip clearly while `ALLOW_TG_E2E` is unset/false, and fail closed with a
   non-zero pytest exit once `ALLOW_TG_E2E=true` explicitly enables live tests.

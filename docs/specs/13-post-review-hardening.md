@@ -1,6 +1,5 @@
 # 13 — Post-Review Hardening
 
-**Status:** Proposed
 **Date:** 2026-06-18
 **Scope:** Post-MVP-review hardening — critical bug fixes, invariant hardening, test quality improvement, testing layer build-out, CI/CD pipeline completion, environment polish, and docs accuracy.
 
@@ -617,14 +616,14 @@ Testing layers 5–8 from [`08-testing-strategy.md`](08-testing-strategy.md)
 §"Test levels" are mixed runtime proof layers rather than unconditional PR-CI
 gates. Local-validator coverage has a reusable script and skips when the Solana
 toolchain is unavailable; devnet, Helius contract, and Telegram E2E checks are
-env-gated manual/nightly evidence for trust-critical external-system behavior.
+env-gated manual evidence for trust-critical external-system behavior.
 
-| Level | Description                | Current status                                         |
-| ----- | -------------------------- | ------------------------------------------------------ |
-| 5     | Local-validator blockchain | Implemented as a local script/test harness; skippable. |
-| 6     | Devnet live smoke          | Implemented as env-gated manual/nightly smoke.         |
-| 7     | Helius webhook contract    | Implemented as env-gated manual/nightly smoke.         |
-| 8     | Telegram E2E (Telethon)    | Implemented as env-gated manual/nightly pytest.        |
+| Level | Description                | Execution mode                           |
+| ----- | -------------------------- | ---------------------------------------- |
+| 5     | Local-validator blockchain | Local script/test harness; skippable.    |
+| 6     | Devnet live smoke          | Env-gated manual smoke.                  |
+| 7     | Helius webhook contract    | Env-gated manual smoke.                  |
+| 8     | Telegram E2E (Telethon)    | Env-gated manual pytest against staging. |
 
 ### Slice 4.1 — Local-validator blockchain test infrastructure
 
@@ -723,7 +722,7 @@ env-gated manual/nightly evidence for trust-critical external-system behavior.
 
 ### Slice 4.5 — Telegram E2E test suite (Telethon)
 
-- Write pytest test files in `tools/e2e-tg/tests/` using Telethon
+- Keep pytest test files in `test/e2e-tg/` using Telethon
   `Conversation` API:
   - `/start <handle>` → registration succeeds, bot replies with welcome.
   - `/card` → pending request created, visible via
@@ -735,14 +734,14 @@ env-gated manual/nightly evidence for trust-critical external-system behavior.
   - Duplicate `/start` and invalid commands handled gracefully.
 - Use `sequential_updates=True` for deterministic message ordering.
 - Add `asyncio.sleep(1)` between test cases for rate limiting.
-- Tests are manual/nightly only, not PR CI.
+- Tests are manual-only, not PR CI.
 - Secrets are configured in GitHub Actions for the staging-only harness
   (`TELETHON_API_ID`, `TELETHON_API_HASH`, `TELETHON_SESSION_STRING`,
   `TG_BOT_TOKEN`, `OPERATOR_TOKEN`).
 
 **Acceptance criteria:**
 
-- `pytest tools/e2e-tg/tests/ -v` runs at least 6 test cases against
+- `pnpm run test:tg-e2e` runs at least 6 test cases against
   the staging bot.
 - All tests pass when the staging bot is operational.
 - Tests fail with clear messages (not crashes) when the bot is
@@ -754,7 +753,7 @@ env-gated manual/nightly evidence for trust-critical external-system behavior.
 ## Epic 5: CI/CD Pipeline Completion
 
 CI/CD coverage includes PR quality gates, Chromium Playwright, staging smoke,
-nightly env-gated live checks, production environment blocks, and rollback
+manual env-gated live checks, production environment blocks, and rollback
 runbook coverage. Keep these gates accurate as scripts and workflows evolve.
 
 ### Slice 5.1 — Add Playwright to CI
@@ -779,7 +778,7 @@ may use additional Playwright browser projects.
 - The `webServer` config in `playwright.config.ts` already handles
   starting the SvelteKit dev server.
 - Use a single browser (chromium) in CI to keep job duration reasonable;
-  full cross-browser testing remains a manual/nightly option.
+  full cross-browser testing remains a manual option.
 
 **Acceptance criteria:**
 
@@ -820,38 +819,37 @@ deployment goes undetected until a human notices.
 
 ---
 
-### Slice 5.3 — Create nightly CI workflow
+### Slice 5.3 — Maintain manual live smoke workflow
 
 **Problem:** Devnet live smoke, Helius contract tests, and Telegram E2E are
-manual/nightly evidence, not PR-CI gates. The nightly workflow must keep their
-secret usage explicit and fail closed when required env is absent or an allow
-flag is not set.
+manual evidence, not PR-CI gates. The manual workflow must keep their secret
+usage explicit and fail closed when required env is absent or an allow flag is
+not set.
 
 **Fix:**
 
-- Keep `.github/workflows/nightly.yml` scheduled and manually triggerable:
+- Keep `.github/workflows/nightly.yml` manually triggerable with scheduling
+  disabled:
   ```yaml
   on:
-    schedule:
-      - cron: '0 3 * * *' # 03:00 UTC daily
-    workflow_dispatch: # manual trigger for testing
+    workflow_dispatch: # manual trigger for live smoke testing
   ```
 - Jobs:
   - `devnet-smoke`: runs `tools/smoke/devnet-smoke.ts` (from Slice 4.3),
     gated behind `ALLOW_DEVNET_SMOKE=true`.
   - `helius-contract`: runs `tools/smoke/helius-contract.ts` (from Slice
     4.4), gated behind env vars.
-  - `tg-e2e`: runs `pytest tools/e2e-tg/tests/` (from Slice 4.5), gated
+  - `tg-e2e`: runs `pnpm run test:tg-e2e` (from Slice 4.5), gated
     behind Telethon secrets.
 - Each job fails closed if its required secrets/env vars are missing.
-- Jobs are `continue-on-error: true` (nightly smoke is informational,
-  not a deployment gate).
+- Jobs must not mask failures; a manually triggered live smoke should report a
+  real pass/fail result for each enabled check.
 
 **Acceptance criteria:**
 
-- Nightly workflow runs on schedule and can be triggered manually.
+- Manual live smoke workflow can be triggered manually.
 - Each job declares and consumes only the CI secrets it needs.
-- Workflow reports pass/fail for each job without blocking anything.
+- Workflow reports pass/fail for each job without masking failures.
 
 ---
 
@@ -1064,19 +1062,18 @@ parity cannot drift silently.
 
 Fix documentation that is stale, misleading, or contradicts reality.
 
-### Slice 7.1 — Update 08-testing-strategy.md status
+### Slice 7.1 — Clarify 08-testing-strategy.md CI policy
 
 **Problem:** `08-testing-strategy.md` can overstate always-on CI coverage when it
-uses a blanket implemented status. The current test stack is mixed: PR CI covers
+uses blanket state markers. The test stack is mixed: PR CI covers
 unit/integration, verification parity, browser, and conditional local-validator
-checks, while devnet, Helius, and Telegram E2E are env-gated manual/nightly
-evidence. Tiny mainnet smoke remains optional planned release evidence.
+checks, while devnet, Helius, and Telegram E2E are env-gated manual evidence.
+Tiny mainnet smoke remains optional release evidence.
 
 **Fix:**
 
-- Change status to "Status: **Partially Implemented**".
-- Add a section documenting which layers are implemented and which are
-  manual/nightly or planned.
+- Remove blanket state markers.
+- Add a section documenting which layers are PR CI, manual-only, or optional.
 - Update the "What green CI means" section to reflect that
   green PR CI does not include live devnet, Helius, Telegram E2E, or mainnet
   evidence.
@@ -1086,7 +1083,8 @@ evidence. Tiny mainnet smoke remains optional planned release evidence.
 
 **Acceptance criteria:**
 
-- `08-testing-strategy.md` status accurately reflects reality.
+- `08-testing-strategy.md` accurately describes PR CI, manual-only checks, and
+  optional release evidence without blanket state markers.
 - Documented-but-nonexistent commands are removed or marked as planned.
 - No false claims about test coverage.
 

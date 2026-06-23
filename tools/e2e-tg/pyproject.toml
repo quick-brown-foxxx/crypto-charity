@@ -1,7 +1,7 @@
 [project]
 name = "open-care-tg-e2e"
 version = "0.0.0"
-description = "Manual/nightly Telegram E2E tests for the Open Care staging bot"
+description = "Manual Telegram E2E tests for the Open Care staging bot"
 requires-python = ">=3.12"
 dependencies = [
     "httpx>=0.28.0",
@@ -10,12 +10,32 @@ dependencies = [
     "telethon>=1.36.0",
 ]
 
+[dependency-groups]
+dev = [
+    "poethepoet>=0.38.0",
+]
+
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["../../test/e2e-tg"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
 markers = [
-    "tg_e2e: manual/nightly live Telegram staging E2E tests",
+    "tg_e2e: manual live Telegram staging E2E tests",
 ]
+
+[tool.poe.tasks.test]
+cmd = "pytest -c tools/e2e-tg/pyproject.toml test/e2e-tg -q"
+cwd = "../.."
+help = "Run Telegram E2E tests; skips unless ALLOW_TG_E2E=true."
+
+[tool.poe.tasks.collect]
+cmd = "pytest -c tools/e2e-tg/pyproject.toml test/e2e-tg --collect-only -q"
+cwd = "../.."
+help = "Collect Telegram E2E tests without live credentials."
+
+[tool.poe.tasks.fail_closed]
+shell = "set +e; output_file=\"${TMPDIR:-/tmp}/open-care-tg-e2e-fail-closed.out\"; ALLOW_TG_E2E=true TELETHON_API_ID= TELETHON_API_HASH= TELETHON_SESSION_STRING= TG_BOT_TOKEN= OPERATOR_TOKEN= pytest -c tools/e2e-tg/pyproject.toml test/e2e-tg -q > \"$output_file\" 2>&1; status=$?; cat \"$output_file\"; if [ \"$status\" -eq 2 ] && grep -q \"Telegram E2E env is incomplete\" \"$output_file\"; then exit 0; fi; exit 1"
+cwd = "../.."
+help = "Verify ALLOW_TG_E2E=true fails closed when live env is missing."

@@ -53,9 +53,10 @@ pnpm run final-check   # install → secret scan → ledger guard → sync → l
 
 This runs the local pre-commit sequence, including the secret scan and ledger
 mutation guard. CI runs repository quality gates on PR/push to main and also
-runs the Chromium Playwright browser suite. All gates must exit 0.
+runs the Chromium Playwright browser suite. All normal commit/PR gates must exit 0. Manual live checks are listed in their own sections below and are not normal
+PR CI gates.
 
-Individual gates:
+Individual normal gates:
 
 ```bash
 pnpm run format:check   # prettier --check .
@@ -69,6 +70,11 @@ pnpm exec playwright test --project=chromium # Chromium browser smoke suite
 pnpm run final-check:secret-scan # scan repo source, docs, tools, and root files for treasury key material
 pnpm run final-check:ledger-guard # reject ledger_events UPDATE/DELETE in production src dirs
 ```
+
+Manual/live checks are intentionally separate from the normal commit/PR gate
+list because they depend on live provider credentials, staging availability,
+funded throwaway wallets, or external account state. See the Devnet, Helius, and
+Telegram sections below for their commands and fail-closed behavior.
 
 ## Secrets and config
 
@@ -223,8 +229,15 @@ The Helius contract smoke is a manual-only staging check. It is intentionally
 devnet SOL fees plus a tiny amount of devnet USDC. Use throwaway/faucet-funded
 devnet wallets only; never use mainnet or treasury private keys.
 
+Keep this check out of `pnpm run test`, `pnpm run final-check`, and PR CI. It is
+useful release evidence, but it depends on live Helius credentials, provider
+delivery behavior, public staging availability, devnet finality, faucet-funded
+wallet state, and webhook/API timing. Those dependencies make it intentionally
+manual rather than deterministic local/CI proof.
+
 ```bash
 pnpm run smoke:helius-contract -- --help
+pnpm run smoke:helius-contract # fail-closed unless ALLOW_HELIUS_CONTRACT_SMOKE=true
 ALLOW_HELIUS_CONTRACT_SMOKE=true \
 HELIUS_API_KEY=<Helius API key used by the staging webhook provider> \
 HELIUS_WEBHOOK_AUTH_HEADER=<staging webhook token without Bearer prefix> \
@@ -258,22 +271,23 @@ webhook, then polls the public read API from a pre-transfer `/api/verify`
 baseline to assert exactly one `donation_confirmed` ledger event for that
 signature.
 
-## Telegram staging E2E (manual/nightly)
+## Telegram staging E2E (manual)
 
-The Telegram E2E suite is a manual/nightly live staging check. It is
-intentionally **not** part of PR CI because it uses a real Telegram test account,
-the staging bot token, and the staging operator token.
+The Telegram E2E suite is a manual live staging check. It is intentionally
+**not** part of PR CI because it uses a real Telegram test account, the staging
+bot token, and the staging operator token.
 
 ```bash
-uv run --project tools/e2e-tg pytest --collect-only -q
-uv run --project tools/e2e-tg pytest -q
+pnpm run test:tg-e2e:collect
+pnpm run test:tg-e2e
+pnpm run test:tg-e2e:fail-closed
 ALLOW_TG_E2E=true \
 TELETHON_API_ID=<telegram api id> \
 TELETHON_API_HASH=<telegram api hash> \
 TELETHON_SESSION_STRING=<telethon string session> \
 TG_BOT_TOKEN=<staging bot token> \
 OPERATOR_TOKEN=<staging operator token> \
-uv run --project tools/e2e-tg pytest -v
+pnpm run test:tg-e2e
 ```
 
 Optional knobs:
@@ -283,7 +297,10 @@ Optional knobs:
 - `TG_E2E_BOT_USERNAME` — skips Bot API `getMe` username resolution when set.
 - `TG_E2E_TIMEOUT_SECONDS` — default `20`.
 
-The suite constructs `TelegramClient(..., sequential_updates=True)`, uses
+The Python dependencies, Poe task definitions, and Telethon session generator
+remain in `tools/e2e-tg/`; the real pytest files live under `test/e2e-tg/` so
+test code is kept in the top-level test tree. The suite constructs
+`TelegramClient(..., sequential_updates=True)`, uses
 Telethon's Conversation API for deterministic bot interactions, and sleeps one
 second between tests to reduce rate-limit pressure. The tests fail closed unless
 `ALLOW_TG_E2E=true` is set, skip clearly when required env is missing, and never
