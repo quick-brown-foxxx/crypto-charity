@@ -149,7 +149,7 @@ vault-db            vault-db              bot-db
 | ORM                   | Drizzle with D1 driver            | Type-safe, SQL-first                       |
 | Test runner           | Vitest                            | Native ESM, fast                           |
 | Browser tests         | Playwright                        | Real browser, not jsdom                    |
-| Telegram E2E          | Telethon + pytest                 | Manual/nightly, not PR CI                  |
+| Telegram E2E          | Telethon + pytest                 | Manual live, not PR CI                     |
 
 ## Future work
 

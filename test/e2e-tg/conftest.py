@@ -67,7 +67,7 @@ def _env_value(name: str) -> str | None:
 
 def _skip_reason_from_env() -> str | None:
     if _env_value("ALLOW_TG_E2E") != "true":
-        return "Telegram E2E disabled; set ALLOW_TG_E2E=true for manual/nightly staging runs"
+        return "Telegram E2E disabled; set ALLOW_TG_E2E=true for manual staging runs"
 
     missing = [name for name in REQUIRED_ENV_NAMES if _env_value(name) is None]
     if missing:
@@ -128,7 +128,7 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    config.addinivalue_line("markers", "tg_e2e: manual/nightly live Telegram staging E2E tests")
+    config.addinivalue_line("markers", "tg_e2e: manual live Telegram staging E2E tests")
     fail_closed_reason = _fail_closed_reason_from_env()
     if fail_closed_reason is not None:
         pytest.exit(fail_closed_reason, returncode=2)

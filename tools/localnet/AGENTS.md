@@ -8,12 +8,12 @@ mainnet, operator, treasury, or deployment secrets.
 
 ## What lives here
 
-| File                         | Role                                                                                                                                                        |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/fixtures.ts`            | Reusable Solana localnet helpers for throwaway keypairs, token accounts, checked/unchecked SPL transfers, and memo transactions.                            |
-| `src/validator.ts`           | Local `solana-test-validator` preflight, startup, readiness polling, process cleanup, and temp directory handling.                                          |
-| `src/run-local-validator.ts` | CLI harness behind `pnpm run blockchain:local-validator`; starts an isolated validator, creates fixtures, runs a smoke or optional command, and tears down. |
-| `test/blockchain.test.ts`    | Vitest local-validator integration tests for real Memo anchors, SPL Token transfers, ingest filtering/idempotency, and hash-chain verification.             |
+| File                                     | Role                                                                                                                                               |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/fixtures.ts`                        | Reusable Solana localnet helpers for throwaway keypairs, token accounts, checked/unchecked SPL transfers, and memo transactions.                   |
+| `src/validator.ts`                       | Local `solana-test-validator` preflight, startup, readiness polling, process cleanup, and temp directory handling.                                 |
+| `src/run-local-validator.ts`             | CLI harness for the root local-validator script; starts an isolated validator, creates fixtures, runs a smoke or optional command, and tears down. |
+| `../../test/localnet/blockchain.test.ts` | Vitest local-validator integration tests for real Memo anchors, SPL Token transfers, ingest filtering/idempotency, and hash-chain verification.    |
 
 ## Connections
 
@@ -27,6 +27,7 @@ mainnet, operator, treasury, or deployment secrets.
 
 - Future blockchain Vitest tests can import `@open-care/localnet/fixtures` and use the CLI harness for a real localnet.
 - Root script `blockchain:local-validator` delegates to this package.
+- The root Vitest suite discovers the local-validator test from `test/localnet/`; this tool package no longer owns a separate Vitest project config.
 
 ## Key invariants
 

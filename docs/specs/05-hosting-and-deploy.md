@@ -1,6 +1,5 @@
 # 05 — Hosting and Deployment
 
-**Status:** Implemented
 **Date:** 2026-06-18
 **Scope:** MVP infrastructure, secrets, CI/CD, and environments.
 
@@ -164,10 +163,12 @@ Runs after PR CI passes and applies production deploy steps:
 
 Live blockchain checks are gated separately:
 
-- **Devnet live smoke:** manual or nightly, free, uses throwaway devnet keypairs
+- **Devnet live smoke:** manual-only, free, uses throwaway devnet keypairs
   and faucet funds.
-- **Helius webhook contract smoke:** manual/nightly against public HTTPS staging,
-  uses Helius API key and configured auth header.
+- **Helius webhook contract smoke:** manual-only against public HTTPS staging,
+  uses Helius API key and configured auth header. It stays out of PR CI and
+  final checks because provider credentials, public staging availability, devnet
+  finality, and webhook timing make it nondeterministic.
 - **Tiny mainnet smoke:** optional manual release gate only, paid, throwaway
   wallet, never normal CI.
 

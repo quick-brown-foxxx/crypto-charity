@@ -119,16 +119,16 @@ neutral shared location:
 
 ## Key decisions
 
-| Decision              | Choice                                        |
-| --------------------- | --------------------------------------------- |
-| Hash canonicalization | RFC 8785 (JCS), normative test vector pinned  |
-| Solana SDK            | `@solana/web3.js` v1 (`^1.98.4`)              |
-| HTTP routing          | Hono                                          |
-| Validation            | Zod (backend), Valibot (frontend)             |
-| ORM                   | Drizzle with D1 driver                        |
-| Test runner           | Vitest                                        |
-| Browser tests         | Playwright                                    |
-| Telegram E2E          | Telethon + pytest (manual/nightly, not PR CI) |
+| Decision              | Choice                                       |
+| --------------------- | -------------------------------------------- |
+| Hash canonicalization | RFC 8785 (JCS), normative test vector pinned |
+| Solana SDK            | `@solana/web3.js` v1 (`^1.98.4`)             |
+| HTTP routing          | Hono                                         |
+| Validation            | Zod (backend), Valibot (frontend)            |
+| ORM                   | Drizzle with D1 driver                       |
+| Test runner           | Vitest                                       |
+| Browser tests         | Playwright                                   |
+| Telegram E2E          | Telethon + pytest (manual live, not PR CI)   |
 
 ## Future work
 

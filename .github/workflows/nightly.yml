@@ -1,22 +1,19 @@
-name: Nightly Live Smoke
+name: Manual Live Smoke
 
 on:
-  schedule:
-    - cron: '0 3 * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: nightly-${{ github.ref }}
+  group: manual-live-smoke-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   devnet-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    continue-on-error: true
     env:
       ALLOW_DEVNET_SMOKE: ${{ vars.ALLOW_DEVNET_SMOKE }}
       SOLANA_CLUSTER: devnet
@@ -70,12 +67,12 @@ jobs:
           fi
 
           if [ "$ALLOW_DEVNET_SMOKE" != "true" ]; then
-            echo "ALLOW_DEVNET_SMOKE must be set to true for nightly devnet smoke." >&2
+            echo "ALLOW_DEVNET_SMOKE must be set to true for manual devnet smoke." >&2
             exit 1
           fi
 
           if [ "$SOLANA_CLUSTER" != "devnet" ]; then
-            echo "SOLANA_CLUSTER must be devnet for nightly devnet smoke." >&2
+            echo "SOLANA_CLUSTER must be devnet for manual devnet smoke." >&2
             exit 1
           fi
 
@@ -91,7 +88,6 @@ jobs:
   helius-contract:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    continue-on-error: true
     env:
       ALLOW_HELIUS_CONTRACT_SMOKE: ${{ vars.ALLOW_HELIUS_CONTRACT_SMOKE }}
       SOLANA_CLUSTER: devnet
@@ -150,12 +146,12 @@ jobs:
           fi
 
           if [ "$ALLOW_HELIUS_CONTRACT_SMOKE" != "true" ]; then
-            echo "ALLOW_HELIUS_CONTRACT_SMOKE must be set to true for nightly Helius contract smoke." >&2
+            echo "ALLOW_HELIUS_CONTRACT_SMOKE must be set to true for manual Helius contract smoke." >&2
             exit 1
           fi
 
           if [ "$SOLANA_CLUSTER" != "devnet" ]; then
-            echo "SOLANA_CLUSTER must be devnet for nightly Helius contract smoke." >&2
+            echo "SOLANA_CLUSTER must be devnet for manual Helius contract smoke." >&2
             exit 1
           fi
 
@@ -172,7 +168,6 @@ jobs:
   tg-e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    continue-on-error: true
     env:
       ALLOW_TG_E2E: ${{ vars.ALLOW_TG_E2E }}
       TG_E2E_OPERATOR_BASE_URL: ${{ vars.TG_E2E_OPERATOR_BASE_URL }}
@@ -180,6 +175,14 @@ jobs:
       TG_E2E_TIMEOUT_SECONDS: ${{ vars.TG_E2E_TIMEOUT_SECONDS }}
     steps:
       - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.6.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
       - uses: astral-sh/setup-uv@v6
         with:
@@ -213,7 +216,7 @@ jobs:
           fi
 
           if [ "$ALLOW_TG_E2E" != "true" ]; then
-            echo "ALLOW_TG_E2E must be set to true for nightly Telegram E2E." >&2
+            echo "ALLOW_TG_E2E must be set to true for manual Telegram E2E." >&2
             exit 1
           fi
 
@@ -226,4 +229,4 @@ jobs:
           TELETHON_SESSION_STRING: ${{ secrets.TELETHON_SESSION_STRING }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           OPERATOR_TOKEN: ${{ secrets.OPERATOR_TOKEN }}
-        run: uv run --project tools/e2e-tg pytest tools/e2e-tg/tests/ -v
+        run: pnpm run test:tg-e2e
